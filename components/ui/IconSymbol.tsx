@@ -18,9 +18,13 @@ const MAPPING = {
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
-  'person.crop.circle': 'account-circle',
+  // Use a thinner look on Android/web by choosing outlined variant where possible
+  'person.crop.circle': 'person-outline',
   'checkmark.circle.fill': 'check-circle',
   'star': 'star',
+  'star.fill': 'star',
+  'ellipsis': 'more-horiz',
+  'book': 'menu-book',
 } as IconMapping;
 
 /**

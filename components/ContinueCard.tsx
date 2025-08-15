@@ -22,9 +22,9 @@ function withOpacity(color: string, alpha: number) {
   if (color.startsWith('rgba') || color.startsWith('rgb')) return color;
   const hex = color.replace('#', '');
   if (hex.length === 6) {
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
+    const r = parseInt(hex.slice(0, 2).toString(), 16);
+    const g = parseInt(hex.slice(2, 4).toString(), 16);
+    const b = parseInt(hex.slice(4, 6).toString(), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
   return `rgba(0,0,0,${alpha})`;
@@ -89,7 +89,7 @@ export default function ContinueCard({ book, onPress, onRatePress, rating, first
       onPress={() => onPress?.(book)}
       style={[
         styles.card,
-        { paddingHorizontal: 12, paddingVertical: 16, padding: 16, width: 288, height: isFinished ? 130 : 90 },
+        { paddingHorizontal: 12, paddingVertical: 10, padding: 16, width: 230, height: isFinished ? 120 : 80 },
         { marginLeft: first ? 0 : 10, marginRight: 10 },
       ]}
     >
@@ -111,21 +111,39 @@ export default function ContinueCard({ book, onPress, onRatePress, rating, first
       {/* Column layout: top content row + bottom rating row */}
       <View style={{ flex: 1, position: 'relative', zIndex: 1 }}>
         {/* Top row: cover + text */}
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-          <View style={{ width: 52, height: 64 }}>
-            {coverError ? (
-              <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                <IconSymbol size={14} name="book" color="#ffffff" />
-              </View>
-            ) : (
-              <Image
-                source={{ uri: book.cover }}
-                contentFit="cover"
-                transition={100}
-                style={{ width: '100%', height: '100%' }}
-                onError={() => setCoverError(true)}
-              />
-            )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {/* Cover with isolated shadow */}
+          <View
+            style={{
+              width: 40,
+              height: 56,
+              borderRadius: 0,
+              // iOS shadow - stronger and biased to bottom-right
+              shadowColor: '#000',
+              shadowOffset: { width: 3, height: 6 },
+              shadowOpacity: 0.4,
+              shadowRadius: 8,
+              // Android shadow - stronger
+              elevation: 12,
+              backgroundColor: 'transparent',
+            }}
+          >
+            <View style={{ flex: 1, borderRadius: 0, overflow: 'hidden', backgroundColor: 'rgba(0,0,0,1.0)' }}> 
+              {/* Shadow container  oslid black @ 1.0 to see the shadow */}
+              {coverError ? (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                  <IconSymbol size={24} name="book" color="#ffffff" />
+                </View>
+              ) : (
+                <Image
+                  source={{ uri: book.cover }}
+                  contentFit="cover"
+                  transition={100}
+                  style={{ flex: 1 }}
+                  onError={() => setCoverError(true)}
+                />
+              )}
+            </View>
           </View>
 
           {/* Text column (truncates) + menu column */}
@@ -134,7 +152,7 @@ export default function ContinueCard({ book, onPress, onRatePress, rating, first
             <Text numberOfLines={1} ellipsizeMode="tail" style={styles.subtitle}>{book.author}</Text>
             <View style={{ marginTop: 2, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               {isFinished ? (
-                <IconSymbol size={12} name="checkmark.circle.fill" color="#ffffff" />
+                <IconSymbol size={14} name="checkmark.circle.fill" color="#ffffff" />
               ) : null}
               <Text numberOfLines={1} ellipsizeMode="tail" style={styles.metaText}>
                 {isFinished ? 'Finished' : `Book • ${Math.round(pct * 100)}%`}
@@ -159,15 +177,19 @@ export default function ContinueCard({ book, onPress, onRatePress, rating, first
           <Pressable
             accessibilityRole="button"
             onPress={() => onRatePress?.(book)}
-            style={{ marginTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' }}
+            style={{ marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' }}
+            className=""
           >
             <Text style={styles.rateLabel}>Tap to Rate</Text>
             <View style={{ flexDirection: 'row', gap: 6, marginLeft: 8 }}>
               {Array.from({ length: 5 }).map((_, i) => {
                 const idx = i + 1;
-                const active = (rating ?? 0) >= idx;
+                const current = rating ?? 0;
+                const active = current >= idx;
+                const cue = current === 0 && idx === 1; // highlight first star as a hint
+                const showActive = active || cue;
                 return (
-                  <IconSymbol key={idx} size={16} name="star.fill" color={active ? 'rgba(255,255,255,1.0)' : 'rgba(255,255,255,0.4)'} />
+                  <IconSymbol key={idx} size={22} name="star.fill" color={showActive ? 'rgba(255,255,255,1.0)' : 'rgba(255,255,255,0.4)'} />
                 );
               })}
             </View>
@@ -193,7 +215,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   title: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#fff',
   },
@@ -208,7 +230,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   rateLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: 'rgba(255,255,255,1.0)',
     fontWeight: '700',
   },

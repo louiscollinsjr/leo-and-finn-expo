@@ -26,8 +26,7 @@ const continueReading: ContinueBook[] = [
     id: '1',
     title: 'The Secret Life of Walter Mitty',
     author: 'James Thurber',
-    cover:
-      'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=800&auto=format&fit=crop',
+    cover:'',
     status: 'Finished',
     progress: 1,
     accentColors: ['rgba(227, 170, 45, 0.85)', 'rgba(227, 170, 45, 0.55)'],
@@ -47,8 +46,7 @@ const continueReading: ContinueBook[] = [
     id: '6',
     title: 'The Adventures of Tom Sawyer',
     author: 'Mark Twain',
-    cover:
-      'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=800&auto=format&fit=crop',
+    cover:'',
     status: 'In Progress',
     progress: 0.12,
   },
@@ -56,8 +54,7 @@ const continueReading: ContinueBook[] = [
     id: '7',
     title: 'Anne of Green Gables',
     author: 'L. M. Montgomery',
-    cover:
-      'https://images.unsplash.com/photo-1524242109386-5a3f9236a31c?q=80&w=800&auto=format&fit=crop',
+    cover:'',
     status: 'In Progress',
     progress: 0.28,
   },
@@ -65,8 +62,7 @@ const continueReading: ContinueBook[] = [
     id: '8',
     title: 'The Secret Garden',
     author: 'Frances Hodgson Burnett',
-    cover:
-      'https://images.unsplash.com/photo-1526315973120-8f3e0d6d9fba?q=80&w=800&auto=format&fit=crop',
+    cover:'',
     status: 'In Progress',
     progress: 0.41,
   },
@@ -74,8 +70,7 @@ const continueReading: ContinueBook[] = [
     id: '9',
     title: 'A Christmas Carol',
     author: 'Charles Dickens',
-    cover:
-      'https://images.unsplash.com/photo-1519681393781-b5b7f0cf0f43?q=80&w=800&auto=format&fit=crop',
+    cover:'',
     status: 'Finished',
     progress: 1,
   },
@@ -105,7 +100,7 @@ const topPicks: Book[] = [
   },
 ];
 
-function ProgressRing({ size = 28, strokeWidth = 3, value = 11, total = 30, trackColor = '#e5e7eb', progressColor = '#000000', showValue = true }) {
+function ProgressRing({ size = 28, strokeWidth = 4, value = 11, total = 30, trackColor = '#caeaf7', progressColor = '#33ade6', showValue = true }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.max(0, Math.min(1, total > 0 ? value / total : 0));
@@ -125,12 +120,12 @@ function ProgressRing({ size = 28, strokeWidth = 3, value = 11, total = 30, trac
           strokeLinecap="round"
           strokeDasharray={`${circumference} ${circumference}`}
           strokeDashoffset={strokeDashoffset}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          transform={`rotate(-270 ${size / 2} ${size / 2})`}
         />
       </Svg>
       {showValue ? (
         <View style={{ ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: Math.max(10, Math.floor(size * 0.30)), fontWeight: '700', color: '#000000' }}>{value}</Text>
+          <Text style={{ fontSize: Math.max(10, Math.floor(size * 0.38)), fontWeight: '700', color: '#33ade6' }}>{value}</Text>
         </View>
       ) : null}
     </View>
@@ -182,7 +177,7 @@ export default function HomeScreen() {
             { useNativeDriver: true }
           )}
           style={{ backgroundColor: '#ffffff' }}
-          contentContainerStyle={{ paddingTop: HEADER_HEIGHT, paddingBottom: 28, paddingHorizontal: 20 }}
+          contentContainerStyle={{ paddingTop: HEADER_HEIGHT, paddingBottom: 28, paddingHorizontal: 36 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Content header row: Title + Progress + Account */}
@@ -190,12 +185,12 @@ export default function HomeScreen() {
             className="mt-2 mb-6 flex-row items-center justify-between"
             style={{ opacity: largeTitleOpacity }}
           >
-            <Text className="text-[34px] font-extrabold text-zinc-900">Home</Text>
+            <Text className="text-[34px] font-extrabold text-zinc-900" style={{ fontFamily: '' }}>Home</Text>
             <View className="flex-row items-center gap-4">
-              <ProgressRing size={30} value={11} total={30} />
+              <View className="pt-1"><ProgressRing size={30} value={11} total={30} /></View>
               <Link href="/account" asChild>
                 <Pressable hitSlop={8}>
-                  <IconSymbol size={40} name="person.crop.circle" color={colorScheme === 'dark' ? '#fff' : '#111827'} />
+                  <IconSymbol size={36} name="person.crop.circle" weight="thin" color={colorScheme === 'dark' ? '#fff' : '#111827'} />
                 </Pressable>
               </Link>
             </View>
@@ -207,7 +202,7 @@ export default function HomeScreen() {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingLeft: 0, paddingRight: 0 }}
-            style={{ marginHorizontal: -20, marginBottom: 24 }}
+            style={{ marginHorizontal: -36, marginBottom: 24 }}
           >
             {continueReading.map((b, i) => (
               <ContinueCard
