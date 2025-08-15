@@ -1,9 +1,11 @@
+import ContinueCard, { ContinueBook } from '@/components/ContinueCard';
+import RatingSheet from '@/components/RatingSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Circle, Svg } from 'react-native-svg';
@@ -19,14 +21,16 @@ type Book = {
   status?: 'Finished' | 'In Progress';
 };
 
-const continueReading: Book[] = [
+const continueReading: ContinueBook[] = [
   {
     id: '1',
     title: 'The Secret Life of Walter Mitty',
     author: 'James Thurber',
     cover:
-      'https://images.unsplash.com/photo-1544937950-fa07a98d237f?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=800&auto=format&fit=crop',
     status: 'Finished',
+    progress: 1,
+    accentColors: ['rgba(227, 170, 45, 0.85)', 'rgba(227, 170, 45, 0.55)'],
   },
   {
     id: '2',
@@ -35,6 +39,45 @@ const continueReading: Book[] = [
     cover:
       'https://images.unsplash.com/photo-1526318472351-c75fcf070305?q=80&w=800&auto=format&fit=crop',
     status: 'In Progress',
+    progress: 0.35,
+    accentColors: ['rgba(72,74,89,0.65)', 'rgba(72,74,89,0.35)'],
+  },
+  // Added per request
+  {
+    id: '6',
+    title: 'The Adventures of Tom Sawyer',
+    author: 'Mark Twain',
+    cover:
+      'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=800&auto=format&fit=crop',
+    status: 'In Progress',
+    progress: 0.12,
+  },
+  {
+    id: '7',
+    title: 'Anne of Green Gables',
+    author: 'L. M. Montgomery',
+    cover:
+      'https://images.unsplash.com/photo-1524242109386-5a3f9236a31c?q=80&w=800&auto=format&fit=crop',
+    status: 'In Progress',
+    progress: 0.28,
+  },
+  {
+    id: '8',
+    title: 'The Secret Garden',
+    author: 'Frances Hodgson Burnett',
+    cover:
+      'https://images.unsplash.com/photo-1526315973120-8f3e0d6d9fba?q=80&w=800&auto=format&fit=crop',
+    status: 'In Progress',
+    progress: 0.41,
+  },
+  {
+    id: '9',
+    title: 'A Christmas Carol',
+    author: 'Charles Dickens',
+    cover:
+      'https://images.unsplash.com/photo-1519681393781-b5b7f0cf0f43?q=80&w=800&auto=format&fit=crop',
+    status: 'Finished',
+    progress: 1,
   },
 ];
 
@@ -97,6 +140,9 @@ function ProgressRing({ size = 28, strokeWidth = 3, value = 11, total = 30, trac
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
+  const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [activeBook, setActiveBook] = useState<ContinueBook | null>(null);
   const NAV_BAR_HEIGHT = 44;
   const HEADER_HEIGHT = NAV_BAR_HEIGHT + insets.top;
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -141,7 +187,7 @@ export default function HomeScreen() {
         >
           {/* Content header row: Title + Progress + Account */}
           <Animated.View
-            className="mt-2 mb-4 pb-6 flex-row items-center justify-between"
+            className="mt-2 mb-6 flex-row items-center justify-between"
             style={{ opacity: largeTitleOpacity }}
           >
             <Text className="text-[34px] font-extrabold text-zinc-900">Home</Text>
@@ -160,11 +206,20 @@ export default function HomeScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingRight: 12 }}
-            style={{ marginHorizontal: -4, marginBottom: 24 }}
+            contentContainerStyle={{ paddingLeft: 0, paddingRight: 0 }}
+            style={{ marginHorizontal: -20, marginBottom: 24 }}
           >
-            {continueReading.map((b) => (
-              <ContinueCard key={b.id} book={b} />
+            {continueReading.map((b, i) => (
+              <ContinueCard
+                key={b.id}
+                book={b}
+                rating={ratings[b.id] ?? 0}
+                first={i === 1}
+                onRatePress={(book) => {
+                  setActiveBook(book);
+                  setSheetVisible(true);
+                }}
+              />
             ))}
           </ScrollView>
 
@@ -173,8 +228,8 @@ export default function HomeScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingRight: 12 }}
-            style={{ marginHorizontal: -4 }}
+            contentContainerStyle={{ paddingLeft: 0, paddingRight: 0 }}
+            style={{ marginHorizontal: -20 }}
           >
             {topPicks.map((b) => (
               <BookCard key={b.id} book={b} />
@@ -257,6 +312,18 @@ export default function HomeScreen() {
           </Animated.Text>
         </Animated.View>
       </View>
+      {/* Rating Sheet */}
+      <RatingSheet
+        visible={sheetVisible}
+        title={activeBook?.title}
+        initialRating={activeBook ? ratings[activeBook.id] ?? 0 : 0}
+        onClose={() => setSheetVisible(false)}
+        onSave={(value) => {
+          if (activeBook) {
+            setRatings((prev) => ({ ...prev, [activeBook.id]: value }));
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -269,40 +336,7 @@ function SectionTitle({ children, style }: { children: React.ReactNode; style: a
   );
 }
 
-function ContinueCard({ book }: { book: Book }) {
-  return (
-    <Pressable style={{ marginHorizontal: 4, width: 288, borderRadius: 16, backgroundColor: '#ffffff', padding: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Image
-          source={{ uri: book.cover }}
-          contentFit="cover"
-          style={{ height: 80, width: 64, borderRadius: 6 }}
-        />
-        <View style={{ flex: 1 }}>
-          <Text numberOfLines={1} style={{ fontSize: 16, fontWeight: '600', color: '#18181b' }}>
-            {book.title}
-          </Text>
-          <Text numberOfLines={1} style={{ fontSize: 12, color: '#71717a' }}>
-            {book.author}
-          </Text>
-          <View style={{ marginTop: 4, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <IconSymbol size={14} name="checkmark.circle.fill" color="#22c55e" />
-            <Text style={{ fontSize: 12, color: '#71717a' }}>{book.status}</Text>
-          </View>
-          <View style={{ marginTop: 8, height: 1, width: '100%', backgroundColor: '#f4f4f5' }} />
-          <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: 12, color: '#71717a' }}>Tap to Rate</Text>
-            <View style={{ flexDirection: 'row', gap: 4, opacity: 0.7 }}>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <IconSymbol key={i} size={14} name="star" color="#eab308" />
-              ))}
-            </View>
-          </View>
-        </View>
-      </View>
-    </Pressable>
-  );
-}
+// ContinueCard moved to components/ContinueCard.tsx
 
 function BookCard({ book }: { book: Book }) {
   return (
