@@ -1,0 +1,165 @@
+{
+  "flex-1": {
+    "flex": 1
+  },
+  "bg-gray-200": {
+    "backgroundColor": "#e5e7eb"
+  },
+  "bg-black": {
+    "backgroundColor": "#000000"
+  },
+  "bg-white": {
+    "backgroundColor": "#ffffff"
+  },
+  "bg-red-500": {
+    "backgroundColor": "#ef4444"
+  },
+  "w-full": {
+    "width": "100%"
+  },
+  "h-10": {
+    "height": 40
+  },
+  "justify-center": {
+    "justifyContent": "center"
+  },
+  "items-center": {
+    "alignItems": "center"
+  },
+  "text-white": {
+    "color": "#ffffff"
+  },
+  "font-bold": {
+    "fontWeight": "bold"
+  },
+  "px-5": {
+    "paddingLeft": 20,
+    "paddingRight": 20
+  },
+  "mt-2": {
+    "marginTop": 8
+  },
+  "mb-4": {
+    "marginBottom": 16
+  },
+  "flex-row": {
+    "flexDirection": "row"
+  },
+  "justify-between": {
+    "justifyContent": "space-between"
+  },
+  "text-3xl": {
+    "fontSize": 30
+  },
+  "text-zinc-900": {
+    "color": "#18181b"
+  },
+  "gap-3": {
+    "gap": 12
+  },
+  "h-9": {
+    "height": 36
+  },
+  "w-9": {
+    "width": 36
+  },
+  "rounded-full": {
+    "borderRadius": 9999
+  },
+  "bg-zinc-100": {
+    "backgroundColor": "#f4f4f5"
+  },
+  "text-[11px]": {
+    "fontSize": 11
+  },
+  "font-semibold": {
+    "fontWeight": "600"
+  },
+  "mb-3": {
+    "marginBottom": 12
+  },
+  "text-xl": {
+    "fontSize": 20
+  },
+  "-mx-1": {
+    "marginLeft": -4,
+    "marginRight": -4
+  },
+  "mb-6": {
+    "marginBottom": 24
+  },
+  "mx-1": {
+    "marginLeft": 4,
+    "marginRight": 4
+  },
+  "w-72": {
+    "width": 288
+  },
+  "rounded-2xl": {
+    "borderRadius": 16
+  },
+  "p-3": {
+    "padding": 12
+  },
+  "shadow-sm": {
+    "shadowColor": "#000",
+    "shadowOffset": {
+      "width": 0,
+      "height": 1
+    },
+    "shadowOpacity": 0.05,
+    "shadowRadius": 2,
+    "elevation": 1
+  },
+  "h-20": {
+    "height": 80
+  },
+  "w-16": {
+    "width": 64
+  },
+  "rounded-md": {
+    "borderRadius": 6
+  },
+  "text-base": {
+    "fontSize": 16
+  },
+  "text-xs": {
+    "fontSize": 12
+  },
+  "text-zinc-500": {
+    "color": "#71717a"
+  },
+  "mt-1": {
+    "marginTop": 4
+  },
+  "h-[1px]": {
+    "height": 1
+  },
+  "bg-zinc-100": {
+    "backgroundColor": "#f4f4f5"
+  },
+  "mt-2": {
+    "marginTop": 8
+  },
+  "opacity-70": {
+    "opacity": 0.7
+  },
+  "gap-1": {
+    "gap": 4
+  },
+  "w-44": {
+    "width": 176
+  },
+  "h-56": {
+    "height": 224
+  },
+  "rounded-lg": {
+    "borderRadius": 8
+  },
+  "mt-3": {
+    "marginTop": 12
+  },
+  "text-sm": {
+    "fontSize": 14
+  }
+}
