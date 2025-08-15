@@ -1,9 +1,12 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
+import { Link } from 'expo-router';
 import React, { useRef } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Circle, Svg } from 'react-native-svg';
 
 // Animatable BlurView for the header background
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
@@ -59,8 +62,41 @@ const topPicks: Book[] = [
   },
 ];
 
+function ProgressRing({ size = 28, strokeWidth = 3, value = 11, total = 30, trackColor = '#e5e7eb', progressColor = '#000000', showValue = true }) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progress = Math.max(0, Math.min(1, total > 0 ? value / total : 0));
+  const strokeDashoffset = circumference * (1 - progress);
+
+  return (
+    <View style={{ width: size, height: size }}>
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Circle cx={size / 2} cy={size / 2} r={radius} stroke={trackColor} strokeWidth={strokeWidth} fill="none" />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={progressColor}
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={`${circumference} ${circumference}`}
+          strokeDashoffset={strokeDashoffset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </Svg>
+      {showValue ? (
+        <View style={{ ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: Math.max(10, Math.floor(size * 0.30)), fontWeight: '700', color: '#000000' }}>{value}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
   const NAV_BAR_HEIGHT = 44;
   const HEADER_HEIGHT = NAV_BAR_HEIGHT + insets.top;
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -103,12 +139,21 @@ export default function HomeScreen() {
           contentContainerStyle={{ paddingTop: HEADER_HEIGHT, paddingBottom: 28, paddingHorizontal: 20 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Large title (scrolling content area) */}
-          <Animated.Text
-            style={{ marginTop: 8, marginBottom: 16, fontSize: 34, fontWeight: '800', color: '#18181b', opacity: largeTitleOpacity }}
+          {/* Content header row: Title + Progress + Account */}
+          <Animated.View
+            className="mt-2 mb-4 pb-6 flex-row items-center justify-between"
+            style={{ opacity: largeTitleOpacity }}
           >
-            Home
-          </Animated.Text>
+            <Text className="text-[34px] font-extrabold text-zinc-900">Home</Text>
+            <View className="flex-row items-center gap-4">
+              <ProgressRing size={30} value={11} total={30} />
+              <Link href="/account" asChild>
+                <Pressable hitSlop={8}>
+                  <IconSymbol size={40} name="person.crop.circle" color={colorScheme === 'dark' ? '#fff' : '#111827'} />
+                </Pressable>
+              </Link>
+            </View>
+          </Animated.View>
 
           {/* Continue Section */}
           <SectionTitle style={{ marginBottom: 12, fontSize: 20, fontWeight: 'bold', color: '#18181b' }}>Continue</SectionTitle>

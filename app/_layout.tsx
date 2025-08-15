@@ -1,10 +1,12 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Link, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import React from 'react';
+import { Pressable, Text } from 'react-native';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -22,6 +24,20 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
+        <Stack.Screen
+          name="account"
+          options={{
+            presentation: 'modal',
+            title: 'Account',
+            headerRight: () => (
+              <Link href=".." replace asChild>
+                <Pressable accessibilityRole="button" hitSlop={8} style={{ paddingHorizontal: 8 }}>
+                  <Text style={{ color: '#2563eb', fontSize: 16, fontWeight: '600' }}>Done</Text>
+                </Pressable>
+              </Link>
+            ),
+          }}
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
