@@ -1,0 +1,68 @@
+
+-- 0) Reference: languages (optional but handy) create table public.languages ( code text primary key, -- 'en', 'fr', 'ro', etc. name text not null );
+-- 1) Works/Books/Stories metadata create table public.stories ( id uuid primary key default gen_random_uuid(), title text not null, author text, source text, -- e.g., 'Project Gutenberg', URL, etc. license text, -- 'Public Domain', 'CC BY 4.0', etc. language_code text references public.languages(code), description text, created_at timestamptz not null default now(), updated_at timestamptz not null default now() );
+-- 1b) Genres create table public.story_genres ( id uuid primary key default gen_random_uuid(), name text unique not null );
+create table public.story_genre_links ( story_id uuid not null references public.stories(id) on delete cascade, genre_id uuid not null references public.story_genres(id) on delete cascade, primary key (story_id, genre_id) );
+-- 2) Chapters create table public.chapters ( id uuid primary key default gen_random_uuid(), story_id uuid not null references public.stories(id) on delete cascade, title text, position int not null, -- chapter order created_at timestamptz default now(), unique (story_id, position) );
+-- 3) Revisions: allows re-tokenization or fixing create table public.story_revisions ( id uuid primary key default gen_random_uuid(), story_id uuid not null references public.stories(id) on delete cascade, rev int not null, -- 1,2,3... note text, created_at timestamptz not null default now(), unique (story_id, rev) );
+-- 4) Segments (paragraphs/sentences) create table public.segments ( id uuid primary key default gen_random_uuid(), story_revision_id uuid not null references public.story_revisions(id) on delete cascade, chapter_id uuid not null references public.chapters(id) on delete cascade, seg_index int not null, -- 0..N within chapter kind text default 'paragraph', -- 'paragraph','quote','heading','verse' attrs jsonb, -- optional formatting/meta unique (story_revision_id, chapter_id, seg_index) );
+-- 5) Tokens (words/punctuation) create table public.tokens ( id text primary key, -- stable deterministic id (hash) story_revision_id uuid not null references public.story_revisions(id) on delete cascade, segment_id uuid not null references public.segments(id) on delete cascade, seg_index int not null, tok_index int not null, -- 0..M within segment text text not null, -- surface form norm text, -- normalized form lemma_key text, -- optional lexeme reference token_type text default 'word', -- 'word','punct','space','number','emoji' style jsonb, -- per-token formatting unique (story_revision_id, seg_index, tok_index) );
+create index tokens_story_rev_idx on public.tokens(story_revision_id); create index tokens_seg_idx on public.tokens(segment_id, tok_index); create index tokens_lemma_idx on public.tokens(lemma_key);
+-- 6) Lexemes dictionary create table public.lexemes ( lemma_key text primary key, -- e.g., "en:cat" language_code text references public.languages(code), lemma text not null, extra jsonb );
+-- 7) User translations (by lemma) create table public.user_translations ( user_id uuid not null references auth.users(id) on delete cascade, lemma_key text not null references public.lexemes(lemma_key) on delete cascade, translation text not null, created_at timestamptz not null default now(), updated_at timestamptz not null default now(), primary key (user_id, lemma_key) );
+-- 7b) Per-token overrides create table public.user_token_translations ( user_id uuid not null references auth.users(id) on delete cascade, token_id text not null references public.tokens(id) on delete cascade, translation text not null, created_at timestamptz not null default now(), primary key (user_id, token_id) );
+-- 8) Highlights create table public.user_highlights ( user_id uuid not null references auth.users(id) on delete cascade, token_id text not null references public.tokens(id) on delete cascade, color text, -- 'yellow','blue','green' or hex status text, -- 'new','learning','known' created_at timestamptz not null default now(), updated_at timestamptz not null default now(), primary key (user_id, token_id) );
+-- 9) Notes create table public.user_notes ( id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade, story_revision_id uuid not null references public.story_revisions(id) on delete cascade, token_id text references public.tokens(id) on delete set null, segment_id uuid references public.segments(id) on delete set null, body text not null, created_at timestamptz not null default now() );
+-- 10) Reading progress/bookmarks create table public.user_story_progress ( user_id uuid not null references auth.users(id) on delete cascade, story_id uuid not null references public.stories(id) on delete cascade, latest_revision_id uuid references public.story_revisions(id), last_chapter_id uuid references public.chapters(id), last_seg_index int, last_tok_index int, percent numeric, updated_at timestamptz not null default now(), primary key (user_id, story_id) );
+-- 11) Optional: audio assets & timings create table public.audio_assets ( id uuid primary key default gen_random_uuid(), story_revision_id uuid not null references public.story_revisions(id) on delete cascade, kind text default 'narration', url text not null, meta jsonb );
+create table public.token_timings ( audio_id uuid not null references public.audio_assets(id) on delete cascade, token_id text not null references public.tokens(id) on delete cascade, t_start_ms int not null, t_end_ms int not null, primary key (audio_id, token_id) );
+-- 12) Optional: formatting spans create table public.format_spans ( id uuid primary key default gen_random_uuid(), story_revision_id uuid not null references public.story_revisions(id) on delete cascade, segment_id uuid not null references public.segments(id) on delete cascade, start_tok_index int not null, end_tok_index int not null, style jsonb not null );
+-- ========================= -- 1) stories (public content) -- ========================= ALTER TABLE public.stories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read stories" ON public.stories FOR SELECT USING (true);
+CREATE POLICY "Admins can modify stories" ON public.stories FOR ALL TO service_role USING (true) WITH CHECK (true);
+-- ========================= -- 2) chapters (public content) -- ========================= ALTER TABLE public.chapters ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read chapters" ON public.chapters FOR SELECT USING (true);
+CREATE POLICY "Admins can modify chapters" ON public.chapters FOR ALL TO service_role USING (true) WITH CHECK (true);
+-- ========================= -- 3) story_revisions (public content) -- ========================= ALTER TABLE public.story_revisions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read story_revisions" ON public.story_revisions FOR SELECT USING (true);
+CREATE POLICY "Admins can modify story_revisions" ON public.story_revisions FOR ALL TO service_role USING (true) WITH CHECK (true);
+-- ========================= -- 4) segments (paragraphs) -- ========================= ALTER TABLE public.segments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read segments" ON public.segments FOR SELECT USING (true);
+CREATE POLICY "Admins can modify segments" ON public.segments FOR ALL TO service_role USING (true) WITH CHECK (true);
+-- ========================= -- 5) tokens -- ========================= ALTER TABLE public.tokens ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read tokens" ON public.tokens FOR SELECT USING (true);
+CREATE POLICY "Admins can modify tokens" ON public.tokens FOR ALL TO service_role USING (true) WITH CHECK (true);
+-- ========================= -- 6) lexemes (public) -- ========================= ALTER TABLE public.lexemes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read lexemes" ON public.lexemes FOR SELECT USING (true);
+CREATE POLICY "Admins can modify lexemes" ON public.lexemes FOR ALL TO service_role USING (true) WITH CHECK (true);
+-- ========================= -- 7) story_genres (public) -- ========================= ALTER TABLE public.story_genres ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read story_genres" ON public.story_genres FOR SELECT USING (true);
+CREATE POLICY "Admins can manage story_genres" ON public.story_genres FOR ALL TO service_role USING (true) WITH CHECK (true);
+-- ========================= -- 8) story_genre_links (public) -- ========================= ALTER TABLE public.story_genre_links ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read story_genre_links" ON public.story_genre_links FOR SELECT USING (true);
+CREATE POLICY "Admins can manage story_genre_links" ON public.story_genre_links FOR ALL TO service_role USING (true) WITH CHECK (true);
+-- ========================= -- 9) user_translations (user-owned) -- ========================= ALTER TABLE public.user_translations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can read their own translations" ON public.user_translations FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert their own translations" ON public.user_translations FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update their own translations" ON public.user_translations FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete their own translations" ON public.user_translations FOR DELETE USING (user_id = auth.uid());
+-- ========================= -- 10) user_token_translations (user-owned) -- ========================= ALTER TABLE public.user_token_translations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can read their own token translations" ON public.user_token_translations FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert their own token translations" ON public.user_token_translations FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update their own token translations" ON public.user_token_translations FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete their own token translations" ON public.user_token_translations FOR DELETE USING (user_id = auth.uid());
+-- ========================= -- 11) user_highlights (user-owned) -- ========================= ALTER TABLE public.user_highlights ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can read their own highlights" ON public.user_highlights FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert their own highlights" ON public.user_highlights FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update their own highlights" ON public.user_highlights FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete their own highlights" ON public.user_highlights FOR DELETE USING (user_id = auth.uid());
+-- ========================= -- 12) user_notes (user-owned) -- ========================= ALTER TABLE public.user_notes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can read their own notes" ON public.user_notes FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert their own notes" ON public.user_notes FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update their own notes" ON public.user_notes FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete their own notes" ON public.user_notes FOR DELETE USING (user_id = auth.uid());
+-- ========================= -- 13) user_story_progress (user-owned) -- ========================= ALTER TABLE public.user_story_progress ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can read their own progress" ON public.user_story_progress FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert their own progress" ON public.user_story_progress FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update their own progress" ON public.user_story_progress FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete their own progress" ON public.user_story_progress FOR DELETE USING (user_id = auth.uid());
