@@ -42,3 +42,9 @@ app-example
 .gitignore
 .gitmodules
 yarn.lock
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test

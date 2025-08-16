@@ -1,3 +1,4 @@
+import 'react-native-url-polyfill/auto';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Mansalva_400Regular } from '@expo-google-fonts/mansalva';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -25,6 +26,7 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
+        <Stack.Screen name="reader/[storyId]" options={{ title: 'Reader' }} />
         <Stack.Screen
           name="account"
           options={{
