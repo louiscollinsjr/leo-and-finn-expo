@@ -1,6 +1,7 @@
 import ContinueCard, { ContinueBook } from '@/components/ContinueCard';
 import RatingSheet from '@/components/RatingSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
@@ -100,7 +101,11 @@ const topPicks: Book[] = [
   },
 ];
 
-function ProgressRing({ size = 28, strokeWidth = 4, value = 11, total = 30, trackColor = '#caeaf7', progressColor = '#33ade6', showValue = true }) {
+function ProgressRing({ size = 28, strokeWidth = 4, value = 11, total = 30, trackColor, progressColor, showValue = true }) {
+  const scheme = useColorScheme();
+  const theme = scheme ?? 'light';
+  const effectiveTrack = trackColor ?? (theme === 'dark' ? 'rgba(98,211,256,0.3)' : 'rgba(0,0,0,0.08)');
+  const effectiveProgress = progressColor ?? (theme === 'dark' ? 'rgba(98,211,256,1.0)' : '#33ade6');
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.max(0, Math.min(1, total > 0 ? value / total : 0));
@@ -109,12 +114,12 @@ function ProgressRing({ size = 28, strokeWidth = 4, value = 11, total = 30, trac
   return (
     <View style={{ width: size, height: size }}>
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <Circle cx={size / 2} cy={size / 2} r={radius} stroke={trackColor} strokeWidth={strokeWidth} fill="none" />
+        <Circle cx={size / 2} cy={size / 2} r={radius} stroke={effectiveTrack} strokeWidth={strokeWidth} fill="none" />
         <Circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={progressColor}
+          stroke={effectiveProgress}
           strokeWidth={strokeWidth}
           fill="none"
           strokeLinecap="round"
@@ -125,7 +130,7 @@ function ProgressRing({ size = 28, strokeWidth = 4, value = 11, total = 30, trac
       </Svg>
       {showValue ? (
         <View style={{ ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: Math.max(10, Math.floor(size * 0.38)), fontWeight: '700', color: '#33ade6' }}>{value}</Text>
+          <Text style={{ fontSize: Math.max(10, Math.floor(size * 0.38)), fontWeight: '700', color: effectiveProgress }}>{value}</Text>
         </View>
       ) : null}
     </View>
@@ -135,6 +140,11 @@ function ProgressRing({ size = 28, strokeWidth = 4, value = 11, total = 30, trac
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
+  const theme = colorScheme ?? 'default';
+  const background = Colors[theme].background;
+  const text = Colors[theme].text;
+  const secondaryText = theme === 'dark' ? 'rgba(236,237,238,0.7)' : '#71717a';
+  const navOverlayColor = theme === 'dark' ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,1.00)';
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [sheetVisible, setSheetVisible] = useState(false);
   const [activeBook, setActiveBook] = useState<ContinueBook | null>(null);
@@ -167,16 +177,23 @@ export default function HomeScreen() {
     extrapolate: 'clamp',
   });
 
+  // Order Continue list: Finished first
+  const sortedContinue = [...continueReading].sort((a, b) => {
+    const aFinished = a.status === 'Finished' || (a.progress ?? 0) >= 1;
+    const bFinished = b.status === 'Finished' || (b.progress ?? 0) >= 1;
+    return Number(bFinished) - Number(aFinished);
+  });
+
   return (
-    <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: '#ffffff' }}>
-      <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
+    <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: background }}>
+      <View style={{ flex: 1, backgroundColor: background }}>
         <Animated.ScrollView
           scrollEventThrottle={16}
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
             { useNativeDriver: true }
           )}
-          style={{ backgroundColor: '#ffffff' }}
+          style={{ backgroundColor: background }}
           contentContainerStyle={{ paddingTop: HEADER_HEIGHT, paddingBottom: 28, paddingHorizontal: 36 }}
           showsVerticalScrollIndicator={false}
         >
@@ -185,7 +202,7 @@ export default function HomeScreen() {
             className="mt-2 mb-6 flex-row items-center justify-between"
             style={{ opacity: largeTitleOpacity }}
           >
-            <Text className="text-[34px] font-extrabold text-zinc-900" style={{ fontFamily: '' }}>Home</Text>
+            <Text className="text-[34px] font-extrabold text-zinc-900" style={{ fontFamily: '', color: theme === 'dark' ? '#ffffff' : '#111827' }}>Home</Text>
             <View className="flex-row items-center gap-4">
               <View className="pt-1"><ProgressRing size={30} value={11} total={30} /></View>
               <Link href="/account" asChild>
@@ -197,19 +214,19 @@ export default function HomeScreen() {
           </Animated.View>
 
           {/* Continue Section */}
-          <SectionTitle style={{ marginBottom: 12, fontSize: 20, fontWeight: 'bold', color: '#18181b' }}>Continue</SectionTitle>
+          <SectionTitle style={{ marginBottom: 16, fontSize: 20, fontWeight: 'bold', color: theme === 'dark' ? '#ffffff' : '#111827' }}>Continue</SectionTitle>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft: 0, paddingRight: 0 }}
+            contentContainerStyle={{ paddingLeft: 30, paddingRight: 0 }}
             style={{ marginHorizontal: -36, marginBottom: 24 }}
           >
-            {continueReading.map((b, i) => (
+            {sortedContinue.map((b, i) => (
               <ContinueCard
                 key={b.id}
                 book={b}
                 rating={ratings[b.id] ?? 0}
-                first={i === 1}
+                first={i === 0}
                 onRatePress={(book) => {
                   setActiveBook(book);
                   setSheetVisible(true);
@@ -219,12 +236,12 @@ export default function HomeScreen() {
           </ScrollView>
 
           {/* Top Picks Section */}
-          <SectionTitle style={{ fontSize: 20, fontWeight: 'bold', color: '#18181b' }}>Top Picks</SectionTitle>
+          <SectionTitle style={{ marginBottom: 12, fontSize: 20, fontWeight: 'bold', color: theme === 'dark' ? '#ffffff' : '#111827' }}>Top Picks</SectionTitle>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingLeft: 0, paddingRight: 0 }}
-            style={{ marginHorizontal: -20 }}
+            style={{ marginHorizontal: -36, marginBottom: 16 }}
           >
             {topPicks.map((b) => (
               <BookCard key={b.id} book={b} />
@@ -232,14 +249,14 @@ export default function HomeScreen() {
           </ScrollView>
 
           {/* Extra content to ensure page is long enough for scroll testing */}
-          <SectionTitle style={{ marginTop: 24, marginBottom: 12, fontSize: 20, fontWeight: 'bold', color: '#18181b' }}>More For You</SectionTitle>
+          <SectionTitle style={{ marginTop: 24, marginBottom: 12, fontSize: 20, fontWeight: 'bold', color: text }}>More For You</SectionTitle>
           {Array.from({ length: 20 }).map((_, i) => (
             <View
               key={`filler-${i}`}
               style={{
                 marginBottom: 12,
                 borderRadius: 16,
-                backgroundColor: '#ffffff',
+                backgroundColor: background,
                 padding: 16,
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 1 },
@@ -248,8 +265,8 @@ export default function HomeScreen() {
                 elevation: 1,
               }}
             >
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#18181b' }}>Item {i + 1}</Text>
-              <Text style={{ fontSize: 12, color: '#71717a' }}>Scroll test content</Text>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: text }}>Item {i + 1}</Text>
+              <Text style={{ fontSize: 12, color: secondaryText }}>Scroll test content</Text>
             </View>
           ))}
         </Animated.ScrollView>
@@ -270,7 +287,7 @@ export default function HomeScreen() {
         >
           {/* The new blur background */}
           <AnimatedBlurView
-            tint="default"
+            tint={theme === 'dark' ? 'dark' : 'default'}
             intensity={100}
             style={{
               ...StyleSheet.absoluteFillObject,
@@ -283,7 +300,7 @@ export default function HomeScreen() {
             style={{
               ...StyleSheet.absoluteFillObject,
               // Apple's systemGray6 with 85% opacity
-              backgroundColor: 'rgba(255,255,255, 1.00)', 
+              backgroundColor: navOverlayColor, 
               opacity: whiteOverlayOpacity, // Start solid, fade to clear by HEADER_HEIGHT/2
     }}
   />
@@ -302,7 +319,7 @@ export default function HomeScreen() {
           />
 
           {/* The title text */}
-          <Animated.Text style={{ fontSize: 17, fontWeight: '600', color: '#111827', opacity: titleOpacity }}>
+          <Animated.Text style={{ fontSize: 17, fontWeight: '600', color: theme === 'dark' ? '#ffffff' : '#111827', opacity: titleOpacity }}>
             Home
           </Animated.Text>
         </Animated.View>
@@ -334,17 +351,21 @@ function SectionTitle({ children, style }: { children: React.ReactNode; style: a
 // ContinueCard moved to components/ContinueCard.tsx
 
 function BookCard({ book }: { book: Book }) {
+  const theme = useColorScheme() ?? 'light';
+  const background = Colors[theme].background;
+  const text = Colors[theme].text;
+  const secondaryText = theme === 'dark' ? 'rgba(236,237,238,0.7)' : '#71717a';
   return (
-    <Pressable style={{ marginHorizontal: 4, width: 176, borderRadius: 16, backgroundColor: '#ffffff', padding: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}>
+    <Pressable style={{ marginHorizontal: 4, width: 176, borderRadius: 16, backgroundColor: background, padding: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}>
       <Image
         source={{ uri: book.cover }}
         contentFit="cover"
         style={{ height: 224, width: '100%', borderRadius: 8 }}
       />
-      <Text numberOfLines={1} style={{ marginTop: 12, fontSize: 14, fontWeight: '600', color: '#18181b' }}>
+      <Text numberOfLines={1} style={{ marginTop: 12, fontSize: 14, fontWeight: '600', color: text }}>
         {book.title}
       </Text>
-      <Text numberOfLines={2} style={{ fontSize: 12, color: '#71717a' }}>
+      <Text numberOfLines={2} style={{ fontSize: 12, color: secondaryText }}>
         {book.author}
       </Text>
     </Pressable>
