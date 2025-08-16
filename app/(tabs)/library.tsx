@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, View, RefreshControl, Button, Animated, StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
-import { supabase } from '@/lib/supabase';
-import { useRouter } from 'expo-router';
-import { BlurView } from 'expo-blur';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { supabase } from '@/lib/supabase';
+import { BlurView } from 'expo-blur';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Button, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Animatable BlurView for the header background
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
@@ -142,7 +142,7 @@ export default function LibraryScreen() {
         accessibilityLabel={`${item.title} by ${item.author ?? 'Unknown author'}`}
       >
         <View className="aspect-[2/3] rounded-xl bg-gray-200 dark:bg-gray-800 shadow-md overflow-hidden items-center justify-center">
-          <ThemedText style={{ fontSize: 36, fontWeight: '700' }}>{initial}</ThemedText>
+        <ThemedText type="title" style={{ fontSize: 36 }}>{initial}</ThemedText>
         </View>
         <ThemedText numberOfLines={2} style={{ marginTop: 8, fontWeight: '600' }}>
           {item.title}
@@ -197,14 +197,14 @@ export default function LibraryScreen() {
                 { useNativeDriver: true }
               )
             }
-            contentContainerStyle={{ paddingTop: HEADER_HEIGHT, paddingBottom: 24, paddingHorizontal: 36 }}
+            contentContainerStyle={{ paddingTop: HEADER_HEIGHT, paddingBottom: 28, paddingHorizontal: 36 }}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             ListHeaderComponent={
-              <Animated.View className="mt-2 mb-4" style={{ opacity: largeTitleOpacity }}>
-                <ThemedText style={{ fontSize: 34, fontWeight: '800', color: theme === 'dark' ? '#ffffff' : '#111827' }}>
+              <Animated.View className="mt-2 mb-6" style={{ opacity: largeTitleOpacity }}>
+                <ThemedText type="title" style={{ fontSize: 34, lineHeight: 42, fontWeight: '800', color: theme === 'dark' ? '#ffffff' : '#111827' }}>
                   Library
                 </ThemedText>
-                <ThemedText style={{ opacity: 0.8, marginTop: 4 }}>Your books</ThemedText>
+                {/* <ThemedText style={{ opacity: 0.8, marginTop: 4 }}>Your books</ThemedText> */}
               </Animated.View>
             }
           />
