@@ -4,8 +4,8 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/lib/supabase';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Button, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Button, Pressable, RefreshControl, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Animatable BlurView for the header background
@@ -34,6 +34,23 @@ export default function LibraryScreen() {
   const NAV_BAR_HEIGHT = 44;
   const HEADER_HEIGHT = NAV_BAR_HEIGHT + insets.top;
   const scrollY = useRef(new Animated.Value(0)).current;
+  const isMountedRef = useRef(true);
+  const requestIdRef = useRef(0);
+
+  // Responsive grid settings
+  const H_PADDING = 36; // keep in sync with contentContainerStyle
+  const GAP = 12;
+  const MIN_CARD = 120;
+  const MIN_COLUMNS = 2;
+  const MAX_COLUMNS = 6;
+  const { width: windowWidth } = useWindowDimensions();
+  const { columns, itemWidth } = useMemo(() => {
+    const available = Math.max(0, windowWidth - H_PADDING * 2);
+    let cols = Math.floor((available + GAP) / (MIN_CARD + GAP));
+    cols = Math.max(MIN_COLUMNS, Math.min(MAX_COLUMNS, cols));
+    const w = cols > 0 ? (available - (cols - 1) * GAP) / cols : available;
+    return { columns: cols, itemWidth: Math.floor(w) };
+  }, [windowWidth]);
 
   const titleOpacity = scrollY.interpolate({
     inputRange: [0, 80],
@@ -80,76 +97,71 @@ export default function LibraryScreen() {
   }, [withTimeout]);
 
   const load = useCallback(async () => {
+    const myId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     try {
       const data = await fetchStories();
+      if (!isMountedRef.current || myId !== requestIdRef.current) return;
       setStories(data);
     } catch (e: any) {
       console.error('[Library] Load error', e);
+      if (!isMountedRef.current || myId !== requestIdRef.current) return;
       setError(e?.message ?? 'Failed to load');
       setStories([]);
     } finally {
+      if (!isMountedRef.current || myId !== requestIdRef.current) return;
       setLoading(false);
     }
   }, [fetchStories]);
 
   const onRefresh = useCallback(async () => {
+    const myId = ++requestIdRef.current;
     setRefreshing(true);
     setError(null);
     try {
       const data = await fetchStories();
+      if (!isMountedRef.current || myId !== requestIdRef.current) return;
       setStories(data);
     } catch (e: any) {
       console.error('[Library] Refresh error', e);
+      if (!isMountedRef.current || myId !== requestIdRef.current) return;
       setError(e?.message ?? 'Failed to refresh');
     } finally {
+      if (!isMountedRef.current || myId !== requestIdRef.current) return;
+      // If this refresh superseded an in-flight initial load, ensure we also
+      // clear the global loading flag so we don't get stuck on the spinner.
       setRefreshing(false);
+      setLoading(false);
     }
   }, [fetchStories]);
 
   useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await fetchStories();
-        if (!isMounted) return;
-        setStories(data);
-      } catch (e: any) {
-        console.error('[Library] Initial load error', e);
-        if (!isMounted) return;
-        setError(e?.message ?? 'Failed to load');
-        setStories([]);
-      } finally {
-        if (!isMounted) return;
-        setLoading(false);
-      }
-    })();
+    load();
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
     };
-  }, [fetchStories]);
+  }, [load]);
 
   const renderItem = ({ item }: { item: Story }) => {
     const initial = (item.title?.trim()?.[0] ?? 'B').toUpperCase();
     return (
       <Pressable
         onPress={() => router.push(`/reader/${item.id}`)}
-        className="w-1/3 px-2 py-3"
+        className="py-3"
+        style={{ width: itemWidth }}
         accessibilityRole="button"
         accessibilityLabel={`${item.title} by ${item.author ?? 'Unknown author'}`}
       >
-        <View className="aspect-[2/3] rounded-xl bg-gray-200 dark:bg-gray-800 shadow-md overflow-hidden items-center justify-center">
+        <View className="aspect-[2/3] rounded-none bg-gray-200 dark:bg-gray-800 shadow-sm items-center justify-center">
         <ThemedText type="title" style={{ fontSize: 36 }}>{initial}</ThemedText>
         </View>
         <ThemedText numberOfLines={2} style={{ marginTop: 8, fontWeight: '600' }}>
-          {item.title}
+          {/* {item.title} */}
         </ThemedText>
         {item.author ? (
           <ThemedText numberOfLines={1} style={{ opacity: 0.7 }}>
-            {item.author}
+            {/* {item.author} */}
           </ThemedText>
         ) : null}
       </Pressable>
@@ -189,7 +201,8 @@ export default function LibraryScreen() {
           <Animated.FlatList
             data={stories}
             keyExtractor={(item) => item.id}
-            numColumns={3}
+            numColumns={columns}
+            key={`grid-${columns}`}
             renderItem={renderItem}
             onScroll={
               Animated.event(
@@ -197,7 +210,8 @@ export default function LibraryScreen() {
                 { useNativeDriver: true }
               )
             }
-            contentContainerStyle={{ paddingTop: HEADER_HEIGHT, paddingBottom: 28, paddingHorizontal: 36 }}
+            contentContainerStyle={{ paddingTop: HEADER_HEIGHT, paddingBottom: 28, paddingHorizontal: H_PADDING }}
+            columnWrapperStyle={{ gap: GAP }}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             ListHeaderComponent={
               <Animated.View className="mt-2 mb-6" style={{ opacity: largeTitleOpacity }}>
