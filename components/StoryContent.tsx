@@ -7,6 +7,7 @@ import { createDefaultRegistry, renderWithRegistry } from '@/lib/blockRegistry';
 import type { ContentSource } from '@/types/reader';
 import { SupabaseContentSource } from '@/adapters/supabase';
 import { useReaderPrefs } from '@/providers/ReaderProvider';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
 type Props = {
   storyId: string;
@@ -26,6 +27,7 @@ export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks
   const [pages, setPages] = useState<Block[][]>([]);
   const { width: screenWidth } = useWindowDimensions();
   const { prefs } = useReaderPrefs();
+  const colorScheme = useColorScheme();
   const baseMargin = hMargin ?? Math.round(screenWidth * 0.08);
   const sidePad = Math.max(20, Math.round(baseMargin * (prefs.marginScale || 1)));
   const registry = createDefaultRegistry({
@@ -33,6 +35,9 @@ export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks
     fontScale: prefs.fontScale,
     lineHeightScale: prefs.lineHeightScale,
     typeface: prefs.typeface,
+    boldText: prefs.boldText,
+    charSpacing: prefs.charSpacing,
+    theme: (prefs.theme === 'system' ? (colorScheme ?? 'light') : prefs.theme) as any,
   });
   const dataBlocks = providedBlocks ?? localBlocks;
 

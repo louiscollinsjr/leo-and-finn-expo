@@ -7,7 +7,10 @@ import TopOverlay from '@/components/overlays/TopOverlay';
 import BottomActions from '@/components/overlays/BottomActions';
 import ContextMenu from '@/components/overlays/ContextMenu';
 import SettingsSheet from '@/components/overlays/SettingsSheet';
-import { useReaderOverlay } from '@/providers/ReaderProvider';
+import ReaderMenuSheet from '@/components/overlays/ReaderMenuSheet';
+import ThemePopover from '@/components/overlays/ThemePopover';
+import { useReaderOverlay, useReaderPrefs } from '@/providers/ReaderProvider';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
 export type ReaderViewProps = {
   title?: string;
@@ -28,10 +31,14 @@ export default function ReaderView(props: ReaderViewProps) {
   const { title, loading, error, onBack, onOpenContents, onOpenSearch, onOpenSettings, children, renderTopOverlay, renderBottomOverlay, renderContextMenu } = props;
   const insets = useSafeAreaInsets();
   const { setOverlayVisible } = useReaderOverlay();
+  const { prefs } = useReaderPrefs();
+  const systemScheme = useColorScheme();
 
   const [showOverlay, setShowOverlay] = useState(false);
   const [showContext, setShowContext] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [showSettings, setShowSettings] = useState(false); // customise sheet
+  const [showMenu, setShowMenu] = useState(false);
+  const [showThemePopover, setShowThemePopover] = useState(false);
 
   // Track scroll vs tap
   const isDraggingRef = useRef(false);
@@ -54,7 +61,7 @@ export default function ReaderView(props: ReaderViewProps) {
             setOverlayVisible(false);
           }
         });
-      }, 2500);
+      }, 3500);
     },
     [overlayOpacity, setOverlayVisible]
   );
@@ -67,6 +74,25 @@ export default function ReaderView(props: ReaderViewProps) {
         setOverlayVisible(false);
       }
     });
+  };
+
+  // Progress tracking for ScrollView content
+  const scrollRef = useRef<ScrollView | null>(null);
+  const [contentHeight, setContentHeight] = useState(1);
+  const [viewportHeight, setViewportHeight] = useState(1);
+  const [scrollY, setScrollY] = useState(0);
+
+  const progress = Math.max(0, Math.min(1, contentHeight <= viewportHeight ? 1 : scrollY / (contentHeight - viewportHeight)));
+  const totalPages = Math.max(1, Math.ceil(contentHeight / Math.max(1, viewportHeight)));
+  const currentPage = Math.max(1, Math.min(totalPages, Math.floor(progress * totalPages) + 1));
+  const pageLabel = `${currentPage} of ${totalPages}`;
+  const pagesLeft = Math.max(0, totalPages - currentPage);
+  const centerLabel = `${pagesLeft} pages left`;
+
+  const scrubTo = (p: number) => {
+    if (!scrollRef.current) return;
+    const target = (contentHeight - viewportHeight) * Math.max(0, Math.min(1, p));
+    scrollRef.current.scrollTo({ y: target, animated: false });
   };
 
   if (loading) {
@@ -87,13 +113,33 @@ export default function ReaderView(props: ReaderViewProps) {
     );
   }
 
+  const effectiveTheme = prefs.theme === 'system' ? (systemScheme ?? 'light') : prefs.theme;
+  const bgColor = effectiveTheme === 'dark' ? '#0f172a' : effectiveTheme === 'sepia' ? '#f6ecd7' : '#ffffff';
+  const statusStyle = effectiveTheme === 'dark' ? 'light' : 'dark';
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: bgColor }}>
       {/* Hide status bar during immersive reading; briefly show when overlays are visible */}
-      <StatusBar hidden={!showOverlay} animated />
+      <StatusBar hidden={!showOverlay} animated style={statusStyle as any} backgroundColor={bgColor} />
+      {/* Brightness dimmer overlay (0..1 -> 0..0.7 opacity) */}
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'black', opacity: Math.max(0, 1 - (prefs.brightness ?? 1)) * 0.9 }} />
+      {/* Status bar area background matching theme (only when visible), above dimmer */}
+      {showOverlay && (
+        <View
+          pointerEvents="none"
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, backgroundColor: bgColor, zIndex: 5 }}
+        />
+      )}
+
       <ScrollView
+        ref={scrollRef as any}
         contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 56 }}
+        style={{ backgroundColor: bgColor }}
         showsVerticalScrollIndicator={false}
+        onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+        onContentSizeChange={(_w, h) => setContentHeight(h)}
+        onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={16}
         onScrollBeginDrag={() => {
           isDraggingRef.current = true;
         }}
@@ -127,7 +173,7 @@ export default function ReaderView(props: ReaderViewProps) {
           {renderTopOverlay ? (
             renderTopOverlay({ insets, title, onBack })
           ) : (
-            <TopOverlay insets={insets} title={title ?? ''} onBack={onBack} />
+            <TopOverlay insets={insets} title={title ?? ''} centerLabel={centerLabel} onBack={onBack} />
           )}
         </Animated.View>
       )}
@@ -142,11 +188,10 @@ export default function ReaderView(props: ReaderViewProps) {
               insets={insets}
               onOpenContents={onOpenContents}
               onOpenSearch={onOpenSearch}
-              onOpenSettings={() => {
-                setShowSettings(true);
-                setOverlayVisible(true);
-                onOpenSettings && onOpenSettings();
-              }}
+              onOpenMenu={() => setShowMenu(true)}
+              progress={progress}
+              onScrub={scrubTo}
+              pageLabel={pageLabel}
             />
           )}
         </Animated.View>
@@ -169,7 +214,26 @@ export default function ReaderView(props: ReaderViewProps) {
         )
       )}
 
-      {/* Settings bottom sheet */}
+      {/* Main menu sheet */}
+      <ReaderMenuSheet
+        visible={showMenu}
+        onClose={() => setShowMenu(false)}
+        onOpenThemePopover={() => setShowThemePopover(true)}
+        progress={progress}
+        onScrub={scrubTo}
+      />
+
+      {/* Themes & Settings popover */}
+      <ThemePopover
+        visible={showThemePopover}
+        onRequestClose={() => setShowThemePopover(false)}
+        onOpenCustomize={() => {
+          setShowThemePopover(false);
+          setShowSettings(true);
+        }}
+      />
+
+      {/* Customise sheet */}
       <SettingsSheet visible={showSettings} onClose={() => setShowSettings(false)} />
     </View>
   );

@@ -1,3 +1,5 @@
+// ContextMenu: Lightweight floating menu shown on long-press within the reader.
+// Presents quick actions like "Themes & Settings". Dismisses when tapping outside.
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';

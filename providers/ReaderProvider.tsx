@@ -31,6 +31,11 @@ export type ReaderPrefs = {
   marginScale: number; // horizontal margin multiplier
   theme: ThemeMode;
   typeface: Typeface;
+  // New visual prefs for advanced customization
+  brightness: number; // 0..1 UI brightness multiplier (app level, not system)
+  boldText: boolean; // prefer bolder text weight for body
+  charSpacing: number; // letter spacing in px (applied to Text.letterSpacing)
+  wordSpacing: number; // reserved for future custom renderer; currently approximated
 };
 
 const DEFAULT_PREFS: ReaderPrefs = {
@@ -39,6 +44,10 @@ const DEFAULT_PREFS: ReaderPrefs = {
   marginScale: 1.0,
   theme: 'system',
   typeface: 'system',
+  brightness: 1.0,
+  boldText: false,
+  charSpacing: 0,
+  wordSpacing: 0,
 };
 
 const STORAGE_KEY = 'reader:prefs:v1';

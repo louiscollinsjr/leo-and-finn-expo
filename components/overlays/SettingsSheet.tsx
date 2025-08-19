@@ -1,4 +1,7 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+// SettingsSheet: Detailed "Customise" bottom sheet with typography and layout controls.
+// Provides steppers for text size, line spacing, margins, and quick theme presets.
+// Appears after choosing Customise from ThemePopover or via ContextMenu.
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { Animated, Easing, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/ThemedText';
@@ -9,6 +12,7 @@ export default function SettingsSheet({ visible, onClose }: { visible: boolean; 
   const insets = useSafeAreaInsets();
   const { prefs, setPrefs } = useReaderPrefs();
   const colorScheme = useColorScheme();
+  const [sheetHeight, setSheetHeight] = useState(0);
   const translateY = useRef(new Animated.Value(300)).current;
   const backdrop = useRef(new Animated.Value(0)).current;
 
@@ -37,6 +41,7 @@ export default function SettingsSheet({ visible, onClose }: { visible: boolean; 
   }, [effectiveTheme]);
 
   useEffect(() => {
+    const hiddenY = Math.max(300, sheetHeight);
     if (visible) {
       Animated.parallel([
         Animated.timing(backdrop, { toValue: 1, duration: 150, easing: Easing.out(Easing.quad), useNativeDriver: true }),
@@ -45,10 +50,10 @@ export default function SettingsSheet({ visible, onClose }: { visible: boolean; 
     } else {
       Animated.parallel([
         Animated.timing(backdrop, { toValue: 0, duration: 150, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-        Animated.timing(translateY, { toValue: 300, duration: 200, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(translateY, { toValue: hiddenY, duration: 200, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
       ]).start();
     }
-  }, [visible]);
+  }, [visible, backdrop, translateY, sheetHeight]);
 
   const step = (key: 'fontScale' | 'lineHeightScale' | 'marginScale', delta: number, min = 0.6, max = 1.8, precision = 2) => {
     const next = Math.min(max, Math.max(min, +(prefs[key] + delta).toFixed(precision)));
@@ -96,6 +101,16 @@ export default function SettingsSheet({ visible, onClose }: { visible: boolean; 
           borderTopRightRadius: 16,
           borderTopWidth: 1,
           borderColor: 'rgba(0,0,0,0.08)'
+        }}
+        onLayout={(e) => {
+          const h = e.nativeEvent.layout.height;
+          if (h !== sheetHeight) {
+            setSheetHeight(h);
+            if (!visible) {
+              // Ensure hidden position matches measured height
+              translateY.setValue(Math.max(300, h));
+            }
+          }
         }}
       >
         {/* Header */}

@@ -25,6 +25,7 @@ const MAPPING = {
   'star.fill': 'star',
   'ellipsis': 'more-horiz',
   'book': 'menu-book',
+  'xmark': 'close',
 } as IconMapping;
 
 /**
