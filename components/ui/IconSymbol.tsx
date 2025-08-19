@@ -26,6 +26,9 @@ const MAPPING = {
   'ellipsis': 'more-horiz',
   'book': 'menu-book',
   'xmark': 'close',
+  'slider.horizontal.3': 'tune',
+  'gearshape': 'settings',
+  'gearshape.fill': 'settings',
 } as IconMapping;
 
 /**

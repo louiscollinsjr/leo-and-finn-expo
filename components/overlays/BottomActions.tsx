@@ -1,12 +1,11 @@
 // BottomActions: Blurred bottom bar overlay with progress slider, current page label,
 // a Contents button (book icon), and a Menu button (hamburger). Supports scrubbing
 // through reading progress and opening main menu/actions. Shown when overlays are visible.
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { BlurView } from 'expo-blur';
 import React from 'react';
 import { Pressable, View } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { BlurView } from 'expo-blur';
-import Slider from '@/components/ui/Slider';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 
 export default function BottomActions({
   insets,
@@ -25,29 +24,22 @@ export default function BottomActions({
   onScrub?: (p: number) => void;
   pageLabel: string;
 }) {
+  const textColor = useThemeColor({}, 'text');
   return (
     <View pointerEvents="box-none" style={{ paddingBottom: (insets?.bottom ?? 0) }}>
-      <BlurView intensity={28} tint="default" style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Pressable onPress={onOpenContents} style={{ padding: 8 }} hitSlop={8}>
-            <IconSymbol name="book" size={22} color="#888" />
-          </Pressable>
-          <View style={{ flex: 1, paddingHorizontal: 8 }}>
-            <Slider
-              value={progress}
-              onChange={(v) => onScrub && onScrub(v)}
-              onChangeEnd={(v) => onScrub && onScrub(v)}
-              trackColor="rgba(0,0,0,0.2)"
-              fillColor="#4f46e5"
-              thumbColor="#fff"
-            />
-            <ThemedText style={{ textAlign: 'center', marginTop: 4, opacity: 0.8 }}>{pageLabel}</ThemedText>
-          </View>
-          <Pressable onPress={onOpenMenu} style={{ padding: 8 }} hitSlop={8}>
-            <ThemedText style={{ fontSize: 22 }}>≡</ThemedText>
+     
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' }}>
+          <Pressable
+            onPress={onOpenMenu}
+            hitSlop={8}
+            style={{ marginRight: 40, width: 40, height: 40, borderRadius: 16, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <BlurView intensity={25} tint="default" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16 }} />
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(217,217,217,0.55)' }} />
+            <IconSymbol name="slider.horizontal.3" size={24} color={textColor} weight="semibold" />
           </Pressable>
         </View>
-      </BlurView>
+     
     </View>
   );
 }
