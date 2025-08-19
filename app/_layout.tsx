@@ -6,6 +6,7 @@ import { useFonts } from 'expo-font';
 import { Link, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
+import { ReaderProvider } from '@/providers/ReaderProvider';
 import { Pressable, Text } from 'react-native';
 import '../global.css';
 
@@ -22,27 +23,29 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-        <Stack.Screen name="reader/[storyId]" options={{ title: 'Reader' }} />
-        <Stack.Screen
-          name="account"
-          options={{
-            presentation: 'modal',
-            title: 'Account',
-            headerRight: () => (
-              <Link href=".." replace asChild>
-                <Pressable accessibilityRole="button" hitSlop={8} style={{ paddingHorizontal: 8 }}>
-                  <Text style={{ color: '#2563eb', fontSize: 16, fontWeight: '600' }}>Done</Text>
-                </Pressable>
-              </Link>
-            ),
-          }}
-        />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <ReaderProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+          <Stack.Screen name="reader/[storyId]" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="account"
+            options={{
+              presentation: 'modal',
+              title: 'Account',
+              headerRight: () => (
+                <Link href=".." replace asChild>
+                  <Pressable accessibilityRole="button" hitSlop={8} style={{ paddingHorizontal: 8 }}>
+                    <Text style={{ color: '#2563eb', fontSize: 16, fontWeight: '600' }}>Done</Text>
+                  </Pressable>
+                </Link>
+              ),
+            }}
+          />
+        </Stack>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </ReaderProvider>
   );
 }

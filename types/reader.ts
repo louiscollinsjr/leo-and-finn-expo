@@ -1,0 +1,28 @@
+// Shared reader types for open-source friendly modularization
+
+// Minimal Block union used by the current reader. Extend as needed (e.g., image, quote, code).
+export type Block =
+  | { key: string; type: 'chapter'; text: string }
+  | { key: string; type: 'heading'; text: string }
+  | { key: string; type: 'paragraph'; text: string };
+
+// Optional future-facing types (not yet used by the app). Left here for contributors.
+export interface ReaderConfig {
+  marginX?: number;
+  marginY?: number;
+  typography?: Partial<ReaderTypography>;
+}
+
+export interface ReaderTypography {
+  fontSize: number;
+  lineHeight: number;
+  avgCharWidth?: number; // if omitted, defaults to fontSize * 0.5
+  paraBottomMargin: number;
+  headingMargins: number; // combined vertical margins for heading block
+  chapterMargins: number; // combined vertical margins for chapter block
+}
+
+// ContentSource allows different backends (Supabase, local JSON, CMS) to provide blocks
+export interface ContentSource {
+  loadStoryBlocks(storyId: string): Promise<Block[]>;
+}
