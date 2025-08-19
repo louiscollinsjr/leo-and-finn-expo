@@ -1,8 +1,8 @@
 // SettingsSheet: Detailed "Customise" bottom sheet with typography and layout controls.
 // Provides steppers for text size, line spacing, margins, and quick theme presets.
 // Appears after choosing Customise from ThemePopover or via ContextMenu.
-import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { Animated, Easing, Pressable, View } from 'react-native';
+import React, { useEffect, useRef, useMemo } from 'react';
+import { Animated, Easing, Pressable, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/ThemedText';
 import { useReaderPrefs } from '@/providers/ReaderProvider';
@@ -12,8 +12,8 @@ export default function SettingsSheet({ visible, onClose }: { visible: boolean; 
   const insets = useSafeAreaInsets();
   const { prefs, setPrefs } = useReaderPrefs();
   const colorScheme = useColorScheme();
-  const [sheetHeight, setSheetHeight] = useState(0);
-  const translateY = useRef(new Animated.Value(300)).current;
+  const { height } = useWindowDimensions();
+  const translateY = useRef(new Animated.Value(0)).current;
   const backdrop = useRef(new Animated.Value(0)).current;
 
   const effectiveTheme = useMemo(() => (prefs.theme === 'system' ? (colorScheme ?? 'light') : prefs.theme), [prefs.theme, colorScheme]);
@@ -41,19 +41,20 @@ export default function SettingsSheet({ visible, onClose }: { visible: boolean; 
   }, [effectiveTheme]);
 
   useEffect(() => {
-    const hiddenY = Math.max(300, sheetHeight);
+    const hiddenY = Math.max(300, height);
     if (visible) {
+      translateY.setValue(hiddenY);
       Animated.parallel([
         Animated.timing(backdrop, { toValue: 1, duration: 150, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(translateY, { toValue: 0, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(translateY, { toValue: 0, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       ]).start();
     } else {
       Animated.parallel([
         Animated.timing(backdrop, { toValue: 0, duration: 150, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-        Animated.timing(translateY, { toValue: hiddenY, duration: 200, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(translateY, { toValue: hiddenY, duration: 220, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
       ]).start();
     }
-  }, [visible, backdrop, translateY, sheetHeight]);
+  }, [visible, backdrop, translateY, height]);
 
   const step = (key: 'fontScale' | 'lineHeightScale' | 'marginScale', delta: number, min = 0.6, max = 1.8, precision = 2) => {
     const next = Math.min(max, Math.max(min, +(prefs[key] + delta).toFixed(precision)));
@@ -87,30 +88,21 @@ export default function SettingsSheet({ visible, onClose }: { visible: boolean; 
         <Animated.View style={{ flex: 1, backgroundColor: 'black', opacity: backdrop.interpolate({ inputRange: [0, 1], outputRange: [0, 0.2] }) }} />
       </Pressable>
 
-      {/* Sheet */}
+      {/* Full-screen Sheet */}
       <Animated.View
         style={{
           position: 'absolute',
           left: 0,
           right: 0,
+          top: 0,
           bottom: 0,
           paddingBottom: (insets.bottom || 0) + 16,
           transform: [{ translateY }],
           backgroundColor: sheetBg,
-          borderTopLeftRadius: 16,
-          borderTopRightRadius: 16,
-          borderTopWidth: 1,
-          borderColor: 'rgba(0,0,0,0.08)'
-        }}
-        onLayout={(e) => {
-          const h = e.nativeEvent.layout.height;
-          if (h !== sheetHeight) {
-            setSheetHeight(h);
-            if (!visible) {
-              // Ensure hidden position matches measured height
-              translateY.setValue(Math.max(300, h));
-            }
-          }
+          borderTopLeftRadius: 0,
+          borderTopRightRadius: 0,
+          borderTopWidth: 0,
+          borderColor: 'transparent'
         }}
       >
         {/* Header */}

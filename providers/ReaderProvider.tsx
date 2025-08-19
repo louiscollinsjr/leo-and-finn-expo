@@ -23,6 +23,7 @@ export function createInMemoryStorageAdapter(): StorageAdapter {
 }
 
 export type ThemeMode = 'system' | 'light' | 'dark' | 'sepia';
+export type PageMode = 'scroll' | 'slide' | 'curl' | 'fast-fade';
 export type Typeface = 'system' | 'serif' | 'sans';
 
 export type ReaderPrefs = {
@@ -36,6 +37,7 @@ export type ReaderPrefs = {
   boldText: boolean; // prefer bolder text weight for body
   charSpacing: number; // letter spacing in px (applied to Text.letterSpacing)
   wordSpacing: number; // reserved for future custom renderer; currently approximated
+  pageMode: PageMode; // reading page transition mode
 };
 
 const DEFAULT_PREFS: ReaderPrefs = {
@@ -48,6 +50,7 @@ const DEFAULT_PREFS: ReaderPrefs = {
   boldText: false,
   charSpacing: 0,
   wordSpacing: 0,
+  pageMode: 'scroll',
 };
 
 const STORAGE_KEY = 'reader:prefs:v1';

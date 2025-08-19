@@ -1,16 +1,16 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Pressable, ScrollView, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { ThemedText } from '@/components/ThemedText';
-import TopOverlay from '@/components/overlays/TopOverlay';
 import BottomActions from '@/components/overlays/BottomActions';
 import ContextMenu from '@/components/overlays/ContextMenu';
-import SettingsSheet from '@/components/overlays/SettingsSheet';
 import ReaderMenuSheet from '@/components/overlays/ReaderMenuSheet';
+import SettingsSheet from '@/components/overlays/SettingsSheet';
 import ThemePopover from '@/components/overlays/ThemePopover';
-import { useReaderOverlay, useReaderPrefs } from '@/providers/ReaderProvider';
+import TopOverlay from '@/components/overlays/TopOverlay';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useReaderOverlay, useReaderPrefs } from '@/providers/ReaderProvider';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Pressable, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type ReaderViewProps = {
   title?: string;
@@ -39,6 +39,8 @@ export default function ReaderView(props: ReaderViewProps) {
   const [showSettings, setShowSettings] = useState(false); // customise sheet
   const [showMenu, setShowMenu] = useState(false);
   const [showThemePopover, setShowThemePopover] = useState(false);
+  const [menuPresented, setMenuPresented] = useState(false);
+  const [bottomOverlayHeight, setBottomOverlayHeight] = useState(0);
 
   // Track scroll vs tap
   const isDraggingRef = useRef(false);
@@ -46,6 +48,8 @@ export default function ReaderView(props: ReaderViewProps) {
 
   // Overlay fade animation and auto-dismiss
   const overlayOpacity = useRef(new Animated.Value(0)).current;
+  // Bottom actions opacity (fades out when menu sheet is open)
+  const bottomActionsOpacity = useRef(new Animated.Value(0)).current;
   const overlayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showOverlays = useMemo(
@@ -75,6 +79,18 @@ export default function ReaderView(props: ReaderViewProps) {
       }
     });
   };
+
+  // Drive bottom actions visibility so it feels "together" with ReaderMenuSheet:
+  // - When menu opens, keep BottomActions visible until the sheet has fully presented, then fade it out.
+  // - When menu closes and overlays are visible, fade BottomActions back in.
+  useEffect(() => {
+    const target = !showOverlay
+      ? 0
+      : showMenu
+      ? (menuPresented ? 0 : 1)
+      : 1;
+    Animated.timing(bottomActionsOpacity, { toValue: target, duration: 180, useNativeDriver: true }).start();
+  }, [showOverlay, showMenu, menuPresented, bottomActionsOpacity]);
 
   // Progress tracking for ScrollView content
   const scrollRef = useRef<ScrollView | null>(null);
@@ -180,7 +196,11 @@ export default function ReaderView(props: ReaderViewProps) {
 
       {/* Bottom overlay */}
       {showOverlay && (
-        <Animated.View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, opacity: overlayOpacity }}>
+        <Animated.View
+          pointerEvents={showOverlay && !showMenu ? 'box-none' : 'none'}
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 0, opacity: bottomActionsOpacity, zIndex: 5 }}
+          onLayout={(e) => setBottomOverlayHeight(e.nativeEvent.layout.height)}
+        >
           {renderBottomOverlay ? (
             renderBottomOverlay({ insets, onOpenContents, onOpenSearch, onOpenSettings })
           ) : (
@@ -188,10 +208,17 @@ export default function ReaderView(props: ReaderViewProps) {
               insets={insets}
               onOpenContents={onOpenContents}
               onOpenSearch={onOpenSearch}
-              onOpenMenu={() => setShowMenu(true)}
+              onOpenMenu={() => {
+                setMenuPresented(false);
+                setShowMenu(true);
+              }}
               progress={progress}
               onScrub={scrubTo}
               pageLabel={pageLabel}
+              onSetMode={(mode) => {
+                // TODO: Implement mode switching logic
+                console.log('Mode selected:', mode);
+              }}
             />
           )}
         </Animated.View>
@@ -217,10 +244,15 @@ export default function ReaderView(props: ReaderViewProps) {
       {/* Main menu sheet */}
       <ReaderMenuSheet
         visible={showMenu}
-        onClose={() => setShowMenu(false)}
+        onClose={() => {
+          setShowMenu(false);
+          setMenuPresented(false);
+        }}
         onOpenThemePopover={() => setShowThemePopover(true)}
         progress={progress}
         onScrub={scrubTo}
+        onPresented={() => setMenuPresented(true)}
+        bottomOffset={Math.max(0, bottomOverlayHeight) - 24}
       />
 
       {/* Themes & Settings popover */}
