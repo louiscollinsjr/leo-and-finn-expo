@@ -223,15 +223,10 @@ export default function ReaderView(props: ReaderViewProps) {
           ) : (
             <BottomActions
               insets={insets}
-              onOpenContents={onOpenContents}
-              onOpenSearch={onOpenSearch}
               onOpenMenu={() => {
                 setMenuPresented(false);
                 setShowMenu(true);
               }}
-              progress={progress}
-              onScrub={scrubTo}
-              pageLabel={pageLabel}
               onSetMode={(mode) => {
                 // TODO: Implement mode switching logic
                 console.log('Mode selected:', mode);

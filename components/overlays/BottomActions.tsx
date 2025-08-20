@@ -1,6 +1,5 @@
-// BottomActions: Blurred bottom bar overlay with progress slider, current page label,
-// a Contents button (book icon), and a Menu button (hamburger). Supports scrubbing
-// through reading progress and opening main menu/actions. Shown when overlays are visible.
+// BottomActions: Blurred bottom bar overlay with mode selection buttons (normal, focused,
+// pronunciation, translations) and a Menu button. Shown when overlays are visible.
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -8,25 +7,15 @@ import { BlurView } from 'expo-blur';
 import React from 'react';
 import { Pressable, View } from 'react-native';
 
-type Mode = 'normal' | 'focused' | 'pronunciation' | 'translations';
+export type Mode = 'normal' | 'focused' | 'pronunciation' | 'translations';
 
 export default function BottomActions({
   insets,
-  onOpenContents,
-  onOpenSearch,
   onOpenMenu,
-  progress,
-  onScrub,
-  pageLabel,
   onSetMode,
 }: {
   insets: any;
-  onOpenContents?: () => void;
-  onOpenSearch?: () => void;
   onOpenMenu?: () => void;
-  progress: number; // 0..1
-  onScrub?: (p: number) => void;
-  pageLabel: string;
   onSetMode?: (m: Mode) => void;
 }) {
   const textColor = useThemeColor({}, 'text');
