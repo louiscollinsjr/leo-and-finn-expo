@@ -25,3 +25,13 @@ export const Colors = {
     tabIconSelected: tintColorDark,
   },
 };
+
+// Centralized swatch colors for quick theme preview buttons
+export const QuickThemeSwatches = {
+  original: { bg: '#ffffff', fg: '#111111' },
+  quiet: { bg: '#49494d', fg: '#abadb5' },
+  paper: { bg: '#ecedec', fg: '#111111' },
+  calm: { bg: '#ede0c5', fg: '#111111' },
+  focus: { bg: '#faf8f0', fg: '#111111' },
+  bold: { bg: '#ffffff', fg: '#111111' },
+} as const;

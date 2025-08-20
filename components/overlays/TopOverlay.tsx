@@ -18,23 +18,23 @@ export default function TopOverlay({ insets, title, centerLabel, onBack }: { ins
           <View style={{ width: 56 }} />
           <View style={{ flex: 1, alignItems: 'center' }}>
             {centerLabel ? (
-              <View style={{ paddingHorizontal: 16, paddingVertical: 6, borderRadius: 16, overflow: 'hidden' }}>
-                <BlurView intensity={25} tint="default" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16 }} />
-                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(217,217,217,0.55)' }} />
-                <ThemedText style={{ fontWeight: '600' }} numberOfLines={1}>{centerLabel}</ThemedText>
+              <View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 16, overflow: 'hidden' }}>
+                <BlurView intensity={25} tint="default" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 2 }} />
+                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(217,217,217,0.80)' }} />
+                <ThemedText style={{ fontWeight: '400', opacity: 0.65, fontSize: 10 }} numberOfLines={1}>{centerLabel}</ThemedText>
               </View>
             ) : title ? (
-              <ThemedText style={{ fontWeight: '600' }} numberOfLines={1}>{title}</ThemedText>
+              <ThemedText style={{ fontWeight: '400' }} numberOfLines={1}>{title}</ThemedText>
             ) : <View />}
           </View>
           <Pressable
             onPress={onBack}
             hitSlop={8}
-            style={{ marginRight: 20, width: 32, height: 32, borderRadius: 16, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}
+            style={{ marginRight: 20, width: 32, height: 32, borderRadius: 10, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}
           >
             <BlurView intensity={25} tint="default" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16 }} />
-            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(217,217,217,0.55)' }} />
-            <IconSymbol name="xmark" size={18} color={textColor} />
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(217,217,217,0.75)' }} />
+            <IconSymbol name="xmark" size={16} color={textColor} style={{ opacity: 0.45 }} />
           </Pressable>
         </View>
       </View>

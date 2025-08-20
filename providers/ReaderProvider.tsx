@@ -24,7 +24,7 @@ export function createInMemoryStorageAdapter(): StorageAdapter {
 
 export type ThemeMode = 'system' | 'light' | 'dark' | 'sepia';
 export type PageMode = 'scroll' | 'slide' | 'curl' | 'fast-fade';
-export type Typeface = 'system' | 'serif' | 'sans';
+export type Typeface = 'system' | 'serif' | 'sans' | 'inter' | 'tisa';
 
 export type ReaderPrefs = {
   fontScale: number; // 1.0 = base size

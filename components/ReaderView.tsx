@@ -9,7 +9,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { useReaderOverlay, useReaderPrefs } from '@/providers/ReaderProvider';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type ReaderViewProps = {
@@ -130,15 +130,26 @@ export default function ReaderView(props: ReaderViewProps) {
   }
 
   const effectiveTheme = prefs.theme === 'system' ? (systemScheme ?? 'light') : prefs.theme;
-  const bgColor = effectiveTheme === 'dark' ? '#0f172a' : effectiveTheme === 'sepia' ? '#f6ecd7' : '#ffffff';
+  // Align dark theme with "Quiet" swatch colors
+  const bgColor = effectiveTheme === 'dark' ? '#49494d' : effectiveTheme === 'sepia' ? '#f6ecd7' : '#ffffff';
   const statusStyle = effectiveTheme === 'dark' ? 'light' : 'dark';
+
+  // Smooth brightness dimmer animation
+  const targetDimOpacity = Math.max(0, 1 - (prefs.brightness ?? 1)) * 0.9;
+  const dimOpacity = useRef(new Animated.Value(targetDimOpacity)).current;
+  useEffect(() => {
+    Animated.timing(dimOpacity, {
+      toValue: targetDimOpacity,
+      duration: 160,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [targetDimOpacity, dimOpacity]);
 
   return (
     <View style={{ flex: 1, backgroundColor: bgColor }}>
       {/* Hide status bar during immersive reading; briefly show when overlays are visible */}
       <StatusBar hidden={!showOverlay} animated style={statusStyle as any} backgroundColor={bgColor} />
-      {/* Brightness dimmer overlay (0..1 -> 0..0.7 opacity) */}
-      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'black', opacity: Math.max(0, 1 - (prefs.brightness ?? 1)) * 0.9 }} />
       {/* Status bar area background matching theme (only when visible), above dimmer */}
       {showOverlay && (
         <View
@@ -182,6 +193,12 @@ export default function ReaderView(props: ReaderViewProps) {
           {children}
         </Pressable>
       </ScrollView>
+
+      {/* Brightness dimmer overlay (0..1 -> 0..0.9 opacity). Placed after content so it actually dims the page. */}
+      <Animated.View
+        pointerEvents="none"
+        style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'black', opacity: dimOpacity }}
+      />
 
       {/* Top overlay */}
       {showOverlay && (
@@ -248,7 +265,14 @@ export default function ReaderView(props: ReaderViewProps) {
           setShowMenu(false);
           setMenuPresented(false);
         }}
-        onOpenThemePopover={() => setShowThemePopover(true)}
+        onOpenThemePopover={() => {
+          // Close the menu first, then open the ThemePopover on the next tick
+          setShowMenu(false);
+          setMenuPresented(false);
+          setTimeout(() => {
+            setShowThemePopover(true);
+          }, 180);
+        }}
         progress={progress}
         onScrub={scrubTo}
         onPresented={() => setMenuPresented(true)}

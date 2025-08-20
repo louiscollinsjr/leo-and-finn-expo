@@ -1,12 +1,13 @@
 // SettingsSheet: Detailed "Customise" bottom sheet with typography and layout controls.
 // Provides steppers for text size, line spacing, margins, and quick theme presets.
 // Appears after choosing Customise from ThemePopover or via ContextMenu.
-import React, { useEffect, useRef, useMemo } from 'react';
-import { Animated, Easing, Pressable, View, useWindowDimensions } from 'react-native';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
+import { Animated, Easing, Pressable, View, useWindowDimensions, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/ThemedText';
 import { useReaderPrefs } from '@/providers/ReaderProvider';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { QuickThemeSwatches } from '@/constants/Colors';
 
 export default function SettingsSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const insets = useSafeAreaInsets();
@@ -15,6 +16,7 @@ export default function SettingsSheet({ visible, onClose }: { visible: boolean; 
   const { height } = useWindowDimensions();
   const translateY = useRef(new Animated.Value(0)).current;
   const backdrop = useRef(new Animated.Value(0)).current;
+  const [mounted, setMounted] = useState(visible);
 
   const effectiveTheme = useMemo(() => (prefs.theme === 'system' ? (colorScheme ?? 'light') : prefs.theme), [prefs.theme, colorScheme]);
   const sheetBg = useMemo(() => {
@@ -43,27 +45,36 @@ export default function SettingsSheet({ visible, onClose }: { visible: boolean; 
   useEffect(() => {
     const hiddenY = Math.max(300, height);
     if (visible) {
+      setMounted(true);
       translateY.setValue(hiddenY);
       Animated.parallel([
         Animated.timing(backdrop, { toValue: 1, duration: 150, easing: Easing.out(Easing.quad), useNativeDriver: true }),
         Animated.timing(translateY, { toValue: 0, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       ]).start();
-    } else {
+    } else if (mounted) {
       Animated.parallel([
         Animated.timing(backdrop, { toValue: 0, duration: 150, easing: Easing.in(Easing.quad), useNativeDriver: true }),
         Animated.timing(translateY, { toValue: hiddenY, duration: 220, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
-      ]).start();
+      ]).start(({ finished }) => {
+        if (finished) setMounted(false);
+      });
     }
-  }, [visible, backdrop, translateY, height]);
+  }, [visible, mounted, backdrop, translateY, height]);
 
   const step = (key: 'fontScale' | 'lineHeightScale' | 'marginScale', delta: number, min = 0.6, max = 1.8, precision = 2) => {
     const next = Math.min(max, Math.max(min, +(prefs[key] + delta).toFixed(precision)));
     setPrefs({ [key]: next } as any);
   };
 
-  const ThemeBtn = ({ label, value, bg, fg }: { label: string; value: any; bg: string; fg: string }) => (
+  const ThemeBtn = ({ label, value, bg, fg, previewFamily }: { label: string; value: any; bg: string; fg: string; previewFamily: string }) => (
     <Pressable
-      onPress={() => setPrefs({ theme: value })}
+      onPress={() => {
+        if (label === 'Original') setPrefs({ theme: 'system', typeface: 'inter', boldText: false });
+        else if (label === 'Quiet') setPrefs({ theme: 'dark', typeface: 'tisa', boldText: false });
+        else if (label === 'Paper') setPrefs({ theme: 'light', typeface: 'tisa', boldText: false });
+        else if (label === 'Calm') setPrefs({ theme: 'sepia', typeface: 'tisa', boldText: false });
+        else setPrefs({ theme: value });
+      }}
       style={{
         alignItems: 'center',
         justifyContent: 'center',
@@ -77,9 +88,14 @@ export default function SettingsSheet({ visible, onClose }: { visible: boolean; 
         width: 100,
       }}
     >
-      <ThemedText style={{ color: fg, fontWeight: '600' }}>{label}</ThemedText>
+      <View style={{ alignItems: 'center' }}>
+        <Text style={{ color: fg, fontSize: 24, fontFamily: previewFamily }}>Aa</Text>
+        <Text style={{ color: fg, marginTop: 4, fontSize: 12, fontFamily: 'Inter-Regular' }}>{label}</Text>
+      </View>
     </Pressable>
   );
+
+  if (!mounted) return null;
 
   return (
     <View pointerEvents={visible ? 'auto' : 'none'} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
@@ -146,10 +162,10 @@ export default function SettingsSheet({ visible, onClose }: { visible: boolean; 
         <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
           <ThemedText style={{ marginBottom: 8, opacity: 0.8, color: textColor }}>Quick Themes</ThemedText>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <ThemeBtn label="Original" value="system" bg="#1f2937" fg="#fff" />
-            <ThemeBtn label="Quiet" value="dark" bg="#111827" fg="#fff" />
-            <ThemeBtn label="Paper" value="light" bg="#f3f4f6" fg="#111" />
-            <ThemeBtn label="Calm" value="sepia" bg="#f1e4cf" fg="#111" />
+            <ThemeBtn label="Original" value="system" bg={QuickThemeSwatches.original.bg} fg={QuickThemeSwatches.original.fg} previewFamily="Inter-Regular" />
+            <ThemeBtn label="Quiet" value="dark" bg={QuickThemeSwatches.quiet.bg} fg={QuickThemeSwatches.quiet.fg} previewFamily="TisaSansPro-Regular" />
+            <ThemeBtn label="Paper" value="light" bg={QuickThemeSwatches.paper.bg} fg={QuickThemeSwatches.paper.fg} previewFamily="TisaSansPro-Regular" />
+            <ThemeBtn label="Calm" value="sepia" bg={QuickThemeSwatches.calm.bg} fg={QuickThemeSwatches.calm.fg} previewFamily="TisaSansPro-Regular" />
           </View>
         </View>
       </Animated.View>
