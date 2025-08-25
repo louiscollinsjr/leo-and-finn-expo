@@ -4,6 +4,7 @@ import { useWordTranslations } from '@/hooks/useWordTranslations';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, TextInput, View, useWindowDimensions } from 'react-native';
 
+
 export type WordContextPopoverProps = {
   visible: boolean;
   anchor?: { x: number; y: number; width: number; height: number } | null;
