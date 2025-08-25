@@ -72,13 +72,13 @@ export class SupabaseContentSource implements ContentSource {
     }
 
     // 4) tokens only for selected segments
-    type Tok = { text: string; type: string };
+    type Tok = { id: string; text: string; type: string };
     const tokensBySeg = new Map<string, Tok[]>();
     const selectedSegIds = segments.map((s) => s.id);
     if (selectedSegIds.length > 0) {
       const { data: tokens, error: tokErr } = await supabase
         .from('tokens')
-        .select('segment_id, tok_index, text, token_type')
+        .select('id, segment_id, tok_index, text, token_type')
         .in('segment_id', selectedSegIds)
         .order('segment_id', { ascending: true })
         .order('tok_index', { ascending: true });
@@ -86,7 +86,7 @@ export class SupabaseContentSource implements ContentSource {
       (tokens ?? []).forEach((t: any) => {
         const arr = tokensBySeg.get(t.segment_id) ?? [];
         const ttype = (t.token_type ?? 'word').toString().toLowerCase();
-        arr.push({ text: t.text ?? '', type: ttype });
+        arr.push({ id: String(t.id), text: t.text ?? '', type: ttype });
         tokensBySeg.set(t.segment_id, arr);
       });
     }
@@ -195,8 +195,10 @@ export class SupabaseContentSource implements ContentSource {
         }
         if (kind === 'paragraph') {
           // Treat paragraph kind as a boundary; if it carries text, emit it as its own paragraph
+          const segTokens = tokensBySeg.get(seg.id) ?? [];
+          const tokensForBlock = segTokens.length ? segTokens.map((t) => ({ id: t.id, text: t.text, type: t.type })) : undefined;
           flushParagraph();
-          if (text) out.push({ key: `p-${paraIndex++}`, type: 'paragraph', text });
+          if (text) out.push({ key: `p-${paraIndex++}`, type: 'paragraph', text, tokens: tokensForBlock });
           continue;
         }
         if (text) {

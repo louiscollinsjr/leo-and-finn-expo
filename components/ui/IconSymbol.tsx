@@ -21,11 +21,16 @@ const MAPPING = {
   // Use a thinner look on Android/web by choosing outlined variant where possible
   'person.crop.circle': 'person-outline',
   'checkmark.circle.fill': 'check-circle',
+  'checkmark': 'check',
   'star': 'star',
   'star.fill': 'star',
   'ellipsis': 'more-horiz',
   'book': 'menu-book',
   'xmark': 'close',
+  // Edit/compose synonyms
+  'square.and.pencil': 'edit',
+  'compose': 'edit',
+  'plus': 'add',
   'slider.horizontal.3': 'tune',
   'gearshape': 'settings',
   'gearshape.fill': 'settings',

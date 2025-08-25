@@ -1,4 +1,6 @@
 import 'react-native-url-polyfill/auto';
+import 'react-native-gesture-handler';
+import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Mansalva_400Regular } from '@expo-google-fonts/mansalva';
 import { Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
@@ -10,6 +12,8 @@ import React from 'react';
 import { ReaderProvider } from '@/providers/ReaderProvider';
 import { Pressable, Text } from 'react-native';
 import '../global.css';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -32,29 +36,33 @@ export default function RootLayout() {
   }
 
   return (
-    <ReaderProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-          <Stack.Screen name="reader/[storyId]" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="account"
-            options={{
-              presentation: 'modal',
-              title: 'Account',
-              headerRight: () => (
-                <Link href=".." replace asChild>
-                  <Pressable accessibilityRole="button" hitSlop={8} style={{ paddingHorizontal: 8 }}>
-                    <Text style={{ color: '#2563eb', fontSize: 16, fontWeight: '600' }}>Done</Text>
-                  </Pressable>
-                </Link>
-              ),
-            }}
-          />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </ReaderProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <BottomSheetModalProvider>
+        <ReaderProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" />
+              <Stack.Screen name="reader/[storyId]" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="account"
+                options={{
+                  presentation: 'modal',
+                  title: 'Account',
+                  headerRight: () => (
+                    <Link href=".." replace asChild>
+                      <Pressable accessibilityRole="button" hitSlop={8} style={{ paddingHorizontal: 8 }}>
+                        <Text style={{ color: '#2563eb', fontSize: 16, fontWeight: '600' }}>Done</Text>
+                      </Pressable>
+                    </Link>
+                  ),
+                }}
+              />
+            </Stack>
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </ReaderProvider>
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView>
   );
 }

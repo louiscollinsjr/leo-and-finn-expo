@@ -1,0 +1,326 @@
+
+
+CREATE TABLE public.audio_assets (
+  story_revision_id uuid NOT NULL,
+  url text NOT NULL,
+  meta jsonb,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  kind text DEFAULT 'narration'::text,
+  CONSTRAINT audio_assets_pkey PRIMARY KEY (id),
+  CONSTRAINT audio_assets_story_revision_id_fkey FOREIGN KEY (story_revision_id) REFERENCES public.story_revisions(id)
+);
+CREATE TABLE public.chapters (
+  story_id uuid NOT NULL,
+  title text,
+  position integer NOT NULL,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT chapters_pkey PRIMARY KEY (id),
+  CONSTRAINT chapters_story_id_fkey FOREIGN KEY (story_id) REFERENCES public.stories(id)
+);
+CREATE TABLE public.collections (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  is_public boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  user_id uuid NOT NULL,
+  title text NOT NULL,
+  description text,
+  image_url text,
+  CONSTRAINT collections_pkey PRIMARY KEY (id),
+  CONSTRAINT collections_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.documents (
+  language_code character varying NOT NULL DEFAULT 'ro'::character varying,
+  collection_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  title text NOT NULL,
+  content jsonb NOT NULL,
+  original_text text NOT NULL,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  word_count integer DEFAULT 0,
+  paragraph_count integer DEFAULT 0,
+  is_public boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  image_url text,
+  description text,
+  CONSTRAINT documents_pkey PRIMARY KEY (id),
+  CONSTRAINT documents_collection_id_fkey FOREIGN KEY (collection_id) REFERENCES public.collections(id),
+  CONSTRAINT documents_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.format_spans (
+  story_revision_id uuid NOT NULL,
+  segment_id uuid NOT NULL,
+  start_tok_index integer NOT NULL,
+  end_tok_index integer NOT NULL,
+  style jsonb NOT NULL,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  CONSTRAINT format_spans_pkey PRIMARY KEY (id),
+  CONSTRAINT format_spans_segment_id_fkey FOREIGN KEY (segment_id) REFERENCES public.segments(id),
+  CONSTRAINT format_spans_story_revision_id_fkey FOREIGN KEY (story_revision_id) REFERENCES public.story_revisions(id)
+);
+CREATE TABLE public.languages (
+  code text NOT NULL,
+  name text NOT NULL,
+  CONSTRAINT languages_pkey PRIMARY KEY (code)
+);
+CREATE TABLE public.lesson_stats (
+  document_id uuid NOT NULL,
+  total_tokens integer NOT NULL DEFAULT 0,
+  total_types integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT lesson_stats_pkey PRIMARY KEY (document_id),
+  CONSTRAINT lesson_stats_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.documents(id)
+);
+CREATE TABLE public.lesson_word_counts (
+  document_id uuid NOT NULL,
+  normalized_word text NOT NULL,
+  occurrence_count integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT lesson_word_counts_pkey PRIMARY KEY (document_id, normalized_word),
+  CONSTRAINT lesson_word_counts_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.documents(id)
+);
+CREATE TABLE public.lexemes (
+  lemma_key text NOT NULL,
+  language_code text,
+  lemma text NOT NULL,
+  extra jsonb,
+  CONSTRAINT lexemes_pkey PRIMARY KEY (lemma_key),
+  CONSTRAINT lexemes_language_code_fkey FOREIGN KEY (language_code) REFERENCES public.languages(code)
+);
+CREATE TABLE public.profiles (
+  id uuid NOT NULL,
+  updated_at timestamp with time zone,
+  full_name text,
+  avatar_url text,
+  website text,
+  native_language character varying NOT NULL DEFAULT 'en'::character varying,
+  CONSTRAINT profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.segments (
+  story_revision_id uuid NOT NULL,
+  chapter_id uuid NOT NULL,
+  seg_index integer NOT NULL,
+  attrs jsonb,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  kind text DEFAULT 'paragraph'::text,
+  CONSTRAINT segments_pkey PRIMARY KEY (id),
+  CONSTRAINT segments_story_revision_id_fkey FOREIGN KEY (story_revision_id) REFERENCES public.story_revisions(id),
+  CONSTRAINT segments_chapter_id_fkey FOREIGN KEY (chapter_id) REFERENCES public.chapters(id)
+);
+CREATE TABLE public.stories (
+  title text NOT NULL,
+  author text,
+  source text,
+  license text,
+  language_code text,
+  description text,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT stories_pkey PRIMARY KEY (id),
+  CONSTRAINT stories_language_code_fkey FOREIGN KEY (language_code) REFERENCES public.languages(code)
+);
+CREATE TABLE public.story_genre_links (
+  story_id uuid NOT NULL,
+  genre_id uuid NOT NULL,
+  CONSTRAINT story_genre_links_pkey PRIMARY KEY (story_id, genre_id),
+  CONSTRAINT story_genre_links_genre_id_fkey FOREIGN KEY (genre_id) REFERENCES public.story_genres(id),
+  CONSTRAINT story_genre_links_story_id_fkey FOREIGN KEY (story_id) REFERENCES public.stories(id)
+);
+CREATE TABLE public.story_genres (
+  name text NOT NULL UNIQUE,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  CONSTRAINT story_genres_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.story_revisions (
+  story_id uuid NOT NULL,
+  rev integer NOT NULL,
+  note text,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT story_revisions_pkey PRIMARY KEY (id),
+  CONSTRAINT story_revisions_story_id_fkey FOREIGN KEY (story_id) REFERENCES public.stories(id)
+);
+CREATE TABLE public.token_timings (
+  audio_id uuid NOT NULL,
+  token_id text NOT NULL,
+  t_start_ms integer NOT NULL,
+  t_end_ms integer NOT NULL,
+  CONSTRAINT token_timings_pkey PRIMARY KEY (audio_id, token_id),
+  CONSTRAINT token_timings_token_id_fkey FOREIGN KEY (token_id) REFERENCES public.tokens(id),
+  CONSTRAINT token_timings_audio_id_fkey FOREIGN KEY (audio_id) REFERENCES public.audio_assets(id)
+);
+CREATE TABLE public.tokens (
+  id text NOT NULL,
+  story_revision_id uuid NOT NULL,
+  segment_id uuid NOT NULL,
+  seg_index integer NOT NULL,
+  tok_index integer NOT NULL,
+  text text NOT NULL,
+  norm text,
+  lemma_key text,
+  style jsonb,
+  token_type text DEFAULT 'word'::text,
+  chapter_id uuid NOT NULL,
+  CONSTRAINT tokens_pkey PRIMARY KEY (id),
+  CONSTRAINT tokens_chapter_id_fkey FOREIGN KEY (chapter_id) REFERENCES public.chapters(id),
+  CONSTRAINT tokens_segment_id_fkey FOREIGN KEY (segment_id) REFERENCES public.segments(id),
+  CONSTRAINT tokens_story_revision_id_fkey FOREIGN KEY (story_revision_id) REFERENCES public.story_revisions(id)
+);
+CREATE TABLE public.user_highlights (
+  user_id uuid NOT NULL,
+  token_id text NOT NULL,
+  color text,
+  status text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT user_highlights_pkey PRIMARY KEY (user_id, token_id),
+  CONSTRAINT user_highlights_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT user_highlights_token_id_fkey FOREIGN KEY (token_id) REFERENCES public.tokens(id)
+);
+CREATE TABLE public.user_notes (
+  user_id uuid NOT NULL,
+  story_revision_id uuid NOT NULL,
+  token_id text,
+  segment_id uuid,
+  body text NOT NULL,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT user_notes_pkey PRIMARY KEY (id),
+  CONSTRAINT user_notes_segment_id_fkey FOREIGN KEY (segment_id) REFERENCES public.segments(id),
+  CONSTRAINT user_notes_token_id_fkey FOREIGN KEY (token_id) REFERENCES public.tokens(id),
+  CONSTRAINT user_notes_story_revision_id_fkey FOREIGN KEY (story_revision_id) REFERENCES public.story_revisions(id),
+  CONSTRAINT user_notes_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.user_story_progress (
+  user_id uuid NOT NULL,
+  story_id uuid NOT NULL,
+  latest_revision_id uuid,
+  last_chapter_id uuid,
+  last_seg_index integer,
+  last_tok_index integer,
+  percent numeric,
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT user_story_progress_pkey PRIMARY KEY (user_id, story_id),
+  CONSTRAINT user_story_progress_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT user_story_progress_last_chapter_id_fkey FOREIGN KEY (last_chapter_id) REFERENCES public.chapters(id),
+  CONSTRAINT user_story_progress_story_id_fkey FOREIGN KEY (story_id) REFERENCES public.stories(id),
+  CONSTRAINT user_story_progress_latest_revision_id_fkey FOREIGN KEY (latest_revision_id) REFERENCES public.story_revisions(id)
+);
+CREATE TABLE public.user_token_translations (
+  user_id uuid NOT NULL,
+  token_id text NOT NULL,
+  translation text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT user_token_translations_pkey PRIMARY KEY (user_id, token_id),
+  CONSTRAINT user_token_translations_token_id_fkey FOREIGN KEY (token_id) REFERENCES public.tokens(id),
+  CONSTRAINT user_token_translations_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.user_translations (
+  user_id uuid NOT NULL,
+  lemma_key text NOT NULL,
+  translation text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT user_translations_pkey PRIMARY KEY (user_id, lemma_key),
+  CONSTRAINT user_translations_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT user_translations_lemma_key_fkey FOREIGN KEY (lemma_key) REFERENCES public.lexemes(lemma_key)
+);
+CREATE TABLE public.user_vocabulary (
+  user_id uuid NOT NULL,
+  romanian_word text NOT NULL,
+  eng_translation text,
+  first_learned_at timestamp with time zone,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  known boolean DEFAULT false,
+  updated_at timestamp with time zone DEFAULT now(),
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT user_vocabulary_pkey PRIMARY KEY (id),
+  CONSTRAINT user_vocabulary_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.word_translations (
+  occurrence_ids ARRAY NOT NULL DEFAULT '{}'::text[],
+  context_left text,
+  context_right text,
+  user_id uuid NOT NULL,
+  document_id uuid NOT NULL,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  original_word text NOT NULL DEFAULT ''::text,
+  normalized_word text NOT NULL DEFAULT ''::text,
+  language_code text NOT NULL DEFAULT 'ro'::text,
+  context text,
+  status text NOT NULL DEFAULT 'confirmed'::text CHECK (status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'rejected'::text])),
+  confidence_score double precision DEFAULT 1.0,
+  translation text NOT NULL,
+  CONSTRAINT word_translations_pkey PRIMARY KEY (id),
+  CONSTRAINT word_translations_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT word_translations_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.documents(id)
+);
+
+
+
+-- ================================
+-- Core Content Tables
+-- ================================
+
+COMMENT ON TABLE public.stories IS 'Metadata about a story/book (title, author, license, source, language)';
+COMMENT ON TABLE public.chapters IS 'Chapters (or lessons) of a story, ordered by position within the story';
+COMMENT ON TABLE public.story_revisions IS 'Versioned revisions of a story text, so text can be updated without losing alignment/annotations';
+COMMENT ON TABLE public.segments IS 'Logical units of a revision, e.g. paragraphs or sentences. Segments belong to a chapter.';
+COMMENT ON TABLE public.tokens IS 'Smallest text units (words, punctuation, etc.) within segments. Basis for highlights, translations, audio alignment.';
+
+-- ================================
+-- Genres & Collections
+-- ================================
+
+COMMENT ON TABLE public.story_genres IS 'List of genres/categories (e.g., fiction, history, kids)';
+COMMENT ON TABLE public.story_genre_links IS 'Join table linking stories to one or more genres';
+COMMENT ON TABLE public.collections IS 'User-defined or public collections of documents (e.g., "My Romanian Lessons")';
+COMMENT ON TABLE public.documents IS 'Standalone learning documents (may or may not come from stories), used in collections for lessons';
+
+-- ================================
+-- Language & Lexicon
+-- ================================
+
+COMMENT ON TABLE public.languages IS 'Supported languages with ISO-like codes and names';
+COMMENT ON TABLE public.lexemes IS 'Canonical lemmas per language (dictionary headwords), linked to tokens by lemma_key';
+
+-- ================================
+-- User-Created Data
+-- ================================
+
+COMMENT ON TABLE public.user_highlights IS 'Per-user highlights of tokens (color-coded annotations)';
+COMMENT ON TABLE public.user_notes IS 'User notes attached to tokens or segments within a story revision';
+COMMENT ON TABLE public.user_story_progress IS 'Tracks how far a user has read into a story (last position, percent complete)';
+COMMENT ON TABLE public.user_token_translations IS 'User-provided translation for a specific token in context';
+COMMENT ON TABLE public.user_translations IS 'User translations at lemma level (global vocabulary building)';
+COMMENT ON TABLE public.user_vocabulary IS 'Simple per-user vocabulary list, with optional status for "known" words';
+
+-- ================================
+-- Audio & Timing
+-- ================================
+
+COMMENT ON TABLE public.audio_assets IS 'Audio recordings tied to a story revision (e.g. narration, slow reading)';
+COMMENT ON TABLE public.token_timings IS 'Word-level audio alignments (token -> start/end time in ms)';
+COMMENT ON TABLE public.format_spans IS 'Style spans (bold, italic, highlights, etc.) applied over tokens in a revision';
+
+-- ================================
+-- Analytics & Stats
+-- ================================
+
+COMMENT ON TABLE public.lesson_stats IS 'Aggregate stats for a document (total tokens, total unique types)';
+COMMENT ON TABLE public.lesson_word_counts IS 'Word frequency counts per document (normalized words)';
+COMMENT ON TABLE public.word_translations IS 'Contextual word translations proposed/confirmed for documents (can include confidence scores)';
+
+-- ================================
+-- Profiles
+-- ================================
+
+COMMENT ON TABLE public.profiles IS 'Extended user profile info (linked to Supabase auth.users)';

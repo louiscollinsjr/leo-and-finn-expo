@@ -1,10 +1,16 @@
 // Shared reader types for open-source friendly modularization
 
 // Minimal Block union used by the current reader. Extend as needed (e.g., image, quote, code).
+export type Token = {
+  id: string;
+  text: string;
+  type?: string; // e.g., 'word' | 'punct' | 'space' | 'number' | 'emoji'
+};
+
 export type Block =
   | { key: string; type: 'chapter'; text: string }
   | { key: string; type: 'heading'; text: string }
-  | { key: string; type: 'paragraph'; text: string };
+  | { key: string; type: 'paragraph'; text: string; tokens?: Token[] };
 
 // Optional future-facing types (not yet used by the app). Left here for contributors.
 export interface ReaderConfig {

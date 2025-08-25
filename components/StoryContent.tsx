@@ -15,9 +15,12 @@ type Props = {
   hMargin?: number;
   blocks?: Block[]; // optional pre-provided content (skips fetching)
   contentSource?: ContentSource; // optional adapter, defaults to Supabase
+  onWordLongPress?: (word: string, tokenId?: string, anchor?: { x: number; y: number; width: number; height: number }) => void;
+  onWordTap?: (word: string, tokenId?: string) => void;
+  onWordSwipeUp?: (word: string, tokenId?: string) => void;
 };
 
-export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks: providedBlocks, contentSource }: Props) {
+export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks: providedBlocks, contentSource, onWordLongPress, onWordTap, onWordSwipeUp }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [localBlocks, setLocalBlocks] = useState<Block[]>([]);
@@ -38,6 +41,9 @@ export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks
     boldText: prefs.boldText,
     charSpacing: prefs.charSpacing,
     theme: (prefs.theme === 'system' ? (colorScheme ?? 'light') : prefs.theme) as any,
+    onWordLongPress,
+    onWordTap,
+    onWordSwipeUp,
   });
   const dataBlocks = providedBlocks ?? localBlocks;
 
