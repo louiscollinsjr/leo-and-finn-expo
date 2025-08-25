@@ -1,7 +1,7 @@
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useWordTranslations } from '@/hooks/useWordTranslations';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, TextInput, View, useWindowDimensions } from 'react-native';
 
 export type WordContextPopoverProps = {
@@ -14,22 +14,35 @@ export type WordContextPopoverProps = {
 
 export default function WordContextPopover({ visible, anchor, word, tokenId, onClose }: WordContextPopoverProps) {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const [step, setStep] = useState<'menu' | 'form'>('menu');
   const [input, setInput] = useState('');
-  const { loading, error, saveTranslation, markKnown } = useWordTranslations();
+  const [showKnownPrompt, setShowKnownPrompt] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { loading, error, getTranslation, saveTranslation, markKnown } = useWordTranslations();
 
   useEffect(() => {
-    if (visible) {
-      setStep('menu');
-      setInput('');
-    }
-  }, [visible, word, tokenId]);
+    let active = true;
+    // Prefill existing translation when opening
+    (async () => {
+      if (visible) {
+        setShowKnownPrompt(false);
+        if (tokenId) {
+          const rec = await getTranslation(tokenId);
+          if (!active) return;
+          setInput(rec?.translation ?? '');
+        } else {
+          setInput('');
+        }
+      } else {
+        setInput('');
+        setShowKnownPrompt(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [visible, tokenId, getTranslation]);
 
   const dims = useMemo(() => {
-    const menuWidth = 260;
-    const formWidth = 340;
-    const width = step === 'menu' ? menuWidth : formWidth;
-    const estimatedHeight = step === 'menu' ? 44 : 110;
+    const width = 340;
+    const estimatedHeight = 120;
     const margin = 8;
 
     const a = anchor ?? { x: screenWidth / 2 - 40, y: screenHeight / 2, width: 80, height: 20 };
@@ -43,7 +56,7 @@ export default function WordContextPopover({ visible, anchor, word, tokenId, onC
     if (top < margin) top = Math.round(a.y + a.height + margin);
 
     return { width, top, left };
-  }, [anchor, screenWidth, screenHeight, step]);
+  }, [anchor, screenWidth, screenHeight]);
 
   if (!visible) return null;
 
@@ -71,56 +84,85 @@ export default function WordContextPopover({ visible, anchor, word, tokenId, onC
           borderColor: 'rgba(0,0,0,0.1)',
         }}
       >
-        {step === 'menu' ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(0,0,0,0.1)' }}>
-            <Pressable onPress={() => setStep('form')} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingVertical: 2, paddingHorizontal: 0 }}>
-              <IconSymbol name="square.and.pencil" size={16} color="#111827" />
-              <ThemedText style={{ marginLeft: 8, fontWeight: '400', fontSize: 10, letterSpacing: 0.2 }}>Add Translation</ThemedText>
-            </Pressable>
-            <View style={{ width: 1, height: 12, backgroundColor: 'rgba(0,0,0,0.1)' }} />
-            <Pressable
-              onPress={async () => {
-                if (!word) return;
-                const res = await markKnown(word);
-                if (res.ok) onClose();
-              }}
-              style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingVertical: 2, paddingHorizontal: 0, justifyContent: 'flex-end' }}
-            >
-              <IconSymbol name="checkmark.circle.fill" size={16} color="#111827" />
-              <ThemedText style={{ marginLeft: 8, fontWeight: '400', fontSize: 10, letterSpacing: 0.2 }}>Got this one!</ThemedText>
-            </Pressable>
+        <View>
+          <ThemedText type="subtitle" style={{ marginBottom: 6 }}>{word}</ThemedText>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TextInput
+              placeholder="Enter translation..."
+              value={input}
+              onChangeText={setInput}
+              autoFocus
+              style={{ flex: 1, borderWidth: 1, borderColor: 'rgba(0,0,0,0.15)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 }}
+            />
+            {input.trim().length > 0 ? (
+              <Pressable
+                onPress={async () => {
+                  if (!tokenId || input.trim().length === 0) return;
+                  const res = await saveTranslation(tokenId, input.trim());
+                  if (res.ok) {
+                    setShowKnownPrompt(true);
+                    if (closeTimer.current) clearTimeout(closeTimer.current);
+                    closeTimer.current = setTimeout(() => {
+                      setShowKnownPrompt(false);
+                      onClose();
+                    }, 1600);
+                  }
+                }}
+                style={{ marginLeft: 8, backgroundColor: '#111827', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12 }}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <ThemedText style={{ color: 'white', fontWeight: '600' }}>{input ? 'Save' : 'Submit'}</ThemedText>
+                )}
+              </Pressable>
+            ) : null}
           </View>
-        ) : (
-          <View>
-            <ThemedText type="subtitle" style={{ marginBottom: 6 }}>{word}</ThemedText>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TextInput
-                placeholder="Enter translation..."
-                value={input}
-                onChangeText={setInput}
-                autoFocus
-                style={{ flex: 1, borderWidth: 1, borderColor: 'rgba(0,0,0,0.15)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 }}
-              />
-              {input.trim().length > 0 ? (
+
+          {/* Inline action to mark as known */}
+          <Pressable
+            onPress={async () => {
+              if (!word) return;
+              const res = await markKnown(word);
+              if (res.ok) onClose();
+            }}
+            style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingVertical: 2, paddingHorizontal: 4 }}
+          >
+            <IconSymbol name="checkmark.circle.fill" size={16} color="#111827" />
+            <ThemedText style={{ marginLeft: 6, fontSize: 12 }}>Mark as known</ThemedText>
+          </Pressable>
+
+          {error ? <ThemedText style={{ marginTop: 6, color: '#b91c1c' }}>{error}</ThemedText> : null}
+
+          {showKnownPrompt ? (
+            <View style={{ marginTop: 8, padding: 8, backgroundColor: 'rgba(17,24,39,0.06)', borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <ThemedText style={{ fontSize: 12 }}>Saved. Mark this word as known?</ThemedText>
+              <View style={{ flexDirection: 'row', marginLeft: 8 }}>
                 <Pressable
                   onPress={async () => {
-                    if (!tokenId || input.trim().length === 0) return;
-                    const res = await saveTranslation(tokenId, input.trim());
+                    if (!word) return;
+                    if (closeTimer.current) clearTimeout(closeTimer.current);
+                    const res = await markKnown(word);
                     if (res.ok) onClose();
                   }}
-                  style={{ marginLeft: 8, backgroundColor: '#111827', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12 }}
+                  style={{ backgroundColor: '#111827', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 }}
                 >
-                  {loading ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <ThemedText style={{ color: 'white', fontWeight: '600' }}>Submit</ThemedText>
-                  )}
+                  <ThemedText style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>Mark</ThemedText>
                 </Pressable>
-              ) : null}
+                <Pressable
+                  onPress={() => {
+                    if (closeTimer.current) clearTimeout(closeTimer.current);
+                    setShowKnownPrompt(false);
+                    onClose();
+                  }}
+                  style={{ marginLeft: 8, borderWidth: 1, borderColor: 'rgba(0,0,0,0.15)', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 }}
+                >
+                  <ThemedText style={{ fontSize: 12 }}>Dismiss</ThemedText>
+                </Pressable>
+              </View>
             </View>
-            {error ? <ThemedText style={{ marginTop: 6, color: '#b91c1c' }}>{error}</ThemedText> : null}
-          </View>
-        )}
+          ) : null}
+        </View>
       </View>
     </View>
   );
