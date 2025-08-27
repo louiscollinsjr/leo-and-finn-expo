@@ -89,7 +89,7 @@ export default function ContinueCard({ book, onPress, onRatePress, rating, first
       onPress={() => onPress?.(book)}
       style={[
         styles.card,
-        { paddingHorizontal: 12, paddingVertical: 10, padding: 16, width: 230, height: isFinished ? 120 : 80 },
+        { paddingHorizontal: 12, paddingVertical: 10, width: 288, height: isFinished ? 130 : 90 },
         { marginLeft: first ? 0 : 10, marginRight: 10 },
       ]}
     >

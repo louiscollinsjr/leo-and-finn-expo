@@ -101,7 +101,25 @@ const topPicks: Book[] = [
   },
 ];
 
-function ProgressRing({ size = 28, strokeWidth = 4, value = 11, total = 30, trackColor, progressColor, showValue = true }) {
+type ProgressRingProps = {
+  size?: number;
+  strokeWidth?: number;
+  value?: number;
+  total?: number;
+  trackColor?: string;
+  progressColor?: string;
+  showValue?: boolean;
+};
+
+function ProgressRing({
+  size = 28,
+  strokeWidth = 4,
+  value = 11,
+  total = 30,
+  trackColor,
+  progressColor,
+  showValue = true,
+}: ProgressRingProps) {
   const scheme = useColorScheme();
   const theme = scheme ?? 'light';
   const effectiveTrack = trackColor ?? (theme === 'dark' ? 'rgba(98,211,256,0.3)' : 'rgba(0,0,0,0.08)');
@@ -140,7 +158,7 @@ function ProgressRing({ size = 28, strokeWidth = 4, value = 11, total = 30, trac
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
-  const theme = colorScheme ?? 'default';
+  const theme = (colorScheme ?? 'light') as 'light' | 'dark';
   const background = Colors[theme].background;
   const text = Colors[theme].text;
   const secondaryText = theme === 'dark' ? 'rgba(236,237,238,0.7)' : '#71717a';

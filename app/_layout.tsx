@@ -14,6 +14,9 @@ import { Pressable, Text } from 'react-native';
 import '../global.css';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+import { createSessionFromUrl } from '@/lib/auth';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -29,6 +32,19 @@ export default function RootLayout() {
     'TisaSansPro-Medium': require('../assets/fonts/tisa-sans-pro/Tisa Sans Pro Medium.ttf'),
     'TisaSansPro-Bold': require('../assets/fonts/tisa-sans-pro/Tisa Sans Pro Bold.ttf'),
   });
+
+  // Complete Web auth sessions (no-op on native)
+  WebBrowser.maybeCompleteAuthSession();
+
+  // Handle deep link returns from OAuth/magic link
+  const url = Linking.useURL();
+  React.useEffect(() => {
+    if (url) {
+      createSessionFromUrl(url).catch(() => {
+        // swallow; invalid or unrelated link
+      });
+    }
+  }, [url]);
 
   if (!loaded) {
     // Async font loading only occurs in development.

@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.leoandfinn"
+      "bundleIdentifier": "com.anonymous.leoandfinn",
+      "associatedDomains": [
+        "applinks:app.leoandfinn.com"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +21,21 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.leoandfinn"
+      "package": "com.anonymous.leoandfinn",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            { "scheme": "https", "host": "app.leoandfinn.com", "pathPrefix": "/" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "data": [ { "scheme": "leoandfinn" } ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",
