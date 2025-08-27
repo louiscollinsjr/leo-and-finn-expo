@@ -2,10 +2,11 @@ import ContinueCard, { ContinueBook } from '@/components/ContinueCard';
 import RatingSheet from '@/components/RatingSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
+import { useAuth } from '@/hooks/useAuth';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -169,6 +170,8 @@ export default function HomeScreen() {
   const NAV_BAR_HEIGHT = 44;
   const HEADER_HEIGHT = NAV_BAR_HEIGHT + insets.top;
   const scrollY = useRef(new Animated.Value(0)).current;
+  const { user } = useAuth();
+  const router = useRouter();
 
   const titleOpacity = scrollY.interpolate({
     inputRange: [0, 80],
@@ -217,17 +220,41 @@ export default function HomeScreen() {
         >
           {/* Content header row: Title + Progress + Account */}
           <Animated.View
-            className="mt-2 mb-6 flex-row items-center justify-between"
-            style={{ opacity: largeTitleOpacity }}
+            // NativeWind classes don't apply to Animated.View by default; set layout explicitly
+            style={[
+              { opacity: largeTitleOpacity as any },
+              { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', marginTop: 8, marginBottom: 24 },
+            ]}
           >
-            <Text className="text-[34px] font-extrabold text-zinc-900" style={{ fontFamily: '', color: theme === 'dark' ? '#ffffff' : '#111827' }}>Home</Text>
-            <View className="flex-row items-center gap-4">
-              <View className="pt-1"><ProgressRing size={30} value={11} total={30} /></View>
-              <Link href="/account" asChild>
-                <Pressable hitSlop={8}>
-                  <IconSymbol size={36} name="person.crop.circle" weight="thin" color={colorScheme === 'dark' ? '#fff' : '#111827'} />
+            <Text
+              className="text-[34px] font-extrabold text-zinc-900"
+              style={{ fontFamily: '', color: theme === 'dark' ? '#ffffff' : '#111827', flex: 1, marginRight: 12 }}
+              numberOfLines={1}
+            >
+              Home
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0, marginLeft: 'auto' }}>
+              <View style={{ paddingTop: 1, marginRight: 12 }}><ProgressRing size={30} value={11} total={30} /></View>
+              {user ? (
+                <Link href="/account" asChild>
+                  <Pressable hitSlop={8}>
+                    <IconSymbol size={36} name="person.crop.circle" weight="thin" color={colorScheme === 'dark' ? '#fff' : '#111827'} />
+                  </Pressable>
+                </Link>
+              ) : (
+                <Pressable
+                  onPress={() => router.push('/welcome')}
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.8 : 1,
+                    backgroundColor: Colors[theme].chip,
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    borderRadius: 999,
+                  })}
+                >
+                  <Text style={{ color: Colors[theme].text, fontWeight: '800', fontSize: 15 }}>Sign up</Text>
                 </Pressable>
-              </Link>
+              )}
             </View>
           </Animated.View>
 

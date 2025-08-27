@@ -109,6 +109,8 @@ export default function AccountScreen() {
     try {
       setBusy('signout');
       await supabase.auth.signOut();
+      // After sign out, go to Welcome screen
+      router.replace('/welcome');
     } catch (e) {
       console.warn(e);
     } finally {
