@@ -24,13 +24,38 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
+// AppState listener for token auto-refresh
+const handleAppStateChange = (state: string) => {
+  if (state === 'active') {
+    supabase.auth.startAutoRefresh();
+  } else {
+    supabase.auth.stopAutoRefresh();
+  }
+};
+
+let appStateSub: { remove?: () => void } | null = null;
+
 // Start/stop token auto-refresh based on app foreground state
 if (Platform.OS !== 'web') {
-  AppState.addEventListener('change', (state) => {
-    if (state === 'active') {
-      supabase.auth.startAutoRefresh();
-    } else {
-      supabase.auth.stopAutoRefresh();
+  if (!appStateSub) {
+    // New RN API returns a subscription with remove()
+    // Older API requires removeEventListener; we store handler for fallback
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    appStateSub = AppState.addEventListener('change', handleAppStateChange as any);
+  }
+}
+
+// Expose a teardown to remove the listener (useful for manual cleanup or tests)
+export function removeSupabaseAppStateListener() {
+  if (appStateSub && typeof appStateSub.remove === 'function') {
+    appStateSub.remove();
+    appStateSub = null;
+  } else {
+    // Fallback for older RN versions
+    // @ts-ignore - removeEventListener exists on older RN
+    if ((AppState as any).removeEventListener) {
+      // @ts-ignore
+      (AppState as any).removeEventListener('change', handleAppStateChange);
     }
-  });
+  }
 }
