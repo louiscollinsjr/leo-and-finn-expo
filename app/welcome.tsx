@@ -1,9 +1,12 @@
 import { Colors } from '@/constants/Colors';
+import { DarkBackgrounds, LightBackgrounds } from '@/constants/welcomeBackgrounds';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { startOAuth } from '@/lib/auth';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -16,6 +19,10 @@ export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
   const sheetRef = React.useRef<BottomSheetModal>(null);
   const snapPoints = React.useMemo(() => ['42%'], []);
+
+  // Pick a background image once per mount for stability
+  const list = theme === 'dark' ? DarkBackgrounds : LightBackgrounds;
+  const backgroundSource = React.useMemo(() => list[Math.floor(Math.random() * list.length)], [list]);
 
   React.useEffect(() => {
     const t = setTimeout(() => sheetRef.current?.present(), 60);
@@ -39,6 +46,18 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme === 'dark' ? '#000' : '#fff' }]}> 
+      {/* Background image */}
+      <Image
+        source={backgroundSource}
+        style={StyleSheet.absoluteFillObject}
+        contentFit="cover"
+        transition={200}
+      />
+      {/* Scrim for readability */}
+      <LinearGradient
+        colors={theme === 'dark' ? ['rgba(0,0,0,0.45)', 'rgba(0,0,0,0.15)'] : ['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.00)']}
+        style={StyleSheet.absoluteFillObject}
+      />
       {/* Header with right-aligned Close */}
       <View
         style={{
@@ -53,7 +72,7 @@ export default function WelcomeScreen() {
           justifyContent: 'flex-end',
           paddingHorizontal: 36,
           zIndex: 100,
-          backgroundColor: theme === 'dark' ? '#000' : '#ffffff',
+          backgroundColor: 'transparent',
         }}
       >
         <Pressable
@@ -68,22 +87,22 @@ export default function WelcomeScreen() {
         >
           <View
             style={{
-              backgroundColor: Colors[theme].chip,
+              backgroundColor: theme === 'dark' ? '#000' : '#e1e2e3',
               borderRadius: 999,
-              borderWidth: 1,
+              borderWidth: 0,
               borderColor: theme === 'dark' ? '#3a3b3d' : '#64748b',
-              width: 40,
-              height: 40,
+              width: 32,
+              height: 32,
               alignItems: 'center',
               justifyContent: 'center',
               shadowColor: '#000',
-              shadowOpacity: 0.08,
+              shadowOpacity: 0.00,
               shadowRadius: 4,
               shadowOffset: { width: 0, height: 1 },
               elevation: 2,
             }}
           >
-            <MaterialIcons name="close" size={20} color={Colors[theme].text} />
+            <MaterialCommunityIcons name="close-thick" size={22} color={Colors[theme].text} style={{ opacity: 0.4 }} />
           </View>
         </Pressable>
       </View>
@@ -99,7 +118,7 @@ export default function WelcomeScreen() {
         ref={sheetRef}
         snapPoints={snapPoints}
         enablePanDownToClose
-        backgroundStyle={{ backgroundColor: '#111111', borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
+        backgroundStyle={{ backgroundColor: '#111111', borderTopLeftRadius: 24, borderTopRightRadius: 24, opacity: 0.90 }}
         handleComponent={null}
         enableHandlePanningGesture={false}
       >
@@ -115,9 +134,13 @@ export default function WelcomeScreen() {
               <Text style={[styles.btnText, { color: '#ffffff' }]}>Continue with Google</Text>
             </Pressable>
 
-            {/* Single entry point for email magic link */}
             <Pressable onPress={() => router.push('/auth/email')} style={[styles.btn, styles.loginBtn]}>
               <Text style={[styles.btnText, { color: '#ffffff' }]}>Log in</Text>
+            </Pressable>
+
+            {/* Guest mode */}
+            <Pressable onPress={closeSheetToGuest} style={[styles.btn, styles.loginBtn]}>
+              <Text style={[styles.btnText, { color: '#ffffff' }]}>Continue as guest</Text>
             </Pressable>
           </View>
         </BottomSheetView>

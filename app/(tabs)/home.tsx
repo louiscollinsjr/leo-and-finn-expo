@@ -219,22 +219,26 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Content header row: Title + Progress + Account */}
-          <Animated.View
-            // NativeWind classes don't apply to Animated.View by default; set layout explicitly
-            style={[
-              { opacity: largeTitleOpacity as any },
-              { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', marginTop: 8, marginBottom: 24 },
-            ]}
-          >
-            <Text
-              className="text-[34px] font-extrabold text-zinc-900"
-              style={{ fontFamily: '', color: theme === 'dark' ? '#ffffff' : '#111827', flex: 1, marginRight: 12 }}
-              numberOfLines={1}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, marginBottom: 24 }}>
+            {/* Title */}
+            <Animated.View
+              style={[
+                { opacity: largeTitleOpacity as any },
+                { flex: 1 },
+              ]}
             >
-              Home
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0, marginLeft: 'auto' }}>
-              <View style={{ paddingTop: 1, marginRight: 12 }}><ProgressRing size={30} value={11} total={30} /></View>
+              <Text
+                className="text-[34px] font-extrabold text-zinc-900"
+                style={{ fontFamily: '', color: theme === 'dark' ? '#ffffff' : '#111827', marginRight: 12 }}
+                numberOfLines={1}
+              >
+                Home
+              </Text>
+            </Animated.View>
+            
+            {/* Right side elements */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 }}>
+              {user && <View style={{ paddingTop: 1, marginRight: 12 }}><ProgressRing size={30} value={11} total={30} /></View>}
               {user ? (
                 <Link href="/account" asChild>
                   <Pressable hitSlop={8}>
@@ -245,18 +249,37 @@ export default function HomeScreen() {
                 <Pressable
                   onPress={() => router.push('/welcome')}
                   style={({ pressed }) => ({
-                    opacity: pressed ? 0.8 : 1,
-                    backgroundColor: Colors[theme].chip,
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    borderRadius: 999,
+                    opacity: pressed ? 0.9 : 1,
+                    backgroundColor: 'transparent',
                   })}
                 >
-                  <Text style={{ color: Colors[theme].text, fontWeight: '800', fontSize: 15 }}>Sign up</Text>
+                  <View style={{
+                    backgroundColor: theme === 'dark' ? '#ffffff' : '#000000', // Apple's standard blue in light mode
+                    paddingVertical: 12,
+                    paddingHorizontal: 20,
+                    borderRadius: 9999, // Fully rounded pill shape
+                    minHeight: 44, // Apple's standard button height
+                    minWidth: 100, // Ensure minimum width for proper pill shape
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    shadowColor: theme === 'dark' ? '#ffffff' : '#000000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.12,
+                    shadowRadius: 3,
+                    elevation: 2,
+                  }}>
+                    <Text style={{ 
+                      color: theme === 'dark' ? '#000000' : '#ffffff', 
+                      fontWeight: '600', // SF Pro Text Semibold
+                      fontSize: 17, // Apple's standard font size
+                      textAlign: 'center', 
+                      letterSpacing: 0.25 
+                    }}>Sign up</Text>
+                  </View>
                 </Pressable>
               )}
             </View>
-          </Animated.View>
+          </View>
 
           {/* Continue Section */}
           <SectionTitle style={{ marginBottom: 16, fontSize: 20, fontWeight: 'bold', color: theme === 'dark' ? '#ffffff' : '#111827' }}>Continue</SectionTitle>
