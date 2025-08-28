@@ -37,6 +37,7 @@
         "react-native-gesture-handler": "~2.24.0",
         "react-native-get-random-values": "^1.11.0",
         "react-native-image-colors": "^2.5.0",
+        "react-native-linear-gradient": "^2.8.3",
         "react-native-raw-bottom-sheet": "^3.0.0",
         "react-native-reanimated": "^3.15.4",
         "react-native-safe-area-context": "5.4.0",
@@ -1576,6 +1577,8 @@
     "react-native-image-colors": ["react-native-image-colors@2.5.0", "", { "dependencies": { "node-vibrant": "^4.0.3" }, "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }, "sha512-3zSDgNj5HaZ0PDWaXkc4BpWpZRM5N4gBsoPC7DBfM/+op69Yvwbc0S1T7CnxBWbvShtOvRE+b2BUBadVn+6z/g=="],
 
     "react-native-is-edge-to-edge": ["react-native-is-edge-to-edge@1.2.1", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-FLbPWl/MyYQWz+KwqOZsSyj2JmLKglHatd3xLZWskXOpRaio4LfEDEz8E/A6uD8QoTHW6Aobw1jbEwK7KMgR7Q=="],
+
+    "react-native-linear-gradient": ["react-native-linear-gradient@2.8.3", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-KflAXZcEg54PXkLyflaSZQ3PJp4uC4whM7nT/Uot9m0e/qxFV3p6uor1983D1YOBJbJN7rrWdqIjq0T42jOJyA=="],
 
     "react-native-raw-bottom-sheet": ["react-native-raw-bottom-sheet@3.0.0", "", {}, "sha512-kHR7j2ExCLqf/AO3MECozMJXi48O1+YxUYSRgRo/5Ftm7mEcrxJEzvjqMmqUbVhhKlfk5hLCGFnEQ5Z9OHCUtg=="],
 

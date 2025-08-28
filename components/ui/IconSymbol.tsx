@@ -34,6 +34,7 @@ const MAPPING = {
   'slider.horizontal.3': 'tune',
   'gearshape': 'settings',
   'gearshape.fill': 'settings',
+  'magnifyingglass.fill': 'search',
 } as IconMapping;
 
 /**

@@ -1,22 +1,22 @@
-import 'react-native-url-polyfill/auto';
-import 'react-native-gesture-handler';
-import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { Mansalva_400Regular } from '@expo-google-fonts/mansalva';
+import { createSessionFromUrl } from '@/lib/auth';
+import { ReaderProvider } from '@/providers/ReaderProvider';
 import { Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
+import { Mansalva_400Regular } from '@expo-google-fonts/mansalva';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
+import * as Linking from 'expo-linking';
 import { Link, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { ReaderProvider } from '@/providers/ReaderProvider';
-import { Pressable, Text } from 'react-native';
-import '../global.css';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
-import { createSessionFromUrl } from '@/lib/auth';
+import React from 'react';
+import { Pressable, Text } from 'react-native';
+import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import 'react-native-reanimated';
+import 'react-native-url-polyfill/auto';
+import '../global.css';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();

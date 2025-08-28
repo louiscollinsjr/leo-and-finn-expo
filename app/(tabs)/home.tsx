@@ -318,8 +318,13 @@ export default function HomeScreen() {
             </>
           )}
 
-          {/* Featured Story - Positioned at the very top */}
-          <View style={{ marginTop: 12, marginHorizontal: -36, paddingHorizontal: 36 }}>
+          {/* Featured Story - Apple Music-style promo banner */}
+          <View style={{ 
+            marginTop: 12, 
+            marginBottom: 12,
+            width: '100%',
+            alignItems: 'center'
+          }}>
             <FeaturedStory 
               story={{
                 id: 'featured1',
