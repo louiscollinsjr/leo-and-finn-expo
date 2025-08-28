@@ -48,12 +48,12 @@ export default function EmailAuthScreen() {
         <Text style={styles.label}>Email address</Text>
         <TextInput
           placeholder="name@example.com"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={theme === 'dark' ? '#9ca3af' : '#9ca3af'}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
-          style={styles.input}
+          style={[styles.input, { color: theme === 'dark' ? '#ffffff' : '#111827' }]}
         />
         <Pressable onPress={onContinue} disabled={!email.trim() || busy === 'email'} style={({ pressed }) => [styles.primaryBtn, { opacity: pressed ? 0.8 : 1 }] }>
           <Text style={styles.primaryBtnText}>{busy === 'email' ? 'Sending…' : 'Continue'}</Text>
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#111827',
+    // Color will be set dynamically
   },
   primaryBtn: { backgroundColor: '#111827', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 4 },
   primaryBtnText: { color: '#fff', fontWeight: '700' },
