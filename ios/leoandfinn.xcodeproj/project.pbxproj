@@ -8,11 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		1BE5E0569F0B035694EA18D7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1BF7137E25E0864DEBA4D462 /* PrivacyInfo.xcprivacy */; };
+		1F1D18068E8516009F36E212 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F417D18B604B8728BF28E2 /* ExpoModulesProvider.swift */; };
+		32437625B562AAAADAB4146E /* libPods-leoandfinn.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9DAF716A8459931666456FFC /* libPods-leoandfinn.a */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		8E3FD0E7F8E4292C8798F38A /* libPods-leoandfinn.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D60C72E838C52E0A323AEF6A /* libPods-leoandfinn.a */; };
-		B795A7CCFDCF282EEFF0C890 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A01631A37E009337040ACB3 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		D9061DF4AE069DD332BA618D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B2B259D4E0ECB24B71D1777C /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
@@ -20,13 +20,13 @@
 		13B07F961A680F5B00A75B9A /* leoandfinn.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = leoandfinn.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = leoandfinn/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = leoandfinn/Info.plist; sourceTree = "<group>"; };
-		1588780C812AC5A799353B8E /* Pods-leoandfinn.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-leoandfinn.release.xcconfig"; path = "Target Support Files/Pods-leoandfinn/Pods-leoandfinn.release.xcconfig"; sourceTree = "<group>"; };
-		8A01631A37E009337040ACB3 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-leoandfinn/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		1BF7137E25E0864DEBA4D462 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = leoandfinn/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		4DD6F99BAF8956CB06317EDE /* Pods-leoandfinn.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-leoandfinn.release.xcconfig"; path = "Target Support Files/Pods-leoandfinn/Pods-leoandfinn.release.xcconfig"; sourceTree = "<group>"; };
+		56F417D18B604B8728BF28E2 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-leoandfinn/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		88D12F1808FA8EDAADFFB55B /* Pods-leoandfinn.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-leoandfinn.debug.xcconfig"; path = "Target Support Files/Pods-leoandfinn/Pods-leoandfinn.debug.xcconfig"; sourceTree = "<group>"; };
+		9DAF716A8459931666456FFC /* libPods-leoandfinn.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-leoandfinn.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = leoandfinn/SplashScreen.storyboard; sourceTree = "<group>"; };
-		B2B259D4E0ECB24B71D1777C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = leoandfinn/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		D60C72E838C52E0A323AEF6A /* libPods-leoandfinn.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-leoandfinn.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		E4C82E8898BA960813DC1721 /* Pods-leoandfinn.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-leoandfinn.debug.xcconfig"; path = "Target Support Files/Pods-leoandfinn/Pods-leoandfinn.debug.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = leoandfinn/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* leoandfinn-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "leoandfinn-Bridging-Header.h"; path = "leoandfinn/leoandfinn-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8E3FD0E7F8E4292C8798F38A /* libPods-leoandfinn.a in Frameworks */,
+				32437625B562AAAADAB4146E /* libPods-leoandfinn.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,7 +53,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				B2B259D4E0ECB24B71D1777C /* PrivacyInfo.xcprivacy */,
+				1BF7137E25E0864DEBA4D462 /* PrivacyInfo.xcprivacy */,
 			);
 			name = leoandfinn;
 			sourceTree = "<group>";
@@ -62,19 +62,27 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				D60C72E838C52E0A323AEF6A /* libPods-leoandfinn.a */,
+				9DAF716A8459931666456FFC /* libPods-leoandfinn.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		3E68EE294FE39E5D7B6F9B79 /* Pods */ = {
+		30CB7D535747AD1AC13D3962 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				E4C82E8898BA960813DC1721 /* Pods-leoandfinn.debug.xcconfig */,
-				1588780C812AC5A799353B8E /* Pods-leoandfinn.release.xcconfig */,
+				88D12F1808FA8EDAADFFB55B /* Pods-leoandfinn.debug.xcconfig */,
+				4DD6F99BAF8956CB06317EDE /* Pods-leoandfinn.release.xcconfig */,
 			);
 			name = Pods;
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		7E33A6CE4B081A5A9F36CD67 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				ED456AD766400FF549F3B352 /* leoandfinn */,
+			);
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -91,8 +99,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				3E68EE294FE39E5D7B6F9B79 /* Pods */,
-				D9C1DF47770E83AD0C7FF046 /* ExpoModulesProviders */,
+				7E33A6CE4B081A5A9F36CD67 /* ExpoModulesProviders */,
+				30CB7D535747AD1AC13D3962 /* Pods */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -116,20 +124,12 @@
 			path = leoandfinn/Supporting;
 			sourceTree = "<group>";
 		};
-		CC98D08CA9B2B35BFCC0289A /* leoandfinn */ = {
+		ED456AD766400FF549F3B352 /* leoandfinn */ = {
 			isa = PBXGroup;
 			children = (
-				8A01631A37E009337040ACB3 /* ExpoModulesProvider.swift */,
+				56F417D18B604B8728BF28E2 /* ExpoModulesProvider.swift */,
 			);
 			name = leoandfinn;
-			sourceTree = "<group>";
-		};
-		D9C1DF47770E83AD0C7FF046 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				CC98D08CA9B2B35BFCC0289A /* leoandfinn */,
-			);
-			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -139,14 +139,14 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "leoandfinn" */;
 			buildPhases = (
-				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				43A971D2FA1698CDDF9DE845 /* [Expo] Configure project */,
+				8E54EDE2EAB4890499A1A780 /* [CP] Check Pods Manifest.lock */,
+				07131FAE9CC83E745BCA677F /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				33CCD240DDDD46EE987C8CFB /* [CP] Embed Pods Frameworks */,
+				675C0FF976CE2F6445196660 /* [CP] Embed Pods Frameworks */,
+				4F5257D5AFFA4935E162D708 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -198,7 +198,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				D9061DF4AE069DD332BA618D /* PrivacyInfo.xcprivacy in Resources */,
+				1BE5E0569F0B035694EA18D7 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -220,47 +220,7 @@
 			shellPath = /bin/sh;
 			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
 		};
-		08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-leoandfinn-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		33CCD240DDDD46EE987C8CFB /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-leoandfinn/Pods-leoandfinn-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-leoandfinn/Pods-leoandfinn-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		43A971D2FA1698CDDF9DE845 /* [Expo] Configure project */ = {
+		07131FAE9CC83E745BCA677F /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -279,7 +239,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-leoandfinn/expo-configure-project.sh\"\n";
 		};
-		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
+		4F5257D5AFFA4935E162D708 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -325,6 +285,46 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-leoandfinn/Pods-leoandfinn-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		675C0FF976CE2F6445196660 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-leoandfinn/Pods-leoandfinn-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-leoandfinn/Pods-leoandfinn-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		8E54EDE2EAB4890499A1A780 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-leoandfinn-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -333,7 +333,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				B795A7CCFDCF282EEFF0C890 /* ExpoModulesProvider.swift in Sources */,
+				1F1D18068E8516009F36E212 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -342,7 +342,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = E4C82E8898BA960813DC1721 /* Pods-leoandfinn.debug.xcconfig */;
+			baseConfigurationReference = 88D12F1808FA8EDAADFFB55B /* Pods-leoandfinn.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -381,7 +381,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1588780C812AC5A799353B8E /* Pods-leoandfinn.release.xcconfig */;
+			baseConfigurationReference = 4DD6F99BAF8956CB06317EDE /* Pods-leoandfinn.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
