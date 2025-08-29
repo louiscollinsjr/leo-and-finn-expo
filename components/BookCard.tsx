@@ -14,7 +14,7 @@ type Book = {
   accentColors?: string[];
 };
 
-export const BookCard = ({ book, style }: { book: Book; style?: any }) => {
+export const BookCard = ({ book, style, onPress }: { book: Book; style?: any; onPress?: () => void }) => {
   const theme = useColorScheme() ?? 'light';
   const background = Colors[theme].background;
   const text = Colors[theme].text;
@@ -25,11 +25,16 @@ export const BookCard = ({ book, style }: { book: Book; style?: any }) => {
   
   return (
     <View style={[styles.outerContainer, style]}>
-      <Pressable style={({ pressed }) => [{
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${book.title} by ${book.author}`}
+        onPress={onPress}
+        style={({ pressed }) => [{
         ...styles.container,
         backgroundColor: background,
         opacity: pressed ? 0.9 : 1
-      }]}>
+      }]}
+      >
         {book.cover ? (
           <Image
             source={{ uri: book.cover }}

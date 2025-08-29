@@ -111,11 +111,11 @@ export const leoMysteries = [
 ];
 
 export const americanClassics: Book[] = [
-  { id: 'free1', title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', cover: '', accentColors: ['rgba(45, 55, 255, 0.9)', 'rgba(148, 0, 211, 0.7)'] },
-  { id: 'free2', title: 'Moby Dick', author: 'Herman Melville', cover: '', accentColors: ['rgba(138, 43, 226, 0.9)', 'rgba(255, 65, 108, 0.7)'] },
-  { id: 'free3', title: 'The Adventures of Huckleberry Finn', author: 'Mark Twain', cover: '', accentColors: ['rgba(64, 224, 208, 0.9)', 'rgba(0, 123, 255, 0.7)'] },
-  { id: 'free4', title: 'Little Women', author: 'Louisa May Alcott', cover: '', accentColors: ['rgba(59, 130, 246, 0.85)', 'rgba(59, 130, 246, 0.55)'] },
-  { id: 'free5', title: 'The Call of the Wild', author: 'Jack London', cover: '', accentColors: ['rgba(24, 220, 255, 0.9)', 'rgba(15, 185, 177, 0.7)'] }
+  { id: 'free1', title: 'The Lighthouse Keeper\'s Daughter', author: 'F. Scott Fitzgerald', cover: '', accentColors: ['rgba(45, 55, 255, 0.9)', 'rgba(148, 0, 211, 0.7)'] },
+  { id: 'free2', title: 'The Singing Pipes Mystery', author: 'Herman Melville', cover: '', accentColors: ['rgba(138, 43, 226, 0.9)', 'rgba(255, 65, 108, 0.7)'] },
+  { id: 'free3', title: 'The Time Thief\'s Last Job', author: 'Mark Twain', cover: '', accentColors: ['rgba(64, 224, 208, 0.9)', 'rgba(0, 123, 255, 0.7)'] },
+  { id: 'free4', title: 'The Library Cat\'s Secret', author: 'Louisa May Alcott', cover: '', accentColors: ['rgba(59, 130, 246, 0.85)', 'rgba(59, 130, 246, 0.55)'] },
+  { id: 'free5', title: 'The Midnight Music Box', author: 'Jack London', cover: '', accentColors: ['rgba(24, 220, 255, 0.9)', 'rgba(15, 185, 177, 0.7)'] }
 ];
 
 export interface Category {

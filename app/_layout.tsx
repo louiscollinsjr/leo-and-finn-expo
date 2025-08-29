@@ -17,6 +17,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
 import '../global.css';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -53,34 +54,36 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <BottomSheetModalProvider>
-        <ReaderProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="welcome" options={{ headerShown: false }} />
-              <Stack.Screen name="auth/email" options={{ presentation: 'modal', title: 'Log in or sign up' }} />
-              <Stack.Screen name="+not-found" />
-              <Stack.Screen name="reader/[storyId]" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="account"
-                options={{
-                  presentation: 'modal',
-                  title: 'Account',
-                  headerRight: () => (
-                    <Link href=".." replace asChild>
-                      <Pressable accessibilityRole="button" hitSlop={8} style={{ paddingHorizontal: 8 }}>
-                        <Text style={{ color: '#2563eb', fontSize: 16, fontWeight: '600' }}>Done</Text>
-                      </Pressable>
-                    </Link>
-                  ),
-                }}
-              />
-            </Stack>
-            <StatusBar style="auto" />
-          </ThemeProvider>
-        </ReaderProvider>
-      </BottomSheetModalProvider>
+      <SafeAreaProvider>
+        <BottomSheetModalProvider>
+          <ReaderProvider>
+            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="welcome" options={{ headerShown: false }} />
+                <Stack.Screen name="auth/email" options={{ presentation: 'modal', title: 'Log in or sign up' }} />
+                <Stack.Screen name="+not-found" />
+                <Stack.Screen name="reader/[storyId]" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="account"
+                  options={{
+                    presentation: 'modal',
+                    title: 'Account',
+                    headerRight: () => (
+                      <Link href=".." replace asChild>
+                        <Pressable accessibilityRole="button" hitSlop={8} style={{ paddingHorizontal: 8 }}>
+                          <Text style={{ color: '#2563eb', fontSize: 16, fontWeight: '600' }}>Done</Text>
+                        </Pressable>
+                      </Link>
+                    ),
+                  }}
+                />
+              </Stack>
+              <StatusBar style="auto" />
+            </ThemeProvider>
+          </ReaderProvider>
+        </BottomSheetModalProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

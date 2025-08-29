@@ -15,7 +15,7 @@ export default function TabLayout() {
     <Tabs
       initialRouteName="home"
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: '#fe2c55',
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,

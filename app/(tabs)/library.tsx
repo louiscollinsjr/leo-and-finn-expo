@@ -1,4 +1,5 @@
 import { ThemedText } from '@/components/ThemedText';
+import BookCard from '@/components/BookCard';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/lib/supabase';
@@ -144,27 +145,17 @@ export default function LibraryScreen() {
   }, [load]);
 
   const renderItem = ({ item }: { item: Story }) => {
-    const initial = (item.title?.trim()?.[0] ?? 'B').toUpperCase();
     return (
-      <Pressable
+      <BookCard
+        style={{ width: itemWidth, paddingVertical: 12 }}
+        book={{
+          id: item.id,
+          title: item.title,
+          author: item.author ?? 'Unknown author',
+          cover: '',
+        }}
         onPress={() => router.push(`/reader/${item.id}`)}
-        className="py-3"
-        style={{ width: itemWidth }}
-        accessibilityRole="button"
-        accessibilityLabel={`${item.title} by ${item.author ?? 'Unknown author'}`}
-      >
-        <View className="aspect-[2/3] rounded-none bg-gray-200 dark:bg-gray-800 shadow-sm items-center justify-center">
-        <ThemedText type="title" style={{ fontSize: 36 }}>{initial}</ThemedText>
-        </View>
-        <ThemedText numberOfLines={2} style={{ marginTop: 8, fontWeight: '600' }}>
-          {/* {item.title} */}
-        </ThemedText>
-        {item.author ? (
-          <ThemedText numberOfLines={1} style={{ opacity: 0.7 }}>
-            {/* {item.author} */}
-          </ThemedText>
-        ) : null}
-      </Pressable>
+      />
     );
   };
 

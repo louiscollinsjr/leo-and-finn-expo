@@ -1,6 +1,6 @@
 // 1. We ONLY import 'List' and 'Row' from the library
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { Text, PlatformColor } from 'react-native';
+import { Text, Platform, PlatformColor, useColorScheme } from 'react-native';
 import { List, Row } from 'react-native-ios-list';
 
 const levelsList = [
@@ -11,6 +11,8 @@ const levelsList = [
 ] as const;
 
 export default function LevelsCard() {
+  const colorScheme = useColorScheme();
+  const defaultTextColor = colorScheme === 'dark' ? '#FFFFFF' : '#000000';
   const handleLevelPress = (levelName: string) => {
     console.log(`Navigating to ${levelName}`);
   };
@@ -20,7 +22,7 @@ export default function LevelsCard() {
       header={
         <Text
           style={{
-            color: PlatformColor('label'),
+            color: Platform.OS === 'ios' ? PlatformColor('label') : defaultTextColor,
             fontWeight: '600',
             fontSize: 18,
             paddingBottom: 8,
