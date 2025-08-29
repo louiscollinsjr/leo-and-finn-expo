@@ -6,8 +6,9 @@ import BottomSheet, {
     BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import React, { forwardRef, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+// Platform-specific components to avoid web Skia errors
 
 interface WordContextBottomSheetProps {
   word: string | null;
@@ -24,7 +25,7 @@ const capitalizeFirst = (input?: string | null): string => {
 };
 
 export const WordContextBottomSheet = forwardRef<
-  BottomSheet,
+  React.ElementRef<typeof BottomSheet>,
   WordContextBottomSheetProps
 >(({ word, tokenId, onClose }, ref) => {
   const snapPoints = useMemo(() => ["35%", "75%", "95%"], []);
@@ -37,6 +38,17 @@ export const WordContextBottomSheet = forwardRef<
     loading: mutationLoading,
     error: mutationError,
   } = useWordTranslations(word, tokenId);
+
+  // Container styles for different platforms
+  const containerStyle = Platform.OS === 'web' 
+    ? [styles.innerContainer, { 
+        // Add some subtle shadow styling for web instead of glow
+        shadowColor: '#5A67D8',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+      }]
+    : styles.innerContainer;
 
   const handleSaveTranslation = async () => {
     if (translation.trim() === "") return;
@@ -87,72 +99,152 @@ export const WordContextBottomSheet = forwardRef<
 
         {/* Close button (top-right) */}
         
-        <View style={styles.innerContainer}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            onPress={() => {
-              (ref as any)?.current?.close();
-              onClose?.();
-            }}
-            style={styles.closeButton}
-            hitSlop={8}
-          >
-            <ThemedText style={{ fontSize: 20, lineHeight: 20 }}>✕</ThemedText>
-          </Pressable>
-          <ThemedText style={styles.wordTitle}>
-            Your story, your words...
-          </ThemedText>
-          <View style={{ alignSelf: "stretch", marginBottom: 0 }}>
-            <ThemedText style={styles.helperText}>
-              Add words you recognize. If you know it by heart, tap ‘I know this
-              word!'
+        {Platform.OS === 'web' ? (
+          // Web version - just a regular View with shadow styles
+          <View style={containerStyle}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              onPress={() => {
+                (ref as any)?.current?.close();
+                onClose?.();
+              }}
+              style={styles.closeButton}
+              hitSlop={8}
+            >
+              <ThemedText style={{ fontSize: 20, lineHeight: 20 }}>✕</ThemedText>
+            </Pressable>
+            <ThemedText style={styles.wordTitle}>
+              Your story, your words...
             </ThemedText>
+            <View style={{ alignSelf: "stretch", marginBottom: 0 }}>
+              <ThemedText style={styles.helperText}>
+                Add words you recognize. If you know it by heart, tap ‘I know this
+                word!'
+              </ThemedText>
+            </View>
+            <ThemedText
+              style={[styles.word, !word && { opacity: 0 }]}
+              accessibilityElementsHidden={!word}
+              importantForAccessibility={word ? 'auto' : 'no-hide-descendants'}
+            >
+              {capitalizeFirst(word) || '\u00A0'}
+            </ThemedText>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Enter translation..."
+              placeholderTextColor="#888"
+              value={translation}
+              onChangeText={setTranslation}
+            />
+
+            <ThemedButton
+              title="Update Translation"
+              onPress={handleSaveTranslation}
+              disabled={mutationLoading}
+              style={{
+                marginBottom: 8,
+                backgroundColor: "#1c1e31",
+                paddingVertical: 14,
+                borderRadius: 18,
+              }}
+              textStyle={{ color: "#fff", fontSize: 20, letterSpacing: 0.25 }}
+            />
+
+            {mutationLoading && <ActivityIndicator style={{ marginTop: 15 }} />}
+            {mutationError && (
+              <ThemedText style={styles.errorText}>{mutationError}</ThemedText>
+            )}
+
+            <ThemedButton
+              title="I know this word!"
+              onPress={handleMarkAsKnown}
+              disabled={mutationLoading}
+              variant="secondary"
+              style={{
+                marginVertical: 6,
+                backgroundColor: "#f5f5f5",
+                paddingVertical: 14,
+                borderRadius: 12,
+              }}
+              textStyle={{ color: "#999", fontSize: 20, letterSpacing: 0.25 }}
+            />
           </View>
-          {word && (
-            <ThemedText style={styles.word}>{capitalizeFirst(word)}</ThemedText>
-          )}
+        ) : (
+          // Native version - use a regular View for now
+          // We'll add the glow in a separate PR after fixing Skia issues
+          <View style={containerStyle}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              onPress={() => {
+                (ref as any)?.current?.close();
+                onClose?.();
+              }}
+              style={styles.closeButton}
+              hitSlop={8}
+            >
+              <ThemedText style={{ fontSize: 20, lineHeight: 20 }}>✕</ThemedText>
+            </Pressable>
+            <ThemedText style={styles.wordTitle}>
+              Your story, your words...
+            </ThemedText>
+            <View style={{ alignSelf: "stretch", marginBottom: 0 }}>
+              <ThemedText style={styles.helperText}>
+                Add words you recognize. If you know it by heart, tap 'I know this
+                word!'
+              </ThemedText>
+            </View>
+            <ThemedText
+              style={[styles.word, !word && { opacity: 0 }]}
+              accessibilityElementsHidden={!word}
+              importantForAccessibility={word ? 'auto' : 'no-hide-descendants'}
+            >
+              {capitalizeFirst(word) || '\u00A0'}
+            </ThemedText>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Enter translation..."
-            placeholderTextColor="#888"
-            value={translation}
-            onChangeText={setTranslation}
-          />
+            <TextInput
+              style={styles.input}
+              placeholder="Enter translation..."
+              placeholderTextColor="#888"
+              value={translation}
+              onChangeText={setTranslation}
+            />
 
-          <ThemedButton
-            title="Update Translation"
-            onPress={handleSaveTranslation}
-            disabled={mutationLoading}
-            style={{
-              marginBottom: 8,
-              backgroundColor: "#1c1e31",
-              paddingVertical: 14,
-              borderRadius: 18,
-            }}
-            textStyle={{ color: "#fff", fontSize: 20, letterSpacing: 0.25 }}
-          />
+            <ThemedButton
+              title="Update Translation"
+              onPress={handleSaveTranslation}
+              disabled={mutationLoading}
+              style={{
+                marginBottom: 8,
+                backgroundColor: "#1c1e31",
+                paddingVertical: 14,
+                borderRadius: 18,
+              }}
+              textStyle={{ color: "#fff", fontSize: 20, letterSpacing: 0.25 }}
+            />
 
-          {mutationLoading && <ActivityIndicator style={{ marginTop: 15 }} />}
-          {mutationError && (
-            <ThemedText style={styles.errorText}>{mutationError}</ThemedText>
-          )}
+            {mutationLoading && <ActivityIndicator style={{ marginTop: 15 }} />}
+            {mutationError && (
+              <ThemedText style={styles.errorText}>{mutationError}</ThemedText>
+            )}
 
-          <ThemedButton
-            title="I know this word!"
-            onPress={handleMarkAsKnown}
-            disabled={mutationLoading}
-            variant="secondary"
-            style={{
-              marginVertical: 6,
-              backgroundColor: "#f5f5f5",
-              paddingVertical: 14,
-              borderRadius: 12,
-            }}
-            textStyle={{ color: "#999", fontSize: 20, letterSpacing: 0.25 }}
-          />
-        </View>
+            <ThemedButton
+              title="I know this word!"
+              onPress={handleMarkAsKnown}
+              disabled={mutationLoading}
+              variant="secondary"
+              style={{
+                marginVertical: 6,
+                backgroundColor: "#f5f5f5",
+                paddingVertical: 14,
+                borderRadius: 12,
+              }}
+              textStyle={{ color: "#999", fontSize: 20, letterSpacing: 0.25 }}
+            />
+          </View>
+        )}
       </BottomSheetScrollView>
     </BottomSheet>
   );
