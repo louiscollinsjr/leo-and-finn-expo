@@ -1,11 +1,11 @@
 import { BookCard } from '@/components/BookCard';
 import ContinueCard from '@/components/ContinueCard';
 import FeaturedStory from '@/components/FeaturedStory';
-import GenresCard from '@/components/GenresCard';
+import LevelsCard from '@/components/LevelsCard';
 import RatingSheet from '@/components/RatingSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
-import { americanClassics, ContinueBook, continueReading, featuredStories, topPicks } from '@/constants/mockData';
+import { americanClassics, continueReading, featuredStories, topPicks, type ContinueBook } from '@/constants/mockData';
 import { useAuth } from '@/hooks/useAuth';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { BlurView } from 'expo-blur';
@@ -153,7 +153,7 @@ export default function HomeScreen() {
             { useNativeDriver: true }
           )}
           style={{ backgroundColor: background }}
-          contentContainerStyle={{ paddingTop: HEADER_HEIGHT, paddingBottom: 28, paddingHorizontal: 20 }}
+          contentContainerStyle={{ paddingTop: HEADER_HEIGHT, paddingBottom: 96, paddingHorizontal: 20 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Content header row: Title + Progress + Account */}
@@ -301,8 +301,8 @@ export default function HomeScreen() {
             ))}
           </ScrollView>
 
-          <View style={{ marginTop: 24 }}>
-            <GenresCard />  
+          <View style={styles.levelsContainer}>
+            <LevelsCard />
           </View>
           
           {/* Genres Section */}
@@ -416,6 +416,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f3f4f6',
+  },
+  levelsContainer: {
+    marginTop: 24,
   },
   testElement: {
     width: '100%',
