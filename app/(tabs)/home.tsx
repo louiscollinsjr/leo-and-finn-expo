@@ -5,7 +5,7 @@ import GenresCard from '@/components/GenresCard';
 import RatingSheet from '@/components/RatingSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
-import { americanClassics, ContinueBook, continueReading, featuredStories, leoMysteries, topPicks } from '@/constants/mockData';
+import { americanClassics, ContinueBook, continueReading, featuredStories, topPicks } from '@/constants/mockData';
 import { useAuth } from '@/hooks/useAuth';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { BlurView } from 'expo-blur';
@@ -258,52 +258,15 @@ export default function HomeScreen() {
             ))}
           </View>
           
-          {/* Recently Added Stories */}
+          {/* Recently Added Stories
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 40 }}>
             <SectionTitle style={{ fontSize: 20, fontWeight: 'bold', color: theme === 'dark' ? '#ffffff' : '#111827', marginBottom: 0 }}>Recently Added</SectionTitle>
             <Pressable>
               <Text style={{ color: theme === 'dark' ? '#9ca3af' : '#6b7280', fontSize: 14 }}>See more</Text>
             </Pressable>
-          </View>
+          </View> */}
           
-          {/* 2x2 Grid of Stories - Sized to fill screen width with placeholders */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', marginBottom: 32 }}>
-            {leoMysteries.map((story, index) => (
-              <Pressable 
-                key={story.id}
-                style={({ pressed }) => ([
-                  {
-                    // 36px horizontal padding on the ScrollView container, plus 12px gap between columns
-                    width: Math.floor((SCREEN_WIDTH - 72 - 12) / 2),
-                    height: Math.floor((SCREEN_WIDTH - 72 - 12) / 2),
-                    marginBottom: 12,
-                    marginRight: index % 2 === 0 ? 12 : 0, // Column gap
-                    borderRadius: 12,
-                    overflow: 'hidden',
-                    opacity: pressed ? 0.9 : 1,
-                    backgroundColor: '#e5e7eb' // Light gray placeholder
-                  }
-                ])}
-              >
-                {/* Bottom label over placeholder */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    padding: 12,
-                    justifyContent: 'flex-end',
-                  }}
-                >
-                  <Text style={{ color: '#111827', fontSize: 14, fontWeight: '600' }} numberOfLines={2}>
-                    {story.title}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-
+        
           {/* Popular Stories Section */}
           <SectionTitle style={{ marginBottom: 12, fontSize: 20, fontWeight: 'bold', color: theme === 'dark' ? '#ffffff' : '#111827' }}>Popular Stories</SectionTitle>
           <ScrollView
@@ -338,7 +301,9 @@ export default function HomeScreen() {
             ))}
           </ScrollView>
 
-          <GenresCard />  
+          <View style={{ marginTop: 24 }}>
+            <GenresCard />  
+          </View>
           
           {/* Genres Section */}
           {/* <Genres theme={theme} /> */}

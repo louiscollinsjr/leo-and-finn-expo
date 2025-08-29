@@ -4,12 +4,10 @@ import { Text } from 'react-native';
 import { List, Row } from 'react-native-ios-list';
 
 const genresList = [
-  { id: '1', name: 'Fiction & Literature', icon: 'book.closed.fill' },
-  { id: '2', name: 'Mysteries & Thrillers', icon: 'magnifyingglass' },
-  { id: '3', name: 'Nonfiction', icon: 'chart.bar.fill' },
-  { id: '4', name: 'Romance', icon: 'heart.fill' },
-  { id: '5', name: 'Health, Mind & Body', icon: 'brain.head.profile' },
-  { id: '6', name: 'All Genres', icon: 'line.3.horizontal' },
+  { id: '1', name: 'Beginner', icon: 'leaf.fill' },
+  { id: '2', name: 'Intermediate', icon: 'lightbulb.fill' },
+  { id: '3', name: 'Advanced', icon: 'star.fill' },
+  { id: '4', name: 'Native', icon: 'heart.fill' },
 ];
 
 export default function GenresCard() {
@@ -20,17 +18,36 @@ export default function GenresCard() {
 
   return (
     <List
-      header="Genres"
+    style={{
+      marginBottom: 72,
+    }}
+      header={
+        <Text style={{
+          color: 'black',
+          fontWeight: '600',
+          fontSize: 18,
+          paddingBottom: 8,
+        }}>
+          Levels
+        </Text>
+      }
       inset={false}
     >
       {genresList.map((genre) => (
         <Row
           key={genre.id}
           onPress={() => handleGenrePress(genre.name)}
-          leading={<IconSymbol name={genre.icon} color="#000000" size={18} />}
+          leading={<IconSymbol name={genre.icon} color="#000000" size={16} />}
           trailing={<IconSymbol name="chevron.right" color="#777777" size={12} />}
+          style={{
+            marginLeft: -20,
+          }}
         >
-          <Text>{genre.name}</Text>
+          <Text style={{
+            fontSize: 14,
+            fontWeight: '400',
+            letterSpacing: 0.25,
+          }}>{genre.name}</Text>
         </Row>
       ))}
     </List>
