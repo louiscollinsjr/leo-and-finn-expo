@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Dimensions, PixelRatio, Pressable, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -21,52 +21,44 @@ export const FeaturedStory = ({ story }: { story: Story }) => {
   return (
     <View style={styles.outerContainer}>
       <View style={styles.container}>
-      <LinearGradient
-            colors={colors}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0.8, y: 1 }}
-            style={[StyleSheet.absoluteFillObject, styles.gradient]}
-          >
-        <Pressable
-          style={({ pressed }) => ([
-            styles.pressable,
-            { opacity: pressed ? 0.96 : 1 }
-          ])}
+        <LinearGradient
+          colors={colors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0.8, y: 1 }}
+          style={styles.gradient}
         >
-         
-
-          {/* Top headline */}
-          <View style={styles.topContent}>
-            <Text style={styles.headlineText} numberOfLines={2}>
-              {story.title}
-            </Text>
-          </View>
-
-          {/* Center content - could be a logo */}
-          <View style={styles.centerContent}>
-            {story.cover ? (
-              <Image source={{ uri: story.cover }} style={styles.coverImage} contentFit="contain" />
-            ) : (
-              <Text style={styles.logoText}>Leo & Finn</Text>
-            )}
-          </View>
-
-          {/* Bottom caption/CTA */}
-          <View style={styles.bottomContent}>
-            <Text style={styles.ctaText}>Try Leo & Finn</Text>
-            {story.description ? (
-              <Text style={styles.descriptionText} numberOfLines={2}>
-                {story.description}
+          <View style={styles.contentContainer}>
+            {/* Top headline */}
+            <View style={styles.topContent}>
+              <Text style={styles.headlineText} numberOfLines={2}>
+                Leo & Finn
               </Text>
-            ) : null}
+            </View>
+
+            {/* Center content - could be a logo */}
+            <View style={styles.centerContent}>
+              {story.cover ? (
+                <Image source={{ uri: story.cover }} style={styles.coverImage} contentFit="contain" />
+              ) : (
+                <Text style={styles.logoText}>{story.title}</Text>
+              )}
+            </View>
           </View>
           
-        </Pressable>
+          {/* Bottom caption/CTA */}
+          <View style={styles.bottomContent}>
+            <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.96 : 1 })}>
+              <Text style={styles.ctaText}>Try Leo & Finn</Text>
+              {story.description ? (
+                <Text style={styles.descriptionText} numberOfLines={2}>
+                  {story.description}
+                </Text>
+              ) : null}
+            </Pressable>
+          </View>
         </LinearGradient>
       </View>
-     
     </View>
-
   );
 };
 
@@ -84,59 +76,66 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 3,
-    height: 510, 
+    height: 480, 
     width: '100%',
     maxWidth: 600,
     alignSelf: 'center',
     backgroundColor: '#ef4444',
   },
   gradient: {
-    borderRadius: 16, 
+    borderRadius: 16,
+    flex: 1,
+    height: '100%',
+    width: '100%',
+    justifyContent: 'space-between',
+    display: 'flex',
   },
-  pressable: {
+  contentContainer: {
     flex: 1,
   },
   topContent: {
     padding: 20,
-    paddingTop: 16,
+    paddingTop: 24,
   },
   headlineText: {
-    color: '#ffffff',
-    fontSize: 28, 
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'left',
+    fontFamily: 'Mansalva',
     letterSpacing: -0.5, 
   },
   centerContent: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'flex-start', 
     paddingHorizontal: 20,
-    minHeight: 120, 
+    paddingTop: 20,
+    flex: 1,
   },
   coverImage: {
     width: 180,
     height: 60,
   },
   logoText: {
-    color: '#000000',
-    fontSize: 36, 
-    fontWeight: '600',
+    color: '#ffffff',
+    fontSize: 50, 
+    fontWeight: '700',
   },
   bottomContent: {
-    position: 'absolute',
-    bottom: 16,
-    left: 0,
-    right: 0,
     paddingHorizontal: 20,
-    alignItems: 'flex-start', 
+    paddingBottom: 24,
+    width: '100%',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
   },
   ctaText: {
-    color: '#000000',
+    color: '#ffffff', 
     fontSize: 16,
     fontWeight: '700',
   },
   descriptionText: {
-    color: 'rgba(000,000,000,0.9)',
+    color: '#ffffff',
     fontSize: 14,
     marginTop: 4,
     textAlign: 'left',

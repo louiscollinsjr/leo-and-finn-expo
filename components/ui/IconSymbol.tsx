@@ -25,7 +25,7 @@ const MAPPING = {
   'star': 'star',
   'star.fill': 'star',
   'ellipsis': 'more-horiz',
-  'book': 'menu-book',
+  'books.vertical.fill' : 'book',
   'xmark': 'close',
   // Edit/compose synonyms
   'square.and.pencil': 'edit',
@@ -35,6 +35,14 @@ const MAPPING = {
   'gearshape': 'settings',
   'gearshape.fill': 'settings',
   'magnifyingglass.fill': 'search',
+  'gamecontroller.fill': 'gamecontroller.fill',
+  // Genre Icons
+  'book.closed.fill': 'menu-book',
+  'magnifyingglass': 'search',
+  'chart.bar.fill': 'bar-chart',
+  'heart.fill': 'favorite',
+  'brain.head.profile': 'psychology',
+  'line.3.horizontal': 'menu',
 } as IconMapping;
 
 /**

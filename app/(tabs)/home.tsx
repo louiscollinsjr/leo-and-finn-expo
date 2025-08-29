@@ -1,13 +1,14 @@
-import ContinueCard, { ContinueBook } from '@/components/ContinueCard';
+import { BookCard } from '@/components/BookCard';
+import ContinueCard from '@/components/ContinueCard';
 import FeaturedStory from '@/components/FeaturedStory';
+import GenresCard from '@/components/GenresCard';
 import RatingSheet from '@/components/RatingSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
+import { americanClassics, ContinueBook, continueReading, featuredStories, leoMysteries, topPicks } from '@/constants/mockData';
 import { useAuth } from '@/hooks/useAuth';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { BlurView } from 'expo-blur';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Animated, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -25,6 +26,7 @@ type Book = {
   author: string;
   cover: string;
   progress?: number;
+  accentColors?: string[];
 };
 
 type Story = {
@@ -34,84 +36,7 @@ type Story = {
   cover: string;
 };
 
-const continueReading = [
-  {
-    id: '1',
-    title: 'The Secret Life of Walter Mitty',
-    author: 'James Thurber',
-    cover:'',
-    status: 'Finished',
-    progress: 1,
-    accentColors: ['rgba(227, 170, 45, 0.85)', 'rgba(227, 170, 45, 0.55)'],
-  },
-  {
-    id: '2',
-    title: 'Moon Over Manifest',
-    author: 'Clare Vanderpool',
-    cover:
-      'https://images.unsplash.com/photo-1526318472351-c75fcf070305?q=80&w=800&auto=format&fit=crop',
-    status: 'In Progress',
-    progress: 0.35,
-    accentColors: ['rgba(72,74,89,0.65)', 'rgba(72,74,89,0.35)'],
-  },
-  // Added per request
-  {
-    id: '6',
-    title: 'The Adventures of Tom Sawyer',
-    author: 'Mark Twain',
-    cover:'',
-    status: 'In Progress',
-    progress: 0.12,
-  },
-  {
-    id: '7',
-    title: 'Anne of Green Gables',
-    author: 'L. M. Montgomery',
-    cover:'',
-    status: 'In Progress',
-    progress: 0.28,
-  },
-  {
-    id: '8',
-    title: 'The Secret Garden',
-    author: 'Frances Hodgson Burnett',
-    cover:'',
-    status: 'In Progress',
-    progress: 0.41,
-  },
-  {
-    id: '9',
-    title: 'A Christmas Carol',
-    author: 'Charles Dickens',
-    cover:'',
-    status: 'Finished',
-    progress: 1,
-  },
-];
-
-const topPicks: Book[] = [
-  {
-    id: '3',
-    title: 'The Alchemist',
-    author: 'Paulo Coelho',
-    cover:
-      'https://images.unsplash.com/photo-1529651737248-dad5e287768e?q=80&w=900&auto=format&fit=crop',
-  },
-  {
-    id: '4',
-    title: 'Of Mice and Men',
-    author: 'John Steinbeck',
-    cover:
-      'https://images.unsplash.com/photo-1474366521946-c3d4b507abf2?q=80&w=900&auto=format&fit=crop',
-  },
-  {
-    id: '5',
-    title: 'Peace Is Every Step',
-    author: 'Thich Nhat Hanh',
-    cover:
-      'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=900&auto=format&fit=crop',
-  },
-];
+// Mock data moved to constants/mockData.ts
 
 type ProgressRingProps = {
   size?: number;
@@ -216,6 +141,8 @@ export default function HomeScreen() {
     return Number(bFinished) - Number(aFinished);
   });
 
+  // Featured Stories moved to constants/mockData.ts
+
   return (
     <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: background }}>
       <View style={{ flex: 1, backgroundColor: background }}>
@@ -226,7 +153,7 @@ export default function HomeScreen() {
             { useNativeDriver: true }
           )}
           style={{ backgroundColor: background }}
-          contentContainerStyle={{ paddingTop: HEADER_HEIGHT, paddingBottom: 28, paddingHorizontal: 36 }}
+          contentContainerStyle={{ paddingTop: HEADER_HEIGHT, paddingBottom: 28, paddingHorizontal: 20 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Content header row: Title + Progress + Account */}
@@ -318,22 +245,17 @@ export default function HomeScreen() {
             </>
           )}
 
-          {/* Featured Story - Apple Music-style promo banner */}
+          {/* Featured Stories */}
           <View style={{ 
             marginTop: 12, 
             marginBottom: 12,
             width: '100%',
-            alignItems: 'center'
           }}>
-            <FeaturedStory 
-              story={{
-                id: 'featured1',
-                title: "Get 3 months for $10.99.",
-                description: "3 months for $10.99, then $10.99/month",
-                cover: '',
-                accentColors: ['#ef4444', '#d10000']
-              }}
-            />
+            {featuredStories.map((story) => (
+              <View key={story.id} style={{ marginBottom: 12, alignItems: 'center' }}>
+                <FeaturedStory story={story} />
+              </View>
+            ))}
           </View>
           
           {/* Recently Added Stories */}
@@ -346,12 +268,7 @@ export default function HomeScreen() {
           
           {/* 2x2 Grid of Stories - Sized to fill screen width with placeholders */}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', marginBottom: 32 }}>
-            {[
-              { id: 'leo1', title: "Leo's First Day at School", cover: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=600&auto=format&fit=crop' },
-              { id: 'leo2', title: 'Finn and the Magic Map', cover: 'https://images.unsplash.com/photo-1577415124269-fc1140a69e91?q=80&w=600&auto=format&fit=crop' },
-              { id: 'leo3', title: 'The Secret Treehouse', cover: 'https://images.unsplash.com/photo-1596997000103-e597b3ca50df?q=80&w=600&auto=format&fit=crop' },
-              { id: 'leo4', title: 'Leo and Finn at the Beach', cover: 'https://images.unsplash.com/photo-1520942702018-0862200e6873?q=80&w=600&auto=format&fit=crop' }
-            ].map((story, index) => (
+            {leoMysteries.map((story, index) => (
               <Pressable 
                 key={story.id}
                 style={({ pressed }) => ([
@@ -387,16 +304,20 @@ export default function HomeScreen() {
             ))}
           </View>
 
-          {/* Top Picks Section */}
-          <SectionTitle style={{ marginBottom: 12, fontSize: 20, fontWeight: 'bold', color: theme === 'dark' ? '#ffffff' : '#111827' }}>Top Picks</SectionTitle>
+          {/* Popular Stories Section */}
+          <SectionTitle style={{ marginBottom: 12, fontSize: 20, fontWeight: 'bold', color: theme === 'dark' ? '#ffffff' : '#111827' }}>Popular Stories</SectionTitle>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft: 0, paddingRight: 0 }}
-            style={{ marginHorizontal: -36, marginBottom: 24 }}
+            contentContainerStyle={{ paddingLeft: 20, paddingRight: 20 }}
+            style={{ marginHorizontal: -20, marginBottom: 24 }}
           >
-            {topPicks.map((b) => (
-              <BookCard key={b.id} book={b} />
+            {topPicks.map((b, index) => (
+              <BookCard 
+                key={b.id} 
+                book={b} 
+                style={{ marginRight: index < topPicks.length - 1 ? 12 : 0 }} 
+              />
             ))}
           </ScrollView>
 
@@ -405,65 +326,22 @@ export default function HomeScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft: 0, paddingRight: 0 }}
-            style={{ marginHorizontal: -36, marginBottom: 24 }}
+            contentContainerStyle={{ paddingLeft: 20, paddingRight: 20 }}
+            style={{ marginHorizontal: -20, marginBottom: 24 }}
           >
-            {[
-              { id: 'free1', title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', cover: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=900&auto=format&fit=crop' },
-              { id: 'free2', title: 'Moby Dick', author: 'Herman Melville', cover: 'https://images.unsplash.com/photo-1545290614-5ceedf356882?q=80&w=900&auto=format&fit=crop' },
-              { id: 'free3', title: 'The Adventures of Huckleberry Finn', author: 'Mark Twain', cover: 'https://images.unsplash.com/photo-1476275466078-4007374efbbe?q=80&w=900&auto=format&fit=crop' },
-              { id: 'free4', title: 'Little Women', author: 'Louisa May Alcott', cover: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=900&auto=format&fit=crop' },
-              { id: 'free5', title: 'The Call of the Wild', author: 'Jack London', cover: 'https://images.unsplash.com/photo-1610301111451-4bcfb0a2c3a8?q=80&w=900&auto=format&fit=crop' }
-            ].map((b) => (
-              <BookCard key={b.id} book={b} />
+            {americanClassics.map((b, index) => (
+              <BookCard 
+                key={b.id} 
+                book={b} 
+                style={{ marginRight: index < americanClassics.length - 1 ? 12 : 0 }} 
+              />
             ))}
           </ScrollView>
+
+          <GenresCard />  
           
-          {/* Categories Section */}
-          <SectionTitle style={{ marginBottom: 12, fontSize: 20, fontWeight: 'bold', color: theme === 'dark' ? '#ffffff' : '#111827' }}>Categories</SectionTitle>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 24 }}>
-            {[
-              { id: 'cat1', name: 'Fiction', icon: 'book' },
-              { id: 'cat2', name: 'Non-Fiction', icon: 'book-open' },
-              { id: 'cat3', name: 'Children', icon: 'smile' },
-              { id: 'cat4', name: 'Fantasy', icon: 'star' },
-              { id: 'cat5', name: 'Mystery', icon: 'search' },
-              { id: 'cat6', name: 'Science', icon: 'flask' }
-            ].map((category) => (
-              <Pressable 
-                key={category.id}
-                style={({ pressed }) => ([
-                  {
-                    width: '48%',
-                    backgroundColor: theme === 'dark' ? '#1c1c1e' : '#f5f5f7',
-                    borderRadius: 12,
-                    padding: 16,
-                    marginBottom: 12,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    opacity: pressed ? 0.8 : 1
-                  }
-                ])}
-              >
-                <View style={{ 
-                  width: 36, 
-                  height: 36, 
-                  borderRadius: 18, 
-                  backgroundColor: theme === 'dark' ? '#2c2c2e' : '#e5e5ea',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 12
-                }}>
-                  <Text style={{ fontSize: 16 }}>📚</Text>
-                </View>
-                <Text style={{ 
-                  fontSize: 15, 
-                  fontWeight: '600',
-                  color: theme === 'dark' ? '#ffffff' : '#111827'
-                }}>{category.name}</Text>
-              </Pressable>
-            ))}
-          </View>
+          {/* Genres Section */}
+          {/* <Genres theme={theme} /> */}
 
           {/* Extra content to ensure page is long enough for scroll testing */}
           {/* <SectionTitle style={{ marginTop: 24, marginBottom: 12, fontSize: 20, fontWeight: 'bold', color: text }}>More For You</SectionTitle>
@@ -567,27 +445,7 @@ function SectionTitle({ children, style }: { children: React.ReactNode; style: a
 
 // ContinueCard moved to components/ContinueCard.tsx
 
-function BookCard({ book }: { book: Book }) {
-  const theme = useColorScheme() ?? 'light';
-  const background = Colors[theme].background;
-  const text = Colors[theme].text;
-  const secondaryText = theme === 'dark' ? 'rgba(236,237,238,0.7)' : '#71717a';
-  return (
-    <Pressable style={{ marginHorizontal: 4, width: 176, borderRadius: 16, backgroundColor: background, padding: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}>
-      <Image
-        source={{ uri: book.cover }}
-        contentFit="cover"
-        style={{ height: 224, width: '100%', borderRadius: 8 }}
-      />
-      <Text numberOfLines={1} style={{ marginTop: 12, fontSize: 14, fontWeight: '600', color: text }}>
-        {book.title}
-      </Text>
-      <Text numberOfLines={2} style={{ fontSize: 12, color: secondaryText }}>
-        {book.author}
-      </Text>
-    </Pressable>
-  );
-}
+// BookCard component moved to components/BookCard.tsx
 
 const styles = StyleSheet.create({
   container: {

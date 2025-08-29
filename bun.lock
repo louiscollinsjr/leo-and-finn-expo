@@ -36,13 +36,15 @@
         "react-native": "0.79.5",
         "react-native-gesture-handler": "~2.24.0",
         "react-native-get-random-values": "^1.11.0",
+        "react-native-heroicons": "^4.0.0",
         "react-native-image-colors": "^2.5.0",
+        "react-native-ios-list": "^2.0.0",
         "react-native-linear-gradient": "^2.8.3",
         "react-native-raw-bottom-sheet": "^3.0.0",
         "react-native-reanimated": "^3.15.4",
         "react-native-safe-area-context": "5.4.0",
         "react-native-screens": "~4.11.1",
-        "react-native-svg": "15.11.2",
+        "react-native-svg": "^15.11.2",
         "react-native-url-polyfill": "^2.0.0",
         "react-native-web": "~0.20.0",
         "react-native-webview": "13.13.5",
@@ -1574,7 +1576,11 @@
 
     "react-native-get-random-values": ["react-native-get-random-values@1.11.0", "", { "dependencies": { "fast-base64-decode": "^1.0.0" }, "peerDependencies": { "react-native": ">=0.56" } }, "sha512-4BTbDbRmS7iPdhYLRcz3PGFIpFJBwNZg9g42iwa2P6FOv9vZj/xJc678RZXnLNZzd0qd7Q3CCF6Yd+CU2eoXKQ=="],
 
+    "react-native-heroicons": ["react-native-heroicons@4.0.0", "", { "peerDependencies": { "react": ">=16.8", "react-native-svg": ">=9" } }, "sha512-RY3XhAr0aQxLtWUkIUifTUBYC3tOspe0pMTHTATpQYyg6Uw7PYO5qmHYFul9w8tvYAB43WDRZ+yomdVmMQ2Jqw=="],
+
     "react-native-image-colors": ["react-native-image-colors@2.5.0", "", { "dependencies": { "node-vibrant": "^4.0.3" }, "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }, "sha512-3zSDgNj5HaZ0PDWaXkc4BpWpZRM5N4gBsoPC7DBfM/+op69Yvwbc0S1T7CnxBWbvShtOvRE+b2BUBadVn+6z/g=="],
+
+    "react-native-ios-list": ["react-native-ios-list@2.0.0", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-mhIDj/wf5vLkCK5uwgTqKYsrT91sNsg93ouZn4/Eqibr1/+T9OZs2rFhrDiEw+4fdrbAVeyDOqVTzV5fPj4u8g=="],
 
     "react-native-is-edge-to-edge": ["react-native-is-edge-to-edge@1.2.1", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-FLbPWl/MyYQWz+KwqOZsSyj2JmLKglHatd3xLZWskXOpRaio4LfEDEz8E/A6uD8QoTHW6Aobw1jbEwK7KMgR7Q=="],
 

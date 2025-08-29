@@ -1,20 +1,12 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { ContinueBook } from '@/constants/mockData';
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-export type ContinueBook = {
-  id: string;
-  title: string;
-  author: string;
-  cover: string;
-  status?: 'Finished' | 'In Progress';
-  progress?: number; // 0..1
-  // Optional overrides for gradient background
-  accentColors?: [string, string];
-};
+// ContinueBook type is now imported from constants/mockData.ts
 
 function withOpacity(color: string, alpha: number) {
   // supports hex like #rrggbb or already rgba strings
