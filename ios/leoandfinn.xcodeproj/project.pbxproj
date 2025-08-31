@@ -7,26 +7,26 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		03435A145F75440C29BAFEFB /* libPods-leoandfinn.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BB55FEC6A1DFB0796F6B08A5 /* libPods-leoandfinn.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		239F17EE2DB2C902746CDE02 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DDD96FCE2DF4809ACA2D5131 /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		B1AF1002A138FDB5FE69DC62 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D6C5D97387E3DBA5D4D0502E /* PrivacyInfo.xcprivacy */; };
-		B7E2EBA6B6A682821F911188 /* libPods-leoandfinn.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C2C5F303AC3FBD99A334B255 /* libPods-leoandfinn.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
-		FB6F0DED0D5E3B8CF6A6A1E2 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10B825D729EBE6D1EE07B4F /* ExpoModulesProvider.swift */; };
+		F4108153E27CFB8F347ADFB4 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17D1E3B0FB2A58424512A91 /* ExpoModulesProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		11AD5D004B0AFC5EA691ED68 /* Pods-leoandfinn.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-leoandfinn.debug.xcconfig"; path = "Target Support Files/Pods-leoandfinn/Pods-leoandfinn.debug.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* leoandfinn.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = leoandfinn.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = leoandfinn/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = leoandfinn/Info.plist; sourceTree = "<group>"; };
-		A10B825D729EBE6D1EE07B4F /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-leoandfinn/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		5E9586D66DAE48DC32F5138A /* Pods-leoandfinn.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-leoandfinn.release.xcconfig"; path = "Target Support Files/Pods-leoandfinn/Pods-leoandfinn.release.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = leoandfinn/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		C0A5BF476BCCABC8F4015FAA /* Pods-leoandfinn.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-leoandfinn.release.xcconfig"; path = "Target Support Files/Pods-leoandfinn/Pods-leoandfinn.release.xcconfig"; sourceTree = "<group>"; };
-		C2C5F303AC3FBD99A334B255 /* libPods-leoandfinn.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-leoandfinn.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CFE5E07A0B042F59FCCF8EA5 /* Pods-leoandfinn.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-leoandfinn.debug.xcconfig"; path = "Target Support Files/Pods-leoandfinn/Pods-leoandfinn.debug.xcconfig"; sourceTree = "<group>"; };
-		D6C5D97387E3DBA5D4D0502E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = leoandfinn/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		BB55FEC6A1DFB0796F6B08A5 /* libPods-leoandfinn.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-leoandfinn.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C17D1E3B0FB2A58424512A91 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-leoandfinn/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		DDD96FCE2DF4809ACA2D5131 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = leoandfinn/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = leoandfinn/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* leoandfinn-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "leoandfinn-Bridging-Header.h"; path = "leoandfinn/leoandfinn-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B7E2EBA6B6A682821F911188 /* libPods-leoandfinn.a in Frameworks */,
+				03435A145F75440C29BAFEFB /* libPods-leoandfinn.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,7 +53,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				D6C5D97387E3DBA5D4D0502E /* PrivacyInfo.xcprivacy */,
+				DDD96FCE2DF4809ACA2D5131 /* PrivacyInfo.xcprivacy */,
 			);
 			name = leoandfinn;
 			sourceTree = "<group>";
@@ -62,25 +62,17 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				C2C5F303AC3FBD99A334B255 /* libPods-leoandfinn.a */,
+				BB55FEC6A1DFB0796F6B08A5 /* libPods-leoandfinn.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		4E0C36FCA2DCE506D7AB5A6A /* leoandfinn */ = {
+		35853C38DB4331C1CA7C86DF /* leoandfinn */ = {
 			isa = PBXGroup;
 			children = (
-				A10B825D729EBE6D1EE07B4F /* ExpoModulesProvider.swift */,
+				C17D1E3B0FB2A58424512A91 /* ExpoModulesProvider.swift */,
 			);
 			name = leoandfinn;
-			sourceTree = "<group>";
-		};
-		7F3F2F33C6792E990500E91C /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				4E0C36FCA2DCE506D7AB5A6A /* leoandfinn */,
-			);
-			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -97,8 +89,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				A42BE543BC9445AB82DD7444 /* Pods */,
-				7F3F2F33C6792E990500E91C /* ExpoModulesProviders */,
+				8773F8E29FAC9ECD095D7741 /* Pods */,
+				8C5E3B776665899D036A5BFA /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -113,14 +105,22 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A42BE543BC9445AB82DD7444 /* Pods */ = {
+		8773F8E29FAC9ECD095D7741 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				CFE5E07A0B042F59FCCF8EA5 /* Pods-leoandfinn.debug.xcconfig */,
-				C0A5BF476BCCABC8F4015FAA /* Pods-leoandfinn.release.xcconfig */,
+				11AD5D004B0AFC5EA691ED68 /* Pods-leoandfinn.debug.xcconfig */,
+				5E9586D66DAE48DC32F5138A /* Pods-leoandfinn.release.xcconfig */,
 			);
 			name = Pods;
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		8C5E3B776665899D036A5BFA /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				35853C38DB4331C1CA7C86DF /* leoandfinn */,
+			);
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -140,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "leoandfinn" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				E7D334B7CDA48130105F2D57 /* [Expo] Configure project */,
+				5452AD214E93FB1DB0EEAD1A /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				A2E72424956FFE5284FE6E8C /* [CP] Embed Pods Frameworks */,
+				DBED7B22AEE6724F2AF8BE1C /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -198,7 +198,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				B1AF1002A138FDB5FE69DC62 /* PrivacyInfo.xcprivacy in Resources */,
+				239F17EE2DB2C902746CDE02 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -241,6 +241,25 @@
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
+		};
+		5452AD214E93FB1DB0EEAD1A /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-leoandfinn/expo-configure-project.sh\"\n";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -288,7 +307,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-leoandfinn/Pods-leoandfinn-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		A2E72424956FFE5284FE6E8C /* [CP] Embed Pods Frameworks */ = {
+		DBED7B22AEE6724F2AF8BE1C /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -306,25 +325,6 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-leoandfinn/Pods-leoandfinn-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		E7D334B7CDA48130105F2D57 /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-leoandfinn/expo-configure-project.sh\"\n";
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -333,7 +333,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				FB6F0DED0D5E3B8CF6A6A1E2 /* ExpoModulesProvider.swift in Sources */,
+				F4108153E27CFB8F347ADFB4 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -342,7 +342,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = CFE5E07A0B042F59FCCF8EA5 /* Pods-leoandfinn.debug.xcconfig */;
+			baseConfigurationReference = 11AD5D004B0AFC5EA691ED68 /* Pods-leoandfinn.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -381,7 +381,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C0A5BF476BCCABC8F4015FAA /* Pods-leoandfinn.release.xcconfig */;
+			baseConfigurationReference = 5E9586D66DAE48DC32F5138A /* Pods-leoandfinn.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;

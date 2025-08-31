@@ -34,11 +34,26 @@ const capitalizeFirst = (input?: string | null): string => {
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
+// Define a type for the BottomSheet methods we need to access
+type BottomSheetMethods = {
+  snapToIndex: (index: number) => void;
+  close: () => void;
+  expand: () => void;
+};
+
 export const WordContextBottomSheet = forwardRef<
   React.ElementRef<typeof BottomSheet>,
   WordContextBottomSheetProps
 >(({ word, tokenId, onClose }, ref) => {
+  // Create a properly typed ref that we can safely use
+  const sheetRef = useRef<BottomSheetMethods | null>(null);
+  
+  // We'll handle ref synchronization directly in the BottomSheet component's ref prop
   // Use fixed snap points
+  // Snap points are optimized for different interaction contexts:
+  // - 35%: A quick glance at the word and its primary definition.
+  // - 75%: Comfortable reading of definitions and examples.
+  // - 95%: Full-screen for focused editing or viewing extensive content.
   const snapPoints = useMemo(() => ["35%", "75%", "95%"], []);
   const [translation, setTranslation] = useState("");
   const insets = useSafeAreaInsets();
@@ -46,6 +61,7 @@ export const WordContextBottomSheet = forwardRef<
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const [sheetIndex, setSheetIndex] = useState(-1);
+  const sheetIndexRef = useRef(sheetIndex);
 
   const {
     addTranslation,
@@ -55,7 +71,7 @@ export const WordContextBottomSheet = forwardRef<
   } = useWordTranslations(word, tokenId);
   
   // iOS safe focus timeout reference
-  const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // iOS-specific input props to avoid RemoteTextInput session errors
   const iosTextInputProps = useMemo(() => {
@@ -82,6 +98,17 @@ export const WordContextBottomSheet = forwardRef<
     };
   }, []);
   
+  // Define handleSaveTranslation before it's used in renderTextInput
+  const handleSaveTranslation = async () => {
+    if (translation.trim() === "") return;
+    await addTranslation(translation);
+    setTranslation("");
+    // Optionally close the sheet after saving
+    if (sheetRef.current) {
+      sheetRef.current.close();
+    }
+  };
+
   // Function to render TextInput with proper iOS support
   const renderTextInput = useCallback(() => {
     const commonProps = {
@@ -102,14 +129,16 @@ export const WordContextBottomSheet = forwardRef<
       onFocus: () => {
         // When input is focused on non-iOS platforms, ensure sheet is at high enough position
         if (Platform.OS !== 'ios' && sheetIndex < 1) {
-          // @ts-ignore
-          ref?.current?.snapToIndex(1);
+          if (sheetRef.current) {
+            sheetRef.current.snapToIndex(1);
+          }
         } else if (Platform.OS === 'ios' && sheetIndex < 1) {
           // On iOS, avoid focus/keyboard interactions during animation
           // Let the sheet animation complete first
           Keyboard.dismiss();
-          // @ts-ignore
-          ref?.current?.snapToIndex(1);
+          if (sheetRef.current) {
+            sheetRef.current.snapToIndex(1);
+          }
           return;
         }
       },
@@ -117,7 +146,7 @@ export const WordContextBottomSheet = forwardRef<
     };
     
     return <TextInput {...commonProps} />;
-  }, [translation, sheetIndex, handleSaveTranslation, iosTextInputProps]);
+  }, [translation, sheetIndex, iosTextInputProps]);
   
   // Keyboard event handlers
   const handleKeyboardShow = useCallback((event: KeyboardEvent) => {
@@ -126,9 +155,8 @@ export const WordContextBottomSheet = forwardRef<
     setIsKeyboardVisible(true);
     
     // When keyboard shows, ensure the sheet is at at least the middle snap point
-    if (sheetIndex < 1) {
-      // @ts-ignore - BottomSheet ref is properly typed but TS doesn't recognize it
-      ref?.current?.snapToIndex(1);
+    if (sheetIndex < 1 && sheetRef.current) {
+      sheetRef.current.snapToIndex(1);
     }
     
     // Animate transitions
@@ -207,31 +235,29 @@ export const WordContextBottomSheet = forwardRef<
       }, 100);
     }
   }, []);
-  
+
   // Handle sheet changes with iOS-specific optimizations
   const handleSheetChange = useCallback((index: number) => {
-    const prevIndex = sheetIndex;
     setSheetIndex(index);
-    
-    // Clear any existing focus timeouts when sheet position changes
+    sheetIndexRef.current = index;
+
+    // Clear any existing timeout to avoid multiple focus attempts
     if (focusTimeoutRef.current) {
       clearTimeout(focusTimeoutRef.current);
       focusTimeoutRef.current = null;
     }
-    
-    // Focus input when sheet opens to a sufficient height
+
+    // When the sheet is opened to a snap point where the input is visible,
+    // safely focus the input after a short delay to avoid keyboard animation conflicts.
     if (index >= 1) {
-      // Don't try to focus if we're just adjusting height between open states
-      if (prevIndex === -1 || prevIndex === 0) {
-        // Use a longer delay on iOS for more reliable input focusing
-        // This is critical to avoid the RemoteTextInput session error
-        const focusDelay = Platform.OS === 'ios' ? 700 : 150;
-        
-        // Use timeout ref so we can cancel this if needed
+      if (Platform.OS === 'ios') {
+        // A delay is necessary on iOS to avoid issues with the keyboard appearing
+        // while the bottom sheet is still animating.
+        const focusDelay = sheetIndexRef.current === -1 ? 350 : 150; // Longer delay if opening from closed state
+
         focusTimeoutRef.current = setTimeout(() => {
-          // Only attempt to focus if sheet is still at the right index
-          // This prevents focus attempts during sheet animations
-          if (sheetIndex >= 1) {
+          // Use the ref to get the latest sheetIndex value, avoiding stale closures.
+          if (sheetIndexRef.current >= 1) {
             safelyFocusInput();
           }
         }, focusDelay);
@@ -240,7 +266,7 @@ export const WordContextBottomSheet = forwardRef<
       // Always dismiss keyboard when sheet is closing
       Keyboard.dismiss();
     }
-  }, [safelyFocusInput, sheetIndex]);
+  }, [safelyFocusInput]);
 
   // Container styles for different platforms
   const containerStyle = Platform.OS === 'web' 
@@ -253,25 +279,29 @@ export const WordContextBottomSheet = forwardRef<
       }]
     : styles.innerContainer;
 
-  const handleSaveTranslation = async () => {
-    if (translation.trim() === "") return;
-    await addTranslation(translation);
-    setTranslation("");
-    // Optionally close the sheet after saving
-    // @ts-ignore
-    ref.current?.close();
-  };
-
   const handleMarkAsKnown = async () => {
     await markAsKnown();
     // Optionally close the sheet after marking as known
-    // @ts-ignore
-    ref.current?.close();
+    if (sheetRef.current) {
+      sheetRef.current.close();
+    }
   };
 
   return (
     <BottomSheet
-      ref={ref}
+      ref={(bottomSheetRef) => {
+        // Connect our local typed ref to the actual BottomSheet instance
+        sheetRef.current = bottomSheetRef;
+        
+        // Also update the forwarded ref if provided
+        if (ref) {
+          if (typeof ref === 'function') {
+            ref(bottomSheetRef);
+          } else {
+            ref.current = bottomSheetRef;
+          }
+        }
+      }}
       index={-1} // Start closed
       snapPoints={snapPoints}
       enablePanDownToClose
@@ -321,7 +351,7 @@ export const WordContextBottomSheet = forwardRef<
               accessibilityRole="button"
               accessibilityLabel="Close"
               onPress={() => {
-                (ref as any)?.current?.close();
+                if (sheetRef.current) sheetRef.current.close();
                 onClose?.();
               }}
               style={styles.closeButton}
@@ -388,7 +418,7 @@ export const WordContextBottomSheet = forwardRef<
               accessibilityRole="button"
               accessibilityLabel="Close"
               onPress={() => {
-                (ref as any)?.current?.close();
+                if (sheetRef.current) sheetRef.current.close();
                 onClose?.();
               }}
               style={styles.closeButton}

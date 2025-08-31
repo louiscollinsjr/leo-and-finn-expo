@@ -1,15 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Image } from 'expo-image';
+import { Image, ImageProps } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import VideoBackground from './VideoBackground';
 
 type Book = {
   id: string;
   title: string;
   author: string;
-  cover: string;
+  cover?: ImageProps['source'];
+  videoCover?: string;
+  posterImage?: ImageProps['source'];
   progress?: number;
   accentColors?: string[];
 };
@@ -35,11 +38,13 @@ export const BookCard = ({ book, style, onPress }: { book: Book; style?: any; on
         opacity: pressed ? 0.9 : 1
       }]}
       >
-        {book.cover ? (
-          <Image
-            source={{ uri: book.cover }}
-            contentFit="cover"
+        {book.videoCover || book.cover ? (
+          <VideoBackground
+            videoCover={book.videoCover}
+            posterImage={book.posterImage}
+            cover={book.cover}
             style={styles.coverImage}
+            shouldPlay={true}
           />
         ) : (
           <LinearGradient

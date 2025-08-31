@@ -67,7 +67,9 @@ export const topPicks: Book[] = [
     id: '3',
     title: 'The Clockmaker\'s Apprentice',
     author: 'Paulo Coelho',
-    cover: '',
+    //cover: '',
+    //videoCover: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    posterImage: require('../assets/images/adaptive-icon.png'),
     accentColors: ['rgba(0, 123, 255, 0.85)', 'rgba(50, 205, 50, 0.85)'],
   },
   {
@@ -91,14 +93,20 @@ export const featuredStories = [
     id: 'featured1',
     title: "The Last Clockmaker.",
     description: "Read the story of a clockmaker who lost his clock.",
-    cover: '',
-    accentColors: ['#ef4444', '#d10000']
+    //cover: require('../assets/images/louiscollinsjr_a_concerned_individual_--ar_34_--sref_httpss.mj._fdb9bc22-cec1-4a15-9b35-e5334203f2e0.png'),
+    videoCover: require('../assets/images/louiscollinsjr_a_concerned_individual_quietly_looking_no_talk_85d66501-7677-4163-81d6-2630544a1ad1_3_2_video.mp4'),
+    //posterImage: require('../assets/images/louiscollinsjr_a_concerned_individual_--ar_34_--sref_httpss.mj._fdb9bc22-cec1-4a15-9b35-e5334203f2e0.png'),
+    accentColors: ['#ef4444', '#d10000'],
+    // cover: '',
+    // posterImage: '',
   },
   {
     id: 'featured2',
     title: "The Clock That Forgot Summer",
     description: "Read the story of a clock that forgot summer.",
-    cover: '',
+    videoCover: require('../assets/images/BigBunny2.mp4'),
+    //cover: require('../assets/images/louiscollinsjr_a_concerned_individual_--ar_34_--sref_httpss.mj._fdb9bc22-cec1-4a15-9b35-e5334203f2e0.png'),
+    //posterImage: require('../assets/images/louiscollinsjr_a_concerned_individual_--ar_34_--sref_httpss.mj._fdb9bc22-cec1-4a15-9b35-e5334203f2e0.png'),
     accentColors: ['#3b82f6', '#1d4ed8']
   }
 ];

@@ -1,7 +1,8 @@
-import { Image } from 'expo-image';
+import { ImageProps } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Dimensions, PixelRatio, Pressable, StyleSheet, Text, View } from 'react-native';
+import VideoBackground from './VideoBackground';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -9,7 +10,9 @@ type Story = {
   id: string;
   title: string;
   description?: string;
-  cover: string;
+  cover?: ImageProps['source'];
+  videoCover?: string;
+  posterImage?: ImageProps['source'];
   accentColors?: [string, string]; // Optional gradient colors
 };
 
@@ -17,46 +20,75 @@ export const FeaturedStory = ({ story }: { story: Story }) => {
   // Default gradient colors if not provided
   const colors = story.accentColors || ['#ef4444', '#b91c1c'];
   const pixelRatio = PixelRatio.get();
-  
+
+  const StoryContent = (
+    <>
+      <View style={styles.contentContainer}>
+        {/* Top headline */}
+        <View style={styles.topContent}>
+          <Text style={styles.headlineText} numberOfLines={2}>
+            Leo & Finn
+          </Text>
+        </View>
+
+        {/* Center content - now always text */}
+        <View style={styles.centerContent}>
+          {/* <Text style={styles.logoText}>{story.title}</Text> */}
+        </View>
+      </View>
+
+      {/* Bottom caption/CTA */}
+      <View style={styles.bottomContent}>
+        <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.96 : 1 })}>
+          <Text style={styles.logoText}>{story.title}</Text>
+          {/* <Text style={styles.ctaText}>Try Leo & Finn</Text> */}
+          {story.description ? (
+            <Text style={styles.descriptionText} numberOfLines={2}>
+              {story.description}
+            </Text>
+          ) : null}
+        </Pressable>
+      </View>
+    </>
+  );
+
   return (
     <View style={styles.outerContainer}>
       <View style={styles.container}>
-        <LinearGradient
-          colors={colors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0.8, y: 1 }}
-          style={styles.gradient}
-        >
-          <View style={styles.contentContainer}>
-            {/* Top headline */}
-            <View style={styles.topContent}>
-              <Text style={styles.headlineText} numberOfLines={2}>
-                Leo & Finn
-              </Text>
-            </View>
-
-            {/* Center content - could be a logo */}
-            <View style={styles.centerContent}>
-              {story.cover ? (
-                <Image source={{ uri: story.cover }} style={styles.coverImage} contentFit="contain" />
-              ) : (
-                <Text style={styles.logoText}>{story.title}</Text>
-              )}
-            </View>
-          </View>
-          
-          {/* Bottom caption/CTA */}
-          <View style={styles.bottomContent}>
-            <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.96 : 1 })}>
-              <Text style={styles.ctaText}>Try Leo & Finn</Text>
-              {story.description ? (
-                <Text style={styles.descriptionText} numberOfLines={2}>
-                  {story.description}
-                </Text>
-              ) : null}
-            </Pressable>
-          </View>
-        </LinearGradient>
+        {story.videoCover || story.cover ? (
+          <VideoBackground
+            videoCover={story.videoCover}
+            posterImage={story.posterImage}
+            cover={story.cover}
+            style={styles.gradient}
+            imageStyle={{ borderRadius: 16 }}
+            shouldPlay={true}
+            loop={false}
+            muted={true}
+            showPosterOverlay={false}
+          >
+            {/* <LinearGradient
+              colors={story.videoCover 
+                ? ['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.7)'] 
+                : ['rgba(0,0,0,0.2)', 'rgba(0,0,0,0.6)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0.8, y: 1 }}
+              style={styles.gradient}
+            >
+              {StoryContent}
+            </LinearGradient> */}
+            {StoryContent}
+          </VideoBackground>
+        ) : (
+          <LinearGradient
+            colors={colors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+            style={styles.gradient}
+          >
+            {StoryContent}
+          </LinearGradient>
+        )}
       </View>
     </View>
   );
