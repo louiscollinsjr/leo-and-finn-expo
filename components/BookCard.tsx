@@ -1,21 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Image, ImageProps } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Book } from '@/types/reader';
+import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import VideoBackground from './VideoBackground';
-
-type Book = {
-  id: string;
-  title: string;
-  author: string;
-  cover?: ImageProps['source'];
-  videoCover?: string;
-  posterImage?: ImageProps['source'];
-  progress?: number;
-  accentColors?: string[];
-};
 
 export const BookCard = ({ book, style, onPress }: { book: Book; style?: any; onPress?: () => void }) => {
   const theme = useColorScheme() ?? 'light';
@@ -38,13 +27,14 @@ export const BookCard = ({ book, style, onPress }: { book: Book; style?: any; on
         opacity: pressed ? 0.9 : 1
       }]}
       >
-        {book.videoCover || book.cover ? (
+        {book.videoCover || book.cover || book.posterImage ? (
           <VideoBackground
             videoCover={book.videoCover}
             posterImage={book.posterImage}
             cover={book.cover}
             style={styles.coverImage}
             shouldPlay={true}
+            loop={book.loopVideo}
           />
         ) : (
           <LinearGradient
@@ -86,14 +76,15 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   coverImage: {
-    height: 224,
+    height: 240,
     width: '100%',
-    borderRadius: 8
+    borderRadius: 12,
+    overflow: 'hidden'
   },
   gradient: {
-    height: 224,
+    height: 240,
     width: '100%',
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center'
   },

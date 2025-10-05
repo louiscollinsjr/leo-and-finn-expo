@@ -13,10 +13,11 @@ type Story = {
   cover?: ImageProps['source'];
   videoCover?: string;
   posterImage?: ImageProps['source'];
-  accentColors?: [string, string]; // Optional gradient colors
+  accentColors?: [string, string];
+  loopVideo?: boolean;
 };
 
-export const FeaturedStory = ({ story }: { story: Story }) => {
+export const FeaturedStory = ({ story }: { story: Story & { loopVideo?: boolean } }) => {
   // Default gradient colors if not provided
   const colors = story.accentColors || ['#ef4444', '#b91c1c'];
   const pixelRatio = PixelRatio.get();
@@ -63,7 +64,7 @@ export const FeaturedStory = ({ story }: { story: Story }) => {
             style={styles.gradient}
             imageStyle={{ borderRadius: 16 }}
             shouldPlay={true}
-            loop={false}
+            loop={story.loopVideo}
             muted={true}
             showPosterOverlay={false}
           >

@@ -1,8 +1,8 @@
-import { VideoView, useVideoPlayer } from 'expo-video';
-import { Image, ImageProps } from 'expo-image';
-import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Animated, View, StyleSheet, ViewStyle, Text } from 'react-native';
 import { useEvent } from 'expo';
+import { Image, ImageProps } from 'expo-image';
+import { VideoView, useVideoPlayer } from 'expo-video';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Animated, StyleSheet, View, ViewStyle } from 'react-native';
 
 type VideoBackgroundProps = {
   videoCover?: string;
@@ -58,6 +58,13 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
       }
     }
   }, [player, shouldPlay, videoLoaded, videoError]);
+
+  // Update loop property when it changes
+  useEffect(() => {
+    if (player) {
+      player.loop = loop;
+    }
+  }, [player, loop]);
   
   // Use event hook to track playing state
   const { isPlaying } = player ? useEvent(player, 'playingChange', { isPlaying: player.playing }) : { isPlaying: false };
@@ -172,7 +179,11 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
       {/* Poster/Image Layer - show if we have an image and either showPosterOverlay is true or video isn't loaded yet */}
       {displayImage && (showPosterOverlay || !videoLoaded || videoError) && (
         <Animated.View style={[styles.imageOverlay, { opacity: showPosterOverlay ? 1 : fadeAnim }]}>
-          <Image source={displayImage} style={[styles.media, imageStyle]} contentFit="cover" />
+          <Image
+            source={displayImage}
+            style={[styles.media, imageStyle]}
+            contentFit={videoCover ? 'cover' : 'contain'}
+          />
         </Animated.View>
       )}
       
