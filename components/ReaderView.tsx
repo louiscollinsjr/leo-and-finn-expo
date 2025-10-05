@@ -1,6 +1,5 @@
 import { ThemedText } from '@/components/ThemedText';
 import BottomActions from '@/components/overlays/BottomActions';
-import ContextMenu from '@/components/overlays/ContextMenu';
 import ReaderMenuSheet from '@/components/overlays/ReaderMenuSheet';
 import SettingsSheet from '@/components/overlays/SettingsSheet';
 import ThemePopover from '@/components/overlays/ThemePopover';
@@ -8,7 +7,7 @@ import TopOverlay from '@/components/overlays/TopOverlay';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useReaderOverlay, useReaderPrefs } from '@/providers/ReaderProvider';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -24,18 +23,34 @@ export type ReaderViewProps = {
   // Slot overrides
   renderTopOverlay?: (ctx: { insets: any; title?: string; onBack?: () => void }) => React.ReactNode;
   renderBottomOverlay?: (ctx: { insets: any; onOpenContents?: () => void; onOpenSearch?: () => void; onOpenSettings?: () => void }) => React.ReactNode;
-  renderContextMenu?: (ctx: { onDismiss: () => void; insets: any }) => React.ReactNode;
 };
 
+function ReaderLoadingState() {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <ActivityIndicator />
+      <ThemedText style={{ marginTop: 8, opacity: 0.7 }}>Loading…</ThemedText>
+    </View>
+  );
+}
+
+function ReaderErrorState({ message }: { message: string | null }) {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
+      <ThemedText type="subtitle">Unable to load story</ThemedText>
+      <ThemedText style={{ marginTop: 8, textAlign: 'center', opacity: 0.8 }}>{message}</ThemedText>
+    </View>
+  );
+}
+
 export default function ReaderView(props: ReaderViewProps) {
-  const { title, loading, error, onBack, onOpenContents, onOpenSearch, onOpenSettings, children, renderTopOverlay, renderBottomOverlay, renderContextMenu } = props;
+  const { title, loading, error, onBack, onOpenContents, onOpenSearch, onOpenSettings, children, renderTopOverlay, renderBottomOverlay } = props;
   const insets = useSafeAreaInsets();
   const { setOverlayVisible } = useReaderOverlay();
   const { prefs } = useReaderPrefs();
   const systemScheme = useColorScheme();
 
   const [showOverlay, setShowOverlay] = useState(false);
-  const [showContext, setShowContext] = useState(false);
   const [showSettings, setShowSettings] = useState(false); // customise sheet
   const [showMenu, setShowMenu] = useState(false);
   const [showThemePopover, setShowThemePopover] = useState(false);
@@ -94,6 +109,9 @@ export default function ReaderView(props: ReaderViewProps) {
 
   // Progress tracking for ScrollView content
   const scrollRef = useRef<ScrollView | null>(null);
+  const setScrollRef = useCallback((node: ScrollView | null) => {
+    scrollRef.current = node;
+  }, []);
   const [contentHeight, setContentHeight] = useState(1);
   const [viewportHeight, setViewportHeight] = useState(1);
   const [scrollY, setScrollY] = useState(0);
@@ -106,28 +124,17 @@ export default function ReaderView(props: ReaderViewProps) {
   const centerLabel = `${pagesLeft} pages left`;
 
   const scrubTo = (p: number) => {
-    if (!scrollRef.current) return;
+    const node = scrollRef.current;
+    if (!node) return;
     const target = (contentHeight - viewportHeight) * Math.max(0, Math.min(1, p));
-    scrollRef.current.scrollTo({ y: target, animated: false });
+    node.scrollTo({ y: target, animated: false });
   };
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator />
-        <ThemedText style={{ marginTop: 8, opacity: 0.7 }}>Loading…</ThemedText>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
-        <ThemedText type="subtitle">Unable to load story</ThemedText>
-        <ThemedText style={{ marginTop: 8, textAlign: 'center', opacity: 0.8 }}>{error}</ThemedText>
-      </View>
-    );
-  }
+  useEffect(() => {
+    return () => {
+      scrollRef.current = null;
+    };
+  }, []);
 
   const effectiveTheme = prefs.theme === 'system' ? (systemScheme ?? 'light') : prefs.theme;
   // Align dark theme with "Quiet" swatch colors
@@ -146,6 +153,14 @@ export default function ReaderView(props: ReaderViewProps) {
     }).start();
   }, [targetDimOpacity, dimOpacity]);
 
+  if (loading) {
+    return <ReaderLoadingState />;
+  }
+
+  if (error) {
+    return <ReaderErrorState message={error} />;
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: bgColor }}>
       {/* Hide status bar during immersive reading; briefly show when overlays are visible */}
@@ -159,14 +174,14 @@ export default function ReaderView(props: ReaderViewProps) {
       )}
 
       <ScrollView
-        ref={scrollRef as any}
+        ref={setScrollRef}
         contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 56 }}
         style={{ backgroundColor: bgColor }}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
         onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
         onContentSizeChange={(_w, h) => setContentHeight(h)}
         onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
-        scrollEventThrottle={16}
         onScrollBeginDrag={() => {
           isDraggingRef.current = true;
         }}
@@ -180,15 +195,14 @@ export default function ReaderView(props: ReaderViewProps) {
         }}
       >
         <Pressable
-          style={{ flex: 1 }}
+          style={{ flex: 1, minHeight: '100%' }}
           onPress={() => {
             const now = Date.now();
-            const recentlyScrolled = now - lastScrollAtRef.current < 120;
+            const recentlyScrolled = now - lastScrollAtRef.current < 150;
             if (isDraggingRef.current || recentlyScrolled) return;
             if (showOverlay) hideOverlays(); else showOverlays();
           }}
-          onLongPress={() => setShowContext(true)}
-          delayLongPress={350}
+          delayLongPress={200}
         >
           {children}
         </Pressable>
@@ -202,7 +216,7 @@ export default function ReaderView(props: ReaderViewProps) {
 
       {/* Top overlay */}
       {showOverlay && (
-        <Animated.View pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, opacity: overlayOpacity }}>
+        <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, opacity: overlayOpacity }}>
           {renderTopOverlay ? (
             renderTopOverlay({ insets, title, onBack })
           ) : (
@@ -214,7 +228,7 @@ export default function ReaderView(props: ReaderViewProps) {
       {/* Bottom overlay */}
       {showOverlay && (
         <Animated.View
-          pointerEvents={showOverlay && !showMenu ? 'box-none' : 'none'}
+          pointerEvents={showOverlay && !showMenu ? 'auto' : 'none'}
           style={{ position: 'absolute', left: 0, right: 0, bottom: 0, opacity: bottomActionsOpacity, zIndex: 5 }}
           onLayout={(e) => setBottomOverlayHeight(e.nativeEvent.layout.height)}
         >
@@ -234,23 +248,6 @@ export default function ReaderView(props: ReaderViewProps) {
             />
           )}
         </Animated.View>
-      )}
-
-      {/* Context menu overlay */}
-      {showContext && (
-        renderContextMenu ? (
-          <>{renderContextMenu({ onDismiss: () => setShowContext(false), insets })}</>
-        ) : (
-          <ContextMenu
-            visible={showContext}
-            onDismiss={() => setShowContext(false)}
-            onOpenSettings={() => {
-              setShowContext(false);
-              setShowSettings(true);
-              setOverlayVisible(true);
-            }}
-          />
-        )
       )}
 
       {/* Main menu sheet */}

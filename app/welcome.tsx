@@ -1,28 +1,39 @@
-import { Colors } from '@/constants/Colors';
-import { DarkBackgrounds, LightBackgrounds } from '@/constants/welcomeBackgrounds';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { startOAuth } from '@/lib/auth';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from "@/constants/Colors";
+import {
+  DarkBackgrounds,
+  LightBackgrounds,
+} from "@/constants/welcomeBackgrounds";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { startOAuth } from "@/lib/auth";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import React from "react";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+
+import { Button, Host, Image as SwiftUIImage } from "@expo/ui/swift-ui";
+import { clipShape, frame, glassEffect } from "@expo/ui/swift-ui/modifiers";
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
-  const theme = colorScheme ?? 'light';
+  const theme = colorScheme ?? "light";
   const insets = useSafeAreaInsets();
   const sheetRef = React.useRef<BottomSheetModal>(null);
-  const snapPoints = React.useMemo(() => ['42%'], []);
+  const snapPoints = React.useMemo(() => ["42%"], []);
 
   // Pick a background image once per mount for stability
-  const list = theme === 'dark' ? DarkBackgrounds : LightBackgrounds;
-  const backgroundSource = React.useMemo(() => list[Math.floor(Math.random() * list.length)], [list]);
+  const list = theme === "dark" ? DarkBackgrounds : LightBackgrounds;
+  const backgroundSource = React.useMemo(
+    () => list[Math.floor(Math.random() * list.length)],
+    [list]
+  );
 
   React.useEffect(() => {
     const t = setTimeout(() => sheetRef.current?.present(), 60);
@@ -32,27 +43,33 @@ export default function WelcomeScreen() {
   const closeSheetToGuest = () => {
     sheetRef.current?.dismiss();
     // Navigate to Home in guest mode
-    router.replace('/(tabs)/home');
+    router.replace("/(tabs)/home");
   };
 
-  const onOAuth = async (provider: 'apple' | 'google') => {
+  const onOAuth = async (provider: "apple" | "google") => {
     try {
       await startOAuth(provider);
-      router.replace('/(tabs)/home');
+      router.replace("/(tabs)/home");
     } catch (e) {
       console.warn(e);
       // Show user-friendly error message
-      const errorMessage = e instanceof Error ? e.message : 'An unexpected error occurred';
+      const errorMessage =
+        e instanceof Error ? e.message : "An unexpected error occurred";
       Alert.alert(
-        'Sign in failed', 
+        "Sign in failed",
         `Unable to sign in with ${provider}. ${errorMessage}`,
-        [{ text: 'OK' }]
+        [{ text: "OK" }]
       );
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme === 'dark' ? '#000' : '#fff' }]}> 
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: theme === "dark" ? "#000" : "#fff" },
+      ]}
+    >
       {/* Background image */}
       <Image
         source={backgroundSource}
@@ -62,62 +79,55 @@ export default function WelcomeScreen() {
       />
       {/* Scrim for readability */}
       <LinearGradient
-        colors={theme === 'dark' ? ['rgba(0,0,0,0.45)', 'rgba(0,0,0,0.15)'] : ['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.00)']}
+        colors={
+          theme === "dark"
+            ? ["rgba(0,0,0,0.45)", "rgba(0,0,0,0.15)"]
+            : ["rgba(255,255,255,0.10)", "rgba(255,255,255,0.00)"]
+        }
         style={StyleSheet.absoluteFillObject}
       />
       {/* Header with right-aligned Close */}
       <View
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 0,
           left: 0,
           right: 0,
           paddingTop: Math.max(insets.top, 8) + 16,
           height: Math.max(insets.top, 8) + 64,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "flex-end",
           paddingHorizontal: 36,
           zIndex: 100,
-          backgroundColor: 'transparent',
+          backgroundColor: "transparent",
         }}
       >
-        <Pressable
-          onPress={closeSheetToGuest}
-          accessibilityRole="button"
-          accessibilityLabel="Close"
-         
-          hitSlop={12}
-          style={({ pressed }) => [{
-            opacity: pressed ? 0.7 : 1,
-          }]}
-        >
-          <View
-            style={{
-              backgroundColor: theme === 'dark' ? '#000' : '#e1e2e3',
-              borderRadius: 999,
-              borderWidth: 0,
-              borderColor: theme === 'dark' ? '#3a3b3d' : '#64748b',
-              width: 32,
-              height: 32,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOpacity: 0.00,
-              shadowRadius: 4,
-              shadowOffset: { width: 0, height: 1 },
-              elevation: 2,
-            }}
+        <Host matchContents>
+          <Button
+            variant="glass"
+            onPress={closeSheetToGuest}
+            modifiers={[
+              frame({ width: 40, height: 40 }),
+              clipShape("circle"),
+              glassEffect({ glass: { variant: "regular" } }),
+            ]}
           >
-            <MaterialCommunityIcons name="close-thick" size={22} color={Colors[theme].text} style={{ opacity: 0.4 }} />
-          </View>
-        </Pressable>
+            <SwiftUIImage systemName="xmark" size={20} />
+          </Button>
+        </Host>
       </View>
 
       {/* Hero */}
-      <View style={[styles.hero, { alignItems: 'center', justifyContent: 'center' }]}>
-        <Text style={[styles.heroText, { color: Colors[theme].text }]}></Text>
-        <View style={[styles.dot, { backgroundColor: Colors[theme].text }]} />
+      <View
+        style={[
+          styles.hero,
+          { alignItems: "center", justifyContent: "center" },
+        ]}
+      >
+        <Text style={[styles.heroText, { color: Colors[theme].text }]}>
+
+        </Text>
       </View>
 
       {/* Bottom Sheet */}
@@ -125,29 +135,62 @@ export default function WelcomeScreen() {
         ref={sheetRef}
         snapPoints={snapPoints}
         enablePanDownToClose
-        backgroundStyle={{ backgroundColor: '#111111', borderTopLeftRadius: 24, borderTopRightRadius: 24, opacity: 0.90 }}
+        backgroundStyle={{
+          backgroundColor: "#111111",
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          opacity: 0.9,
+        }}
         handleComponent={null}
         enableHandlePanningGesture={false}
       >
         <BottomSheetView style={{ padding: 20 }}>
-          <View style={{ gap: 12, marginTop: 4,marginBottom: 16 }}>
-            <Pressable onPress={() => onOAuth('apple')} style={[styles.btn, styles.appleBtn]}>
-              <Ionicons name="logo-apple" size={18} color="#111827" style={{ marginRight: 8 }} />
-              <Text style={[styles.btnText, { color: '#111827' }]}>Continue with Apple</Text>
+          <View style={{ gap: 12, marginTop: 4, marginBottom: 16 }}>
+            <Pressable
+              onPress={() => onOAuth("apple")}
+              style={[styles.btn, styles.appleBtn]}
+            >
+              <Ionicons
+                name="logo-apple"
+                size={18}
+                color="#111827"
+                style={{ marginRight: 8 }}
+              />
+              <Text style={[styles.btnText, { color: "#111827" }]}>
+                Continue with Apple
+              </Text>
             </Pressable>
 
-            <Pressable onPress={() => onOAuth('google')} style={[styles.btn, styles.googleBtn]}>
-              <Ionicons name="logo-google" size={18} color="#ea4335" style={{ marginRight: 8 }} />
-              <Text style={[styles.btnText, { color: '#ffffff' }]}>Continue with Google</Text>
+            <Pressable
+              onPress={() => onOAuth("google")}
+              style={[styles.btn, styles.googleBtn]}
+            >
+              <Ionicons
+                name="logo-google"
+                size={18}
+                color="#ea4335"
+                style={{ marginRight: 8 }}
+              />
+              <Text style={[styles.btnText, { color: "#ffffff" }]}>
+                Continue with Google
+              </Text>
             </Pressable>
 
-            <Pressable onPress={() => router.push('/auth/email')} style={[styles.btn, styles.loginBtn]}>
-              <Text style={[styles.btnText, { color: '#ffffff' }]}>Log in</Text>
+            <Pressable
+              onPress={() => router.push("/auth/email")}
+              style={[styles.btn, styles.loginBtn]}
+            >
+              <Text style={[styles.btnText, { color: "#ffffff" }]}>Log in</Text>
             </Pressable>
 
             {/* Guest mode */}
-            <Pressable onPress={closeSheetToGuest} style={[styles.btn, styles.loginBtn]}>
-              <Text style={[styles.btnText, { color: '#ffffff' }]}>Continue as guest</Text>
+            <Pressable
+              onPress={closeSheetToGuest}
+              style={[styles.btn, styles.loginBtn]}
+            >
+              <Text style={[styles.btnText, { color: "#ffffff" }]}>
+                Continue as guest
+              </Text>
             </Pressable>
           </View>
         </BottomSheetView>
@@ -159,29 +202,29 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   closeBtn: {
-    position: 'absolute',
+    position: "absolute",
     top: 12,
     right: 12,
     width: 32,
     height: 32,
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   hero: {
     flex: 1,
-    alignItems: 'flex-start',
-    justifyContent: 'flex-end',
+    alignItems: "flex-start",
+    justifyContent: "flex-end",
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
   heroText: {
     fontSize: 44,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: -0.5,
   },
   dot: {
-    position: 'absolute',
+    position: "absolute",
     width: 18,
     height: 18,
     borderRadius: 9,
@@ -189,28 +232,28 @@ const styles = StyleSheet.create({
     right: 26,
   },
   btn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 14,
     paddingHorizontal: 14,
     borderRadius: 14,
   },
   btnText: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   appleBtn: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: "#e5e7eb",
   },
   googleBtn: {
-    backgroundColor: '#2b2c2e',
+    backgroundColor: "#2b2c2e",
   },
   loginBtn: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: '#2b2c2d',
+    borderColor: "#2b2c2d",
   },
 });

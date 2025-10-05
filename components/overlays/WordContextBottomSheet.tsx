@@ -1,3 +1,6 @@
+// WordContextBottomSheet: Full-featured vocabulary sheet that surfaces when a
+// reader long-presses a word. Supports translation entry, "known word" actions,
+// and adapts its layout across iOS/Android/Web with keyboard-safe behavior.
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { useWordTranslations } from "@/hooks/useWordTranslations";
@@ -64,11 +67,11 @@ export const WordContextBottomSheet = forwardRef<
   const sheetIndexRef = useRef(sheetIndex);
 
   const {
-    addTranslation,
-    markAsKnown,
+    saveTranslation,
+    markKnown,
     loading: mutationLoading,
     error: mutationError,
-  } = useWordTranslations(word, tokenId);
+  } = useWordTranslations();
   
   // iOS safe focus timeout reference
   const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -79,9 +82,9 @@ export const WordContextBottomSheet = forwardRef<
     
     return {
       blurOnSubmit: true,
-      keyboardAppearance: "light",
+      keyboardAppearance: "light" as const,
       enablesReturnKeyAutomatically: true,
-      autoCapitalize: "none",
+      autoCapitalize: "none" as const,
       autoCorrect: false,
       spellCheck: false,
       multiline: false,
@@ -100,8 +103,8 @@ export const WordContextBottomSheet = forwardRef<
   
   // Define handleSaveTranslation before it's used in renderTextInput
   const handleSaveTranslation = async () => {
-    if (translation.trim() === "") return;
-    await addTranslation(translation);
+    if (translation.trim() === "" || !tokenId) return;
+    await saveTranslation(tokenId, translation);
     setTranslation("");
     // Optionally close the sheet after saving
     if (sheetRef.current) {
@@ -118,7 +121,7 @@ export const WordContextBottomSheet = forwardRef<
       placeholderTextColor: "#888",
       value: translation,
       onChangeText: setTranslation,
-      returnKeyType: "done",
+      returnKeyType: "done" as const,
       blurOnSubmit: Platform.OS === 'ios', // true for iOS, false for other platforms
       onSubmitEditing: () => {
         if (translation.trim()) {
@@ -280,7 +283,8 @@ export const WordContextBottomSheet = forwardRef<
     : styles.innerContainer;
 
   const handleMarkAsKnown = async () => {
-    await markAsKnown();
+    if (!word) return;
+    await markKnown(word);
     // Optionally close the sheet after marking as known
     if (sheetRef.current) {
       sheetRef.current.close();
@@ -307,7 +311,7 @@ export const WordContextBottomSheet = forwardRef<
       enablePanDownToClose
       onClose={onClose}
       onChange={handleSheetChange}
-      style={{ width: "100%", alignContent: "center" }}
+      style={{ zIndex: 1000 }}
       backgroundStyle={{ backgroundColor: "transparent", borderRadius: 40 }}
       topInset={Math.max(12, insets.top)}
       // Completely avoid interactive keyboard behavior on iOS to prevent RemoteTextInput errors
@@ -322,6 +326,7 @@ export const WordContextBottomSheet = forwardRef<
           {...props}
           disappearsOnIndex={-1}
           appearsOnIndex={0}
+          opacity={0.5}
         />
       )}
       handleIndicatorStyle={{

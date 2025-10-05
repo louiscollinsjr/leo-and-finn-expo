@@ -67,7 +67,6 @@ export default function ReaderScreen() {
           <ThemedText style={{ marginTop: 8, opacity: 0.7 }}>Loading…</ThemedText>
         </View>
       ) : (
-        <>
         <ReaderView
           title={title}
           loading={false}
@@ -89,18 +88,18 @@ export default function ReaderScreen() {
             }}
           />
         </ReaderView>
-
-        <WordContextBottomSheet
-          ref={bottomSheetRef}
-          word={selectedWord}
-          tokenId={selectedTokenId}
-          onClose={() => {
-            setSelectedWord(null);
-            setSelectedTokenId(null);
-          }}
-        />
-        </>
       )}
+
+      {/* WordContextBottomSheet at root level to avoid z-index/clipping issues */}
+      <WordContextBottomSheet
+        ref={bottomSheetRef}
+        word={selectedWord}
+        tokenId={selectedTokenId}
+        onClose={() => {
+          setSelectedWord(null);
+          setSelectedTokenId(null);
+        }}
+      />
     </ThemedView>
   );
 }

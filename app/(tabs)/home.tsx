@@ -32,6 +32,10 @@ import {
 } from "react-native-safe-area-context";
 import { Circle, Svg } from "react-native-svg";
 
+import { Button, Host, Text as SwiftText } from "@expo/ui/swift-ui";
+import { frame, glassEffect, padding } from "@expo/ui/swift-ui/modifiers";
+
+
 // Animatable BlurView for the header background
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
@@ -254,43 +258,28 @@ export default function HomeScreen() {
                   </Pressable>
                 </Link>
               ) : (
-                <Pressable
-                  onPress={() => router.push("/welcome")}
-                  style={({ pressed }) => ({
-                    opacity: pressed ? 0.9 : 1,
-                    backgroundColor: "transparent",
-                  })}
-                >
-                  <View
-                    style={{
-                      backgroundColor: theme === "dark" ? "#ffffff" : "#000000",
-                      paddingVertical: 8,
-                      paddingHorizontal: 16,
-                      borderRadius: 9999, // Fully rounded pill shape
-                      minHeight: 36, // Smaller button height
-                      minWidth: 80, // Smaller minimum width
-                      justifyContent: "center",
-                      alignItems: "center",
-                      shadowColor: theme === "dark" ? "#ffffff" : "#000000",
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 2,
-                      elevation: 1,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: theme === "dark" ? "#000000" : "#ffffff",
-                        fontWeight: "600", // SF Pro Text Semibold
-                        fontSize: 13, // Smaller font size
-                        textAlign: "center",
-                        letterSpacing: 0.25,
-                      }}
-                    >
-                      Sign up
-                    </Text>
+                
+                  <View>
+                    <Host matchContents>
+                      <Button
+                        variant="glass"
+                        onPress={() => router.push("/welcome")}
+                        modifiers={[
+                          padding({ all: 0 }),
+                          frame({ width: 80 }),
+                          glassEffect({ glass: { variant: "regular", tint:"#f8f3e9" } }),
+                        ]}
+                      >
+                        <SwiftText
+                          size={16}
+                        >
+                          Sign up
+                        </SwiftText>
+
+                      </Button>
+                    </Host>
                   </View>
-                </Pressable>
+               
               )}
             </View>
           </View>

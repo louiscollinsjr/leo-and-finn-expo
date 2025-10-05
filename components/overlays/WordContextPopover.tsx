@@ -1,3 +1,6 @@
+// WordContextPopover: Floating inline translator that anchors near the selected
+// word. Shows quick translation input, known-word prompt, and adapts its
+// position to stay within the viewport.
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useWordTranslations } from '@/hooks/useWordTranslations';

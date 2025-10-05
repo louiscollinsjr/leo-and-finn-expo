@@ -4,7 +4,7 @@ import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 // ContinueBook type is now imported from constants/mockData.ts
 
@@ -39,7 +39,8 @@ export default function ContinueCard({ book, onPress, onRatePress, rating, first
     let isMounted = true;
     (async () => {
       try {
-        // Skip in Expo Go where the native module is unavailable
+        // Skip on iOS for now to avoid VisionKit errors, and in Expo Go where the native module is unavailable
+        if (Platform.OS === 'ios') return;
         if (Constants.appOwnership === 'expo') return;
         // Lazy-load native module to avoid crashing when unavailable (e.g., Expo Go)
         const mod = await import('react-native-image-colors').catch(() => null as any);
@@ -124,7 +125,7 @@ export default function ContinueCard({ book, onPress, onRatePress, rating, first
               {/* Shadow container  oslid black @ 1.0 to see the shadow */}
               {coverError ? (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                  <IconSymbol size={24} name="book" color="#ffffff" />
+                  <IconSymbol size={24} name="books.vertical.fill" color="#ffffff" />
                 </View>
               ) : (
                 <Image

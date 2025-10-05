@@ -39,7 +39,7 @@ export default function BottomActions({
           >
             <BlurView intensity={25} tint="default" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16 }} />
             <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(217,217,217,0.65)' }} />
-            <IconSymbol name="slider.horizontal.3" size={24} color={textColor} weight="regular" style={{ opacity: 0.5 }} />
+            <IconSymbol name="slider.horizontal.3" size={24} color={textColor} style={{ opacity: 0.5 }} />
           </Pressable>
         </View>
      

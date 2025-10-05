@@ -1,13 +1,14 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { LongPressGestureHandler, FlingGestureHandler, Directions } from 'react-native-gesture-handler';
+import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { ThemedText } from '@/components/ThemedText';
 import type { Block } from '@/types/reader';
 import { defaultTypography } from '@/lib/typography';
 import type { ThemeMode, Typeface } from '@/providers/ReaderProvider';
 import { QuickThemeSwatches } from '@/constants/Colors';
+import { runOnJS } from 'react-native-reanimated';
 
-export type BlockRenderer = (block: Block) => JSX.Element;
+export type BlockRenderer = (block: Block) => React.ReactNode;
 export type BlockRegistry = Record<Block['type'], BlockRenderer>;
 
 export function createDefaultRegistry(opts: {
@@ -56,54 +57,87 @@ export function createDefaultRegistry(opts: {
   }) => {
     const [highlight, setHighlight] = useState(false);
     const containerRef = useRef<View>(null);
-    const onTap = () => {
+
+    const handleTap = useCallback(() => {
       setHighlight((v) => !v);
-      if (onWordTap && text) onWordTap(text, tokenId);
-    };
+      if (onWordTap && text) {
+        onWordTap(text, tokenId);
+      }
+    }, [text, tokenId]);
+
+    const handleLongPress = useCallback(() => {
+      if (!text || !onWordLongPress) {
+        return;
+      }
+
+      const node = containerRef.current;
+      if (node && 'measureInWindow' in node && typeof (node as any).measureInWindow === 'function') {
+        (node as any).measureInWindow((x: number, y: number, width: number, height: number) => {
+          onWordLongPress(text, tokenId, { x, y, width, height });
+        });
+      } else {
+        onWordLongPress(text, tokenId);
+      }
+    }, [text, tokenId]);
+
+    const handleSwipeUp = useCallback(() => {
+      if (onWordSwipeUp && text) {
+        onWordSwipeUp(text, tokenId);
+      }
+    }, [text, tokenId]);
+
+    const gesture = useMemo(() => {
+      const tapGesture = Gesture.Tap()
+        .onEnd((_event, success) => {
+          if (success) {
+            runOnJS(handleTap)();
+          }
+        });
+
+      const longPressGesture = Gesture.LongPress()
+        .minDuration(220)
+        .onEnd((_event, success) => {
+          if (success) {
+            runOnJS(handleLongPress)();
+          }
+        });
+
+      if (!onWordSwipeUp) {
+        return Gesture.Simultaneous(longPressGesture, tapGesture);
+      }
+
+      const flingGesture = Gesture.Fling()
+        .direction(Directions.UP)
+        .onEnd((_event, success) => {
+          if (success) {
+            runOnJS(handleSwipeUp)();
+          }
+        });
+
+      return Gesture.Simultaneous(longPressGesture, flingGesture, tapGesture);
+    }, [handleTap, handleLongPress, handleSwipeUp]);
+
     return (
-      <FlingGestureHandler
-        direction={Directions.UP}
-        onActivated={() => {
-          if (onWordSwipeUp && text) onWordSwipeUp(text, tokenId);
-        }}
-      >
-        <LongPressGestureHandler
-          minDurationMs={350}
-          onActivated={() => {
-            if (text && onWordLongPress) {
-              const node = containerRef.current;
-              if (node && 'measureInWindow' in node) {
-                // @ts-ignore measureInWindow exists on native components
-                node.measureInWindow((x: number, y: number, width: number, height: number) => {
-                  onWordLongPress(text, tokenId, { x, y, width, height });
-                });
-              } else {
-                onWordLongPress(text, tokenId);
-              }
-            }
-          }}
-        >
-          <View ref={containerRef} style={{ flexDirection: 'row' }}>
-            <Pressable onPress={onTap} hitSlop={4}>
-              <ThemedText
-                style={{
-                  fontSize: paraFontSize,
-                  lineHeight: paraLineHeight,
-                  letterSpacing: charSpacing,
-                  color: textColor,
-                  backgroundColor: highlight ? 'rgba(180, 200, 255, 0.35)' : 'transparent',
-                  borderRadius: highlight ? 4 : 0,
-                }}
-              >
-                {text}
-              </ThemedText>
-            </Pressable>
-            {showSpace ? (
-              <ThemedText style={{ fontSize: paraFontSize, lineHeight: paraLineHeight, letterSpacing: charSpacing, color: textColor }}> </ThemedText>
-            ) : null}
-          </View>
-        </LongPressGestureHandler>
-      </FlingGestureHandler>
+      <GestureDetector gesture={gesture}>
+        <View ref={containerRef} style={{ flexDirection: 'row' }}>
+          <ThemedText
+            style={{
+              fontSize: paraFontSize,
+              lineHeight: paraLineHeight,
+              letterSpacing: charSpacing,
+              color: textColor,
+              backgroundColor: highlight ? 'rgba(180, 200, 255, 0.35)' : 'transparent',
+              borderRadius: highlight ? 4 : 0,
+              paddingHorizontal: 2,
+            }}
+          >
+            {text}
+          </ThemedText>
+          {showSpace ? (
+            <ThemedText style={{ fontSize: paraFontSize, lineHeight: paraLineHeight, letterSpacing: charSpacing, color: textColor }}> </ThemedText>
+          ) : null}
+        </View>
+      </GestureDetector>
     );
   };
 

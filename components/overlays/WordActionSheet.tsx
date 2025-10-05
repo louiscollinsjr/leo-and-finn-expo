@@ -1,3 +1,6 @@
+// WordActionSheet: Legacy lightweight translation editor bottom sheet offering
+// quick lookup, save, and "I know this word" actions for the selected token.
+// Prefetches existing translations and expands on open, then closes when done.
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, TextInput, Pressable, ActivityIndicator } from 'react-native';
 import BottomSheet, { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
