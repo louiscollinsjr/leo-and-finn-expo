@@ -108,7 +108,7 @@ export default function WelcomeScreen() {
             variant="glass"
             onPress={closeSheetToGuest}
             modifiers={[
-              frame({ width: 40, height: 40 }),
+              frame({ width: 48, height: 48 }),
               clipShape("circle"),
               glassEffect({ glass: { variant: "regular" } }),
             ]}
