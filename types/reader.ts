@@ -12,6 +12,18 @@ export type Block =
   | { key: string; type: 'heading'; text: string }
   | { key: string; type: 'paragraph'; text: string; tokens?: Token[] };
 
+// Book type for the app
+export interface Book {
+  id: string;
+  title: string;
+  author: string;
+  cover?: string;
+  videoCover?: any;
+  posterImage?: any;
+  accentColors?: string[] | [string, string];
+  loopVideo?: boolean;
+}
+
 // Optional future-facing types (not yet used by the app). Left here for contributors.
 export interface ReaderConfig {
   marginX?: number;

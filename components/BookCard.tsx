@@ -13,7 +13,7 @@ export const BookCard = ({ book, style, onPress }: { book: Book; style?: any; on
   const secondaryText = theme === 'dark' ? 'rgba(236,237,238,0.7)' : '#71717a';
   
   // Default gradient colors if not provided (similar to FeaturedStory)
-  const colors = book.accentColors || ['#7F9CF5', '#5A67D8'];
+  const colors = (book.accentColors || ['#7F9CF5', '#5A67D8']) as unknown as readonly [string, string];
   
   return (
     <View style={[styles.outerContainer, style]}>

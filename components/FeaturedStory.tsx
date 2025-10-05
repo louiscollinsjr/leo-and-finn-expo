@@ -13,13 +13,13 @@ type Story = {
   cover?: ImageProps['source'];
   videoCover?: string;
   posterImage?: ImageProps['source'];
-  accentColors?: [string, string];
+  accentColors?: string[] | [string, string];
   loopVideo?: boolean;
 };
 
 export const FeaturedStory = ({ story }: { story: Story & { loopVideo?: boolean } }) => {
   // Default gradient colors if not provided
-  const colors = story.accentColors || ['#ef4444', '#b91c1c'];
+  const colors = (story.accentColors || ['#ef4444', '#b91c1c']) as unknown as readonly [string, string];
   const pixelRatio = PixelRatio.get();
 
   const StoryContent = (

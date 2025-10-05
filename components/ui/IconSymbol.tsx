@@ -41,6 +41,9 @@ const MAPPING = {
   'heart.fill': 'favorite',
   'brain.head.profile': 'psychology',
   'line.3.horizontal': 'menu',
+  // Additional icons
+  'lightbulb.fill': 'lightbulb',
+  'leaf.fill': 'eco',
 } as const;
 
 /**

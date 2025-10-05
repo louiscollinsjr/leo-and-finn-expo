@@ -252,7 +252,6 @@ export default function HomeScreen() {
                     <IconSymbol
                       size={36}
                       name="person.crop.circle"
-                      weight="thin"
                       color={colorScheme === "dark" ? "#fff" : "#111827"}
                     />
                   </Pressable>

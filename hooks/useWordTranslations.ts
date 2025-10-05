@@ -87,7 +87,7 @@ export function useWordTranslations(defaultUserId?: string) {
       } else {
         const { error: insErr } = await supabase
           .from('user_vocabulary')
-          .insert({ user_id: userId, romanian_word: word, known: true }, { returning: 'minimal' });
+          .insert({ user_id: userId, romanian_word: word, known: true });
         if (insErr) throw insErr;
       }
       return { ok: true } as const;

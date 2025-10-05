@@ -6,7 +6,7 @@ import { useReaderPrefs } from '@/providers/ReaderProvider';
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
-  type?: 'default' | 'title' | 'subtitle' | 'link';
+  type?: 'default' | 'defaultSemiBold' | 'title' | 'subtitle' | 'link';
 };
 
 export function ThemedText({
@@ -51,8 +51,9 @@ export function ThemedText({
   return (
     <Text
       style={[
-        { color, fontFamily: type === 'default' || type === 'link' ? bodyFamily : strongFamily },
+        { color, fontFamily: type === 'default' || type === 'link' || type === 'defaultSemiBold' ? bodyFamily : strongFamily },
         type === 'default' ? styles.default : undefined,
+        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
         type === 'title' ? styles.title : undefined,
         type === 'subtitle' ? styles.subtitle : undefined,
         type === 'link' ? styles.link : undefined,
@@ -67,6 +68,11 @@ const styles = StyleSheet.create({
   default: {
     fontSize: 16,
     lineHeight: 24,
+  },
+  defaultSemiBold: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '600',
   },
   title: {
     fontSize: 32,

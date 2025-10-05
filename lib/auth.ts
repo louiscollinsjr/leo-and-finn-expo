@@ -20,7 +20,7 @@ export async function createSessionFromUrl(url: string) {
   // Legacy: access_token / refresh_token
   const access_token = params?.access_token as string | undefined;
   const refresh_token = params?.refresh_token as string | undefined;
-  if (access_token) {
+  if (access_token && refresh_token) {
     const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
     if (error) throw error;
     return data.session;

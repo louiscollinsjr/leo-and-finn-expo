@@ -29,7 +29,7 @@ export default function LibraryScreen() {
   // Theme + header layout (match Home)
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
-  const theme = colorScheme ?? 'default';
+  const theme = colorScheme || 'light';
   const background = Colors[theme].background;
   const navOverlayColor = theme === 'dark' ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,1.00)';
   const NAV_BAR_HEIGHT = 44;
@@ -86,12 +86,12 @@ export default function LibraryScreen() {
 
   const fetchStories = useCallback(async () => {
     console.log('[Library] Fetching stories…');
-    const { data, error } = await withTimeout(
-      supabase
-        .from('stories')
-        .select('id,title,author,description')
-        .order('created_at', { ascending: false })
-    );
+    const promise = supabase
+      .from('stories')
+      .select('id,title,author,description')
+      .order('created_at', { ascending: false });
+    const result = await withTimeout(promise as unknown as Promise<any>);
+    const { data, error } = result as { data: any[]; error: any };
     if (error) throw error;
     console.log(`[Library] Loaded ${data?.length ?? 0} stories`);
     return data ?? [];
