@@ -1,13 +1,11 @@
 import ReaderView from '@/components/ReaderView';
 import StoryContent from '@/components/StoryContent';
-import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { WordContextBottomSheet } from '@/components/overlays/WordContextBottomSheet';
 import { supabase } from '@/lib/supabase';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, View, useWindowDimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 
 export default function ReaderScreen() {
   const { storyId } = useLocalSearchParams<{ storyId: string }>();
@@ -61,15 +59,9 @@ export default function ReaderScreen() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      {loading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator />
-          <ThemedText style={{ marginTop: 8, opacity: 0.7 }}>Loading…</ThemedText>
-        </View>
-      ) : (
-        <ReaderView
+      <ReaderView
           title={title}
-          loading={false}
+          loading={loading}
           error={error}
           onBack={() => router.back()}
           onOpenContents={() => { /* TODO: open contents */ }}
@@ -88,10 +80,9 @@ export default function ReaderScreen() {
             }}
           />
         </ReaderView>
-      )}
 
       {/* WordContextBottomSheet at root level to avoid z-index/clipping issues */}
-      <WordContextBottomSheet
+      {/* <WordContextBottomSheet
         ref={bottomSheetRef}
         word={selectedWord}
         tokenId={selectedTokenId}
@@ -99,7 +90,7 @@ export default function ReaderScreen() {
           setSelectedWord(null);
           setSelectedTokenId(null);
         }}
-      />
+      /> */}
     </ThemedView>
   );
 }

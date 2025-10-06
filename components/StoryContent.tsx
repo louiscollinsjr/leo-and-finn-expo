@@ -100,7 +100,7 @@ export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks
 
   if (loading) {
     return (
-      <View style={{ paddingVertical: 16 }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 16 }}>
         <ActivityIndicator />
         <ThemedText style={{ marginTop: 8, opacity: 0.7 }}>Loading content…</ThemedText>
       </View>
