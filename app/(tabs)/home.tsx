@@ -283,40 +283,7 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Continue Section - Only visible when authenticated */}
-          {user && (
-            <>
-              <SectionTitle
-                style={{
-                  marginBottom: 16,
-                  fontSize: 20,
-                  fontWeight: "bold",
-                  color: theme === "dark" ? "#ffffff" : "#111827",
-                }}
-              >
-                Continue
-              </SectionTitle>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingLeft: 30, paddingRight: 0 }}
-                style={{ marginHorizontal: -36, marginBottom: 24 }}
-              >
-                {sortedContinue.map((b, i) => (
-                  <ContinueCard
-                    key={b.id}
-                    book={b}
-                    rating={ratings[b.id] ?? 0}
-                    first={i === 0}
-                    onRatePress={(book) => {
-                      setActiveBook(book);
-                      setSheetVisible(true);
-                    }}
-                  />
-                ))}
-              </ScrollView>
-            </>
-          )}
+        
 
           {/* Featured Stories */}
           <View
@@ -395,7 +362,7 @@ export default function HomeScreen() {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingLeft: 20, paddingRight: 20 }}
-            style={{ marginHorizontal: -20, marginBottom: 24 }}
+            style={{ marginHorizontal: -20, marginBottom: 64 }}
           >
             {americanClassics.map((b, index) => (
               <BookCard
@@ -407,6 +374,44 @@ export default function HomeScreen() {
               />
             ))}
           </ScrollView>
+
+          {/* Continue Reading Section */}
+            {/* Continue Section - Only visible when authenticated */}
+            {user && (
+            <>
+              <SectionTitle
+                style={{
+                  marginBottom: 16,
+                  fontSize: 20,
+                  fontWeight: "bold",
+                  color: theme === "dark" ? "#ffffff" : "#111827",
+                }}
+              >
+                Continue Reading
+              </SectionTitle>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingLeft: 30, paddingRight: 0 }}
+                style={{ marginHorizontal: -36, marginBottom: 24 }}
+              >
+                {sortedContinue.map((b, i) => (
+                  <ContinueCard
+                    key={b.id}
+                    book={b}
+                    rating={ratings[b.id] ?? 0}
+                    first={i === 0}
+                    onRatePress={(book) => {
+                      setActiveBook(book);
+                      setSheetVisible(true);
+                    }}
+                  />
+                ))}
+              </ScrollView>
+            </>
+          )}
+
+          {/* Levels Section */}
 
           <View style={styles.levelsContainer}>
             <LevelsCard />

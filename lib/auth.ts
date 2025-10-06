@@ -2,6 +2,7 @@ import { makeRedirectUri } from 'expo-auth-session';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '@/lib/supabase';
+import { Platform } from 'react-native';
 
 export const redirectTo = makeRedirectUri({ path: 'auth/callback' });
 
@@ -43,12 +44,53 @@ export async function startOAuth(provider: 'apple' | 'google') {
   }
 }
 
-export async function sendMagicLink(email: string) {
+export type EmailSignInMode = 'magic-link' | 'otp';
+
+export async function sendMagicLink(email: string): Promise<{ mode: EmailSignInMode }> {
+  if (Platform.OS === 'web') {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: redirectTo,
+      },
+    });
+    if (error) throw error;
+    return { mode: 'magic-link' };
+  }
+
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: redirectTo,
+      shouldCreateUser: true,
     },
   });
   if (error) throw error;
+  return { mode: 'otp' };
+}
+
+export async function verifyEmailOtp(email: string, token: string) {
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: 'email',
+  });
+  if (error) throw error;
+  return data.session;
+}
+
+export async function signOut() {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}
+
+export async function getCurrentUser() {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  return user;
+}
+
+export async function getCurrentSession() {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error) throw error;
+  return session;
 }

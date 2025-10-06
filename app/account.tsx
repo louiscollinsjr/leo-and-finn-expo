@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, View, Text, Pressable, TextInput, Platform } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '@/hooks/useAuth';
-import { startOAuth, sendMagicLink } from '@/lib/auth';
+import { startOAuth, sendMagicLink, signOut } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 
@@ -108,11 +108,17 @@ export default function AccountScreen() {
   const onSignOut = async () => {
     try {
       setBusy('signout');
-      await supabase.auth.signOut();
-      // After sign out, go to Welcome screen
-      router.replace('/welcome');
-    } catch (e) {
+      await signOut();
+      // The session listener will handle navigation to welcome screen
+    } catch (e: any) {
       console.warn(e);
+      let errorMessage = 'Failed to sign out';
+      
+      if (e.message?.includes('network')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setBusy(null);
     }

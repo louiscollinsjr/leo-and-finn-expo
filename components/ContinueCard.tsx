@@ -77,28 +77,38 @@ export default function ContinueCard({ book, onPress, onRatePress, rating, first
     };
   }, [book.cover, book.id]);
 
+  const imageSource = useMemo(() => {
+    if (coverError) return null;
+    if (book.posterImage) return book.posterImage;
+    if (book.cover) return { uri: book.cover };
+    return null;
+  }, [book.posterImage, book.cover, coverError]);
+
   return (
     <Pressable
       onPress={() => onPress?.(book)}
       style={[
         styles.card,
-        { paddingHorizontal: 12, paddingVertical: 10, width: 288, height: isFinished ? 130 : 90 },
+        { paddingHorizontal: 12, paddingVertical: 12, width: 288, height: isFinished ? 130 : 110 },
         { marginLeft: first ? 0 : 10, marginRight: 10 },
       ]}
     >
       {/* Background mask keeps rounded corners without clipping foreground shadows */}
       <View style={[StyleSheet.absoluteFill, { borderRadius: 16, overflow: 'hidden' }]} pointerEvents="none">
         {/* Blurred, zoomed background using the cover */}
-        <Image
-          source={{ uri: book.cover }}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          blurRadius={isFinished ? 16 : 38}
-          // slight zoom for the background
-          transition={100}
-        />
+        {imageSource ? (
+          <Image
+            source={imageSource}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            blurRadius={isFinished ? 60 : 38}
+            // slight zoom for the background
+            transition={100}
+            onError={() => setCoverError(true)}
+          />
+        ) : null}
         {/* darken/brand gradient overlay */}
-        <LinearGradient colors={[c1, c2]} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={[c1, c1]} style={StyleSheet.absoluteFill} />
       </View>
 
       {/* Column layout: top content row + bottom rating row */}
@@ -108,8 +118,8 @@ export default function ContinueCard({ book, onPress, onRatePress, rating, first
           {/* Cover with isolated shadow */}
           <View
             style={{
-              width: 40,
-              height: 56,
+              width: 64,
+              height: 78,
               borderRadius: 0,
               // iOS shadow - stronger and biased to bottom-right
               shadowColor: '#000',
@@ -121,20 +131,20 @@ export default function ContinueCard({ book, onPress, onRatePress, rating, first
               backgroundColor: 'transparent',
             }}
           >
-            <View style={{ flex: 1, borderRadius: 0, overflow: 'hidden', backgroundColor: 'rgba(0,0,0,1.0)' }}> 
+            <View style={{ flex: 1, borderRadius: 0, overflow: 'hidden', backgroundColor: 'rgba(0,0,0,0.0)' }}>
               {/* Shadow container  oslid black @ 1.0 to see the shadow */}
-              {coverError ? (
-                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                  <IconSymbol size={24} name="books.vertical.fill" color="#ffffff" />
-                </View>
-              ) : (
+              {imageSource ? (
                 <Image
-                  source={{ uri: book.cover }}
+                  source={imageSource}
                   contentFit="cover"
                   transition={100}
                   style={{ flex: 1 }}
                   onError={() => setCoverError(true)}
                 />
+              ) : (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                  <IconSymbol size={24} name="books.vertical.fill" color="#ffffff" />
+                </View>
               )}
             </View>
           </View>
@@ -170,7 +180,7 @@ export default function ContinueCard({ book, onPress, onRatePress, rating, first
           <Pressable
             accessibilityRole="button"
             onPress={() => onRatePress?.(book)}
-            style={{ marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' }}
+            style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' }}
             className=""
           >
             <Text style={styles.rateLabel}>Tap to Rate</Text>
