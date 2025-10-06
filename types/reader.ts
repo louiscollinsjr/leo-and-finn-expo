@@ -18,6 +18,7 @@ export interface Book {
   title: string;
   author: string;
   cover?: string;
+  coverImage?: string;
   videoCover?: any;
   posterImage?: any;
   accentColors?: string[] | [string, string];

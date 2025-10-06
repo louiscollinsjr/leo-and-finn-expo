@@ -102,6 +102,15 @@ CREATE TABLE public.profiles (
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
+
+CREATE TABLE public.user_settings (
+  user_id uuid NOT NULL,
+  last_seen_discover_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT user_settings_pkey PRIMARY KEY (user_id),
+  CONSTRAINT user_settings_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+);
 CREATE TABLE public.segments (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   story_revision_id uuid NOT NULL,
@@ -244,6 +253,18 @@ CREATE TABLE public.user_vocabulary (
   CONSTRAINT user_vocabulary_pkey PRIMARY KEY (id),
   CONSTRAINT user_vocabulary_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.story_covers (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  story_id uuid NOT NULL,
+  url text NOT NULL,
+  is_primary boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT story_covers_pkey PRIMARY KEY (id),
+  CONSTRAINT story_covers_story_id_fkey FOREIGN KEY (story_id) REFERENCES public.stories(id) ON DELETE CASCADE,
+  CONSTRAINT story_covers_story_id_is_primary_unique UNIQUE (story_id, is_primary) WHERE (is_primary = true)
+);
+
 CREATE TABLE public.word_translations (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
@@ -264,3 +285,24 @@ CREATE TABLE public.word_translations (
   CONSTRAINT word_translations_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT word_translations_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.documents(id)
 );
+
+
+create table public.story_covers (
+  id uuid not null default gen_random_uuid (),
+  story_id uuid not null,
+  storage_path text null,
+  file_name text null,
+  mime_type text null,
+  width integer null,
+  height integer null,
+  cdn_url text null,
+  is_primary boolean null default false,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint story_covers_pkey primary key (id),
+  constraint story_covers_story_id_fkey foreign KEY (story_id) references stories (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create unique INDEX IF not exists story_covers_primary_idx on public.story_covers using btree (story_id) TABLESPACE pg_default
+where
+  (is_primary = true);

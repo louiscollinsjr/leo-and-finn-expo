@@ -1,5 +1,4 @@
 import { BookCard } from "@/components/BookCard";
-import ContinueCard from "@/components/ContinueCard";
 import FeaturedStory from "@/components/FeaturedStory";
 import LevelsCard from "@/components/LevelsCard";
 import RatingSheet from "@/components/RatingSheet";
@@ -20,6 +19,7 @@ import React, { useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
+  PlatformColor,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -32,9 +32,8 @@ import {
 } from "react-native-safe-area-context";
 import { Circle, Svg } from "react-native-svg";
 
-import { Button, Host, Text as SwiftText } from "@expo/ui/swift-ui";
-import { frame, glassEffect, padding } from "@expo/ui/swift-ui/modifiers";
-
+import { Button, Gauge, Host, Text as SwiftText } from "@expo/ui/swift-ui";
+import { frame, glassEffect, padding, scaleEffect } from "@expo/ui/swift-ui/modifiers";
 
 // Animatable BlurView for the header background
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
@@ -243,7 +242,21 @@ export default function HomeScreen() {
             >
               {user && (
                 <View style={{ paddingTop: 1, marginRight: 12 }}>
-                  <ProgressRing size={30} value={11} total={30} />
+                  {/* <ProgressRing size={30} value={11} total={30} /> */}
+                  <Host matchContents>
+                    <Gauge
+                      max={{ value: 100, label: "50" }}
+                      min={{ value: 0, label: "0" }}
+                      current={{ value: 20 }}
+                      color={[
+                        // PlatformColor("systemRed"),
+                        // PlatformColor("systemYellow"),
+                        PlatformColor("systemGreen"),
+                      ]}
+                      type="circular"
+                      modifiers={[frame({ width: 44, height: 44 }), scaleEffect(0.6)]}
+                    />
+                  </Host>
                 </View>
               )}
               {user ? (
@@ -257,33 +270,26 @@ export default function HomeScreen() {
                   </Pressable>
                 </Link>
               ) : (
-                
-                  <View>
-                    <Host matchContents>
-                      <Button
-                        variant="glass"
-                        onPress={() => router.push("/welcome")}
-                        modifiers={[
-                          padding({ all: 0 }),
-                          frame({ width: 80 }),
-                          glassEffect({ glass: { variant: "regular", tint:"#f8f3e9" } }),
-                        ]}
-                      >
-                        <SwiftText
-                          size={16}
-                        >
-                          Sign up
-                        </SwiftText>
-
-                      </Button>
-                    </Host>
-                  </View>
-               
+                <View>
+                  <Host matchContents>
+                    <Button
+                      variant="glass"
+                      onPress={() => router.push("/welcome")}
+                      modifiers={[
+                        padding({ all: 0 }),
+                        frame({ width: 80 }),
+                        glassEffect({
+                          glass: { variant: "regular", tint: "#f8f3e9" },
+                        }),
+                      ]}
+                    >
+                      <SwiftText size={16}>Sign up</SwiftText>
+                    </Button>
+                  </Host>
+                </View>
               )}
             </View>
           </View>
-
-        
 
           {/* Featured Stories */}
           <View
@@ -376,8 +382,8 @@ export default function HomeScreen() {
           </ScrollView>
 
           {/* Continue Reading Section */}
-            {/* Continue Section - Only visible when authenticated */}
-            {user && (
+          {/* Continue Section - Only visible when authenticated */}
+          {/* {user && (
             <>
               <SectionTitle
                 style={{
@@ -409,7 +415,7 @@ export default function HomeScreen() {
                 ))}
               </ScrollView>
             </>
-          )}
+          )} */}
 
           {/* Levels Section */}
 

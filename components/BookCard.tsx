@@ -1,10 +1,12 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Book } from '@/types/reader';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import VideoBackground from './VideoBackground';
+
+const DEFAULT_COVER = require('@/assets/images/bookcovers/BookCover_Blank.png');
 
 export const BookCard = ({ book, style, onPress }: { book: Book; style?: any; onPress?: () => void }) => {
   const theme = useColorScheme() ?? 'light';
@@ -12,8 +14,7 @@ export const BookCard = ({ book, style, onPress }: { book: Book; style?: any; on
   const text = Colors[theme].text;
   const secondaryText = theme === 'dark' ? 'rgba(236,237,238,0.7)' : '#71717a';
   
-  // Default gradient colors if not provided (similar to FeaturedStory)
-  const colors = (book.accentColors || ['#7F9CF5', '#5A67D8']) as unknown as readonly [string, string];
+  const coverSource = book.cover || DEFAULT_COVER;
   
   return (
     <View style={[styles.outerContainer, style]}>
@@ -27,29 +28,23 @@ export const BookCard = ({ book, style, onPress }: { book: Book; style?: any; on
         opacity: pressed ? 0.9 : 1
       }]}
       >
-        {book.videoCover || book.cover || book.posterImage ? (
+        {book.videoCover ? (
           <VideoBackground
             videoCover={book.videoCover}
-            posterImage={book.posterImage}
-            cover={book.cover}
+            cover={coverSource}
             style={styles.coverImage}
             shouldPlay={true}
             loop={book.loopVideo}
           />
         ) : (
-          <LinearGradient
-            colors={colors}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0.8, y: 1 }}
-            style={styles.gradient}
-          >
-            <View style={styles.initialContainer}>
-              <Text style={styles.initialText}>{book.title.charAt(0)}</Text>
-            </View>
-          </LinearGradient>
+          <Image
+            source={coverSource}
+            style={styles.coverImage}
+            contentFit="cover"
+          />
         )}
         <View style={styles.textContainer}>
-          <Text numberOfLines={1} style={[styles.titleText, { color: text }]}>
+          <Text numberOfLines={2} style={[styles.titleText, { color: text }]}>
             {book.title}
           </Text>
           <Text numberOfLines={2} style={[styles.authorText, { color: secondaryText }]}>
@@ -76,36 +71,22 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   coverImage: {
-    height: 240,
+    height: 260,
     width: '100%',
     borderRadius: 12,
     overflow: 'hidden'
-  },
-  gradient: {
-    height: 240,
-    width: '100%',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  initialContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  initialText: {
-    color: 'white',
-    fontSize: 48,
-    fontWeight: 'bold'
   },
   textContainer: {
     marginTop: 12
   },
   titleText: {
     fontSize: 14,
+    paddingLeft: 15,
     fontWeight: '600'
   },
   authorText: {
-    fontSize: 12
+    fontSize: 12,
+    paddingLeft: 15,
   }
 });
 
