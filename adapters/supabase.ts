@@ -1,8 +1,50 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import type { Block, ContentSource } from '@/types/reader';
 
+const CACHE_PREFIX = 'story-blocks:';
+const CACHE_TTL_MS = 1000 * 60 * 30;
+
+type CachedBlocksEntry = {
+  blocks: Block[];
+  cachedAt: number;
+};
+
+const memoryCache = new Map<string, CachedBlocksEntry>();
+
+const cacheKeyFor = (storyId: string) => `${CACHE_PREFIX}${storyId}`;
+
+const isFresh = (entry: CachedBlocksEntry) => Date.now() - entry.cachedAt < CACHE_TTL_MS;
+
+async function readPersistedCache(storyId: string): Promise<CachedBlocksEntry | null> {
+  try {
+    const raw = await AsyncStorage.getItem(cacheKeyFor(storyId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed.blocks) || typeof parsed.cachedAt !== 'number') return null;
+    return { blocks: parsed.blocks, cachedAt: parsed.cachedAt };
+  } catch {
+    return null;
+  }
+}
+
+async function writePersistedCache(storyId: string, entry: CachedBlocksEntry) {
+  try {
+    await AsyncStorage.setItem(cacheKeyFor(storyId), JSON.stringify(entry));
+  } catch {}
+}
+
 export class SupabaseContentSource implements ContentSource {
   async loadStoryBlocks(storyId: string): Promise<Block[]> {
+    const cachedMem = memoryCache.get(storyId);
+    if (cachedMem && isFresh(cachedMem)) return cachedMem.blocks;
+
+    const persisted = await readPersistedCache(storyId);
+    if (persisted && isFresh(persisted)) {
+      memoryCache.set(storyId, persisted);
+      return persisted.blocks;
+    }
+
     // 1) all revisions for this story (desc by rev)
     const { data: revs, error: revErr } = await supabase
       .from('story_revisions')
@@ -146,7 +188,6 @@ export class SupabaseContentSource implements ContentSource {
       for (const seg of segs) {
         const kind = (seg.kind as string) || 'paragraph';
 
-        // reconstruct text with spacing for this segment
         const toks = tokensBySeg.get(seg.id) ?? [];
         let buf = '';
         let prevType: string | null = null;
@@ -188,13 +229,11 @@ export class SupabaseContentSource implements ContentSource {
         const text = buf.replace(/\s+/g, ' ').trim();
 
         if (kind === 'heading') {
-          // Close any open paragraph before a heading and emit heading text if present
           flushParagraph();
           if (text) out.push({ key: `h-${seg.id}`, type: 'heading', text });
           continue;
         }
         if (kind === 'paragraph') {
-          // Treat paragraph kind as a boundary; if it carries text, emit it as its own paragraph
           const segTokens = tokensBySeg.get(seg.id) ?? [];
           const tokensForBlock = segTokens.length ? segTokens.map((t) => ({ id: t.id, text: t.text, type: t.type })) : undefined;
           flushParagraph();
@@ -202,13 +241,15 @@ export class SupabaseContentSource implements ContentSource {
           continue;
         }
         if (text) {
-          // sentence or other content contributes to current paragraph
           currentParaParts.push(text);
         }
       }
       flushParagraph();
     }
 
+    const entry: CachedBlocksEntry = { blocks: out, cachedAt: Date.now() };
+    memoryCache.set(storyId, entry);
+    await writePersistedCache(storyId, entry);
     return out;
   }
 }

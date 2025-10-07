@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 // Simple, pluggable storage adapter so apps can use AsyncStorage, SecureStore, etc.
 export interface StorageAdapter {
@@ -55,21 +55,56 @@ const DEFAULT_PREFS: ReaderPrefs = {
 
 const STORAGE_KEY = 'reader:prefs:v1';
 
-export type ReaderContextShape = {
+type ReaderProviderProps = {
+  children: React.ReactNode;
+  storage?: StorageAdapter;
+};
+
+type ReaderPrefsContextValue = {
   prefs: ReaderPrefs;
   setPrefs: (next: Partial<ReaderPrefs>) => void;
   resetPrefs: () => void;
-  // Optional shared overlay state if the app wants global control
-  overlayVisible: boolean;
-  setOverlayVisible: (v: boolean) => void;
 };
 
-const ReaderContext = createContext<ReaderContextShape | undefined>(undefined);
+export type WordAnchor = { x: number; y: number; width: number; height: number };
 
-export function ReaderProvider({ children, storage }: { children: React.ReactNode; storage?: StorageAdapter }) {
+type WordContextValue = {
+  word: string | null;
+  tokenId: string | null;
+  anchor: WordAnchor | null;
+};
+
+export type WordContextPayload = {
+  word: string | null;
+  tokenId?: string | null;
+  anchor?: WordAnchor | null;
+};
+
+type ReaderUIContextValue = {
+  overlayVisible: boolean;
+  setOverlayVisible: (visible: boolean) => void;
+  menuVisible: boolean;
+  setMenuVisible: (visible: boolean) => void;
+  themePopoverVisible: boolean;
+  setThemePopoverVisible: (visible: boolean) => void;
+  settingsVisible: boolean;
+  setSettingsVisible: (visible: boolean) => void;
+  wordContext: WordContextValue;
+  openWordContext: (payload: WordContextPayload) => void;
+  closeWordContext: () => void;
+};
+
+const ReaderPrefsContext = createContext<ReaderPrefsContextValue | undefined>(undefined);
+const ReaderUIContext = createContext<ReaderUIContextValue | undefined>(undefined);
+
+export function ReaderProvider({ children, storage }: ReaderProviderProps) {
   const storageRef = useRef<StorageAdapter>(storage ?? createInMemoryStorageAdapter());
   const [prefs, setPrefsState] = useState<ReaderPrefs>(DEFAULT_PREFS);
   const [overlayVisible, setOverlayVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [themePopoverVisible, setThemePopoverVisible] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [wordContext, setWordContext] = useState<WordContextValue>({ word: null, tokenId: null, anchor: null });
   const loadedRef = useRef(false);
 
   // Load on mount
@@ -106,24 +141,66 @@ export function ReaderProvider({ children, storage }: { children: React.ReactNod
 
   const resetPrefs = () => setPrefsState(DEFAULT_PREFS);
 
-  const value = useMemo<ReaderContextShape>(
-    () => ({ prefs, setPrefs, resetPrefs, overlayVisible, setOverlayVisible }),
-    [prefs, overlayVisible]
+  const openWordContext = useCallback(({ word, tokenId = null, anchor = null }: WordContextPayload) => {
+    setWordContext({ word, tokenId, anchor });
+  }, []);
+
+  const closeWordContext = useCallback(() => {
+    setWordContext({ word: null, tokenId: null, anchor: null });
+  }, []);
+
+  const prefsValue = useMemo<ReaderPrefsContextValue>(
+    () => ({ prefs, setPrefs, resetPrefs }),
+    [prefs]
   );
 
-  return <ReaderContext.Provider value={value}>{children}</ReaderContext.Provider>;
+  const uiValue = useMemo<ReaderUIContextValue>(
+    () => ({
+      overlayVisible,
+      setOverlayVisible,
+      menuVisible,
+      setMenuVisible,
+      themePopoverVisible,
+      setThemePopoverVisible,
+      settingsVisible,
+      setSettingsVisible,
+      wordContext,
+      openWordContext,
+      closeWordContext,
+    }),
+    [
+      overlayVisible,
+      menuVisible,
+      themePopoverVisible,
+      settingsVisible,
+      wordContext,
+      openWordContext,
+      closeWordContext,
+    ]
+  );
+
+  return (
+    <ReaderPrefsContext.Provider value={prefsValue}>
+      <ReaderUIContext.Provider value={uiValue}>{children}</ReaderUIContext.Provider>
+    </ReaderPrefsContext.Provider>
+  );
 }
 
 export function useReaderPrefs() {
-  const ctx = useContext(ReaderContext);
+  const ctx = useContext(ReaderPrefsContext);
   if (!ctx) throw new Error('useReaderPrefs must be used within <ReaderProvider>');
-  const { prefs, setPrefs, resetPrefs } = ctx;
-  return { prefs, setPrefs, resetPrefs };
+  return ctx;
 }
 
 export function useReaderOverlay() {
-  const ctx = useContext(ReaderContext);
+  const ctx = useContext(ReaderUIContext);
   if (!ctx) throw new Error('useReaderOverlay must be used within <ReaderProvider>');
   const { overlayVisible, setOverlayVisible } = ctx;
   return { overlayVisible, setOverlayVisible };
+}
+
+export function useReaderUI() {
+  const ctx = useContext(ReaderUIContext);
+  if (!ctx) throw new Error('useReaderUI must be used within <ReaderProvider>');
+  return ctx;
 }

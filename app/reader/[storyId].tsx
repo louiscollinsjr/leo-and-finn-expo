@@ -1,7 +1,9 @@
 import ReaderView from '@/components/ReaderView';
 import StoryContent from '@/components/StoryContent';
+import { WordContextBottomSheet } from '@/components/overlays/WordContextBottomSheet';
 import { ThemedView } from '@/components/ThemedView';
 import { supabase } from '@/lib/supabase';
+import { useReaderUI } from '@/providers/ReaderProvider';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
@@ -13,9 +15,7 @@ export default function ReaderScreen() {
   const [author, setAuthor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedWord, setSelectedWord] = useState<string | null>(null);
-  const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
-  
+  const { wordContext, openWordContext, closeWordContext } = useReaderUI();
   const bottomSheetRef = useRef<BottomSheet>(null);
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -24,10 +24,12 @@ export default function ReaderScreen() {
   // After the selected word is set and committed, open the sheet so the
   // first visible frame already includes the word, avoiding a perceived delay.
   useEffect(() => {
-    if (selectedWord) {
+    if (wordContext.word) {
       requestAnimationFrame(() => bottomSheetRef.current?.snapToIndex(1));
+    } else {
+      bottomSheetRef.current?.close();
     }
-  }, [selectedWord]);
+  }, [wordContext.word]);
 
   useEffect(() => {
     let isMounted = true;
@@ -74,23 +76,18 @@ export default function ReaderScreen() {
             mode="scroll"
             hMargin={hMargin}
             onWordLongPress={(w, tokenId, anchor) => {
-              setSelectedWord(w);
-              setSelectedTokenId(tokenId ?? null);
-              // Sheet opening is handled in a useEffect once state is committed.
+              openWordContext({ word: w, tokenId, anchor });
             }}
           />
         </ReaderView>
 
       {/* WordContextBottomSheet at root level to avoid z-index/clipping issues */}
-      {/* <WordContextBottomSheet
+      <WordContextBottomSheet
         ref={bottomSheetRef}
-        word={selectedWord}
-        tokenId={selectedTokenId}
-        onClose={() => {
-          setSelectedWord(null);
-          setSelectedTokenId(null);
-        }}
-      /> */}
+        word={wordContext.word}
+        tokenId={wordContext.tokenId}
+        onClose={closeWordContext}
+      />
     </ThemedView>
   );
 }
