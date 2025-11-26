@@ -2,8 +2,8 @@ import BookCard from '@/components/BookCard';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { DISCOVER_LAST_SEEN_EVENT } from '@/constants/events';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { useAuth } from '@/hooks/useAuth';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/lib/supabase';
 import { BlurView } from 'expo-blur';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -118,6 +118,7 @@ export default function DiscoverScreen() {
 
     const storiesResult = await withTimeout(storiesPromise as unknown as Promise<any>);
     const { data: storiesData, error: storiesError } = storiesResult as { data: any[]; error: any };
+    console.log('[Discover] Query result:', { count: storiesData?.length, error: storiesError });
     if (storiesError) throw storiesError;
 
     const transformedData: Story[] = (storiesData ?? [])
@@ -159,7 +160,7 @@ export default function DiscoverScreen() {
       cacheRef.current = data;
       setStories(data);
     } catch (e: any) {
-      console.error('[Discover] Load error', e);
+      console.error('[Discover] Load error', e?.message ?? e, e?.code, e?.details);
       if (!isMountedRef.current || myId !== requestIdRef.current) return;
       setError(e?.message ?? 'Failed to load');
       setStories([]);

@@ -1,3 +1,6 @@
+# Force the symlinked Node path so Xcode scripts don't use a stale Cellar path
+ENV['NODE_BINARY'] = '/opt/homebrew/bin/node'
+
 require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
 require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
 
