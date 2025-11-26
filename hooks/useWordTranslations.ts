@@ -1,5 +1,6 @@
+import { useAuth } from '@/hooks/useAuth';
+import { db } from '@/lib/db';
 import { useCallback, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 
 export type TranslationRecord = {
   token_id: string;
@@ -10,35 +11,26 @@ export type TranslationRecord = {
 export function useWordTranslations(defaultUserId?: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
-  const resolveUserId = useCallback(async (override?: string) => {
+  const resolveUserId = useCallback((override?: string) => {
     if (override) return override;
     if (defaultUserId) return defaultUserId;
-    // Best-effort fetch from auth
-    try {
-      const { data } = await supabase.auth.getUser();
-      return data.user?.id ?? null;
-    } catch {
-      return null;
-    }
-  }, [defaultUserId]);
+    return user?.id ?? null;
+  }, [defaultUserId, user?.id]);
 
   // Fetch translation for a specific token
   const getTranslation = useCallback(async (tokenId: string, userIdOverride?: string) => {
     setError(null);
-    const userId = await resolveUserId(userIdOverride);
+    const userId = resolveUserId(userIdOverride);
     if (!userId) return null;
-    const { data, error } = await supabase
-      .from('user_token_translations')
-      .select('token_id, translation, user_id')
-      .eq('token_id', tokenId)
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (error) {
-      setError(error.message);
+    try {
+      const data = await db.getTranslation(tokenId, userId);
+      return data;
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to get translation');
       return null;
     }
-    return (data as TranslationRecord | null) ?? null;
   }, [resolveUserId]);
 
   // Upsert a translation for a specific token
@@ -46,12 +38,9 @@ export function useWordTranslations(defaultUserId?: string) {
     setLoading(true);
     setError(null);
     try {
-      const userId = await resolveUserId(userIdOverride);
+      const userId = resolveUserId(userIdOverride);
       if (!userId) throw new Error('Not signed in');
-      const { error } = await supabase
-        .from('user_token_translations')
-        .upsert({ token_id: tokenId, translation, user_id: userId }, { onConflict: 'user_id,token_id' });
-      if (error) throw error;
+      await db.upsertTranslation(tokenId, userId, translation);
       return { ok: true } as const;
     } catch (e: any) {
       setError(e?.message ?? 'Failed to save translation');
@@ -61,35 +50,14 @@ export function useWordTranslations(defaultUserId?: string) {
     }
   }, [resolveUserId]);
 
-  // Mark a word as known in user_vocabulary without assuming translation implies knowledge
+  // Mark a word as known in user_vocabulary
   const markKnown = useCallback(async (word: string, userIdOverride?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const userId = await resolveUserId(userIdOverride);
+      const userId = resolveUserId(userIdOverride);
       if (!userId) throw new Error('Not signed in');
-      // Check if an entry already exists for this (user, word)
-      const { data: existing, error: selErr } = await supabase
-        .from('user_vocabulary')
-        .select('id, known')
-        .eq('user_id', userId)
-        .eq('romanian_word', word)
-        .limit(1)
-        .maybeSingle();
-      if (selErr && selErr.code !== 'PGRST116') throw selErr;
-
-      if (existing?.id) {
-        const { error: updErr } = await supabase
-          .from('user_vocabulary')
-          .update({ known: true })
-          .eq('id', existing.id);
-        if (updErr) throw updErr;
-      } else {
-        const { error: insErr } = await supabase
-          .from('user_vocabulary')
-          .insert({ user_id: userId, romanian_word: word, known: true });
-        if (insErr) throw insErr;
-      }
+      await db.upsertVocabularyEntry(userId, word, true);
       return { ok: true } as const;
     } catch (e: any) {
       setError(e?.message ?? 'Failed to mark word as known');

@@ -4,7 +4,7 @@ import { Colors } from '@/constants/Colors';
 import { DISCOVER_LAST_SEEN_EVENT } from '@/constants/events';
 import { useAuth } from '@/hooks/useAuth';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 import { BlurView } from 'expo-blur';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -98,45 +98,20 @@ export default function DiscoverScreen() {
   const fetchStories = useCallback(async () => {
     console.log('[Discover] Fetching stories…');
 
-    const storiesPromise = supabase
-      .from('stories')
-      .select(
-        `
-        id,
-        title,
-        author,
-        description,
-        updated_at,
-        story_covers!left (
-          file_name,
-          cdn_url,
-          is_primary
-        )
-      `
-      )
-      .order('updated_at', { ascending: false, nullsFirst: false });
+    const storiesPromise = db.getStories();
+    const stories = await withTimeout(storiesPromise);
+    
+    console.log('[Discover] Query result:', { count: stories.length });
 
-    const storiesResult = await withTimeout(storiesPromise as unknown as Promise<any>);
-    const { data: storiesData, error: storiesError } = storiesResult as { data: any[]; error: any };
-    console.log('[Discover] Query result:', { count: storiesData?.length, error: storiesError });
-    if (storiesError) throw storiesError;
-
-    const transformedData: Story[] = (storiesData ?? [])
-      .map((row: any) => {
-        if (!row) return null;
-        const coverEntries = Array.isArray(row.story_covers) ? row.story_covers : row.story_covers ? [row.story_covers] : [];
-        const primaryCover = coverEntries.find((entry: any) => entry?.is_primary) ?? coverEntries[0] ?? null;
-        return {
-          id: row.id,
-          title: row.title ?? 'Untitled story',
-          author: row.author ?? null,
-          description: row.description ?? null,
-          coverFilename: primaryCover?.file_name ?? null,
-          coverUrl: primaryCover?.cdn_url ?? null,
-          updated_at: row.updated_at ?? null,
-        };
-      })
-      .filter(Boolean) as Story[];
+    const transformedData: Story[] = stories.map((row) => ({
+      id: row.id,
+      title: row.title ?? 'Untitled story',
+      author: row.author ?? null,
+      description: row.description ?? null,
+      coverFilename: row.coverFilename ?? null,
+      coverUrl: row.coverUrl ?? null,
+      updated_at: row.updated_at ?? null,
+    }));
 
     console.log(`[Discover] Loaded ${transformedData.length} stories`);
     return transformedData;
@@ -195,10 +170,7 @@ export default function DiscoverScreen() {
 
     try {
       const now = new Date().toISOString();
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert({ user_id: user.id, last_seen_discover_at: now, updated_at: now }, { onConflict: 'user_id' });
-      if (error) throw error;
+      await db.upsertUserSettings(user.id, { last_seen_discover_at: now });
       DeviceEventEmitter.emit(DISCOVER_LAST_SEEN_EVENT);
     } catch (err) {
       console.error('[Discover] Failed to mark seen', err);

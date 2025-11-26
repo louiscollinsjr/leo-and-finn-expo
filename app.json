@@ -26,14 +26,28 @@
         {
           "action": "VIEW",
           "data": [
-            { "scheme": "https", "host": "app.leoandfinn.com", "pathPrefix": "/" }
+            {
+              "scheme": "https",
+              "host": "app.leoandfinn.com",
+              "pathPrefix": "/"
+            }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         },
         {
           "action": "VIEW",
-          "data": [ { "scheme": "leoandfinn" } ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": [
+            {
+              "scheme": "leoandfinn"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -54,7 +68,8 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

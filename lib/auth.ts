@@ -1,96 +1,163 @@
-import { makeRedirectUri } from 'expo-auth-session';
-import * as QueryParams from 'expo-auth-session/build/QueryParams';
+/**
+ * Authentication functions using Stack Auth.
+ * 
+ * Complete implementation for React Native with:
+ * - OAuth (Google/Apple) via WebBrowser
+ * - Magic link / OTP via email
+ * - Deep link handling for callbacks
+ */
+
+import {
+    AUTH_REDIRECT_URI,
+    buildOAuthUrl,
+    exchangeCodeForTokens,
+    stackAuth,
+    getCurrentUser as stackGetCurrentUser,
+    sendMagicLink as stackSendMagicLink,
+    signOut as stackSignOut,
+    verifyOtp as stackVerifyOtp,
+    type AuthResult,
+    type StackUser,
+} from '@/lib/stack';
+import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
-import { supabase } from '@/lib/supabase';
-import { Platform } from 'react-native';
 
-export const redirectTo = makeRedirectUri({ path: 'auth/callback' });
+// ─────────────────────────────────────────────────────────────────────────────
+// OAuth Flow
+// ─────────────────────────────────────────────────────────────────────────────
 
-export async function createSessionFromUrl(url: string) {
-  const { params, errorCode } = QueryParams.getQueryParams(url);
-  if (errorCode) throw new Error(errorCode);
-
-  // PKCE flow: exchange `code` for a session
-  const code = (params?.code ?? params?.['authorization_code']) as string | undefined;
-  if (code) {
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) throw error;
-    return data.session;
+/**
+ * Start OAuth flow for Google or Apple.
+ * Opens the browser, handles the redirect, and exchanges the code for tokens.
+ */
+export async function startOAuth(provider: 'apple' | 'google'): Promise<AuthResult> {
+  if (!stackAuth.projectId) {
+    throw new Error('Stack Auth not configured');
   }
 
-  // Legacy: access_token / refresh_token
-  const access_token = params?.access_token as string | undefined;
-  const refresh_token = params?.refresh_token as string | undefined;
-  if (access_token && refresh_token) {
-    const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
-    if (error) throw error;
-    return data.session;
+  // Build the OAuth URL
+  const authUrl = buildOAuthUrl(provider);
+  console.log('[Auth] Starting OAuth for', provider);
+  console.log('[Auth] Redirect URI:', AUTH_REDIRECT_URI);
+
+  // Open the browser for OAuth
+  const result = await WebBrowser.openAuthSessionAsync(authUrl, AUTH_REDIRECT_URI);
+
+  if (result.type !== 'success') {
+    throw new Error(`OAuth cancelled or failed: ${result.type}`);
   }
+
+  // Extract the authorization code from the redirect URL
+  const url = result.url;
+  const { queryParams } = Linking.parse(url);
+  const code = queryParams?.code as string | undefined;
+
+  if (!code) {
+    throw new Error('No authorization code in callback URL');
+  }
+
+  console.log('[Auth] Got authorization code, exchanging for tokens...');
+
+  // Exchange the code for tokens
+  const authResult = await exchangeCodeForTokens(code);
+  console.log('[Auth] OAuth complete for', authResult.user.email);
+
+  return authResult;
 }
 
-export async function startOAuth(provider: 'apple' | 'google') {
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      redirectTo,
-      skipBrowserRedirect: true,
-    },
-  });
-  if (error) throw error;
+// ─────────────────────────────────────────────────────────────────────────────
+// Magic Link / OTP Flow
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const res = await WebBrowser.openAuthSessionAsync(data?.url ?? '', redirectTo);
-  if (res.type === 'success' && res.url) {
-    await createSessionFromUrl(res.url);
-  }
-}
+export type EmailSignInMode = 'otp';
 
-export type EmailSignInMode = 'magic-link' | 'otp';
-
+/**
+ * Send a magic link / OTP to the user's email.
+ * Stack Auth uses OTP codes for React Native (not clickable links).
+ */
 export async function sendMagicLink(email: string): Promise<{ mode: EmailSignInMode }> {
-  if (Platform.OS === 'web') {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: redirectTo,
-      },
-    });
-    if (error) throw error;
-    return { mode: 'magic-link' };
+  if (!stackAuth.projectId) {
+    throw new Error('Stack Auth not configured');
   }
 
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      shouldCreateUser: true,
-    },
-  });
-  if (error) throw error;
+  await stackSendMagicLink(email);
+  console.log('[Auth] OTP sent to', email);
+
+  // Stack Auth sends OTP codes for mobile apps
   return { mode: 'otp' };
 }
 
-export async function verifyEmailOtp(email: string, token: string) {
-  const { data, error } = await supabase.auth.verifyOtp({
-    email,
-    token,
-    type: 'email',
-  });
-  if (error) throw error;
-  return data.session;
+/**
+ * Verify the OTP code sent to the user's email.
+ */
+export async function verifyEmailOtp(email: string, code: string): Promise<AuthResult> {
+  if (!stackAuth.projectId) {
+    throw new Error('Stack Auth not configured');
+  }
+
+  const result = await stackVerifyOtp(email, code);
+  console.log('[Auth] OTP verified for', result.user.email);
+
+  return result;
 }
 
-export async function signOut() {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+// ─────────────────────────────────────────────────────────────────────────────
+// Session Management
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Sign out the current user.
+ */
+export async function signOut(): Promise<void> {
+  await stackSignOut();
 }
 
-export async function getCurrentUser() {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error) throw error;
-  return user;
+/**
+ * Get the current user.
+ */
+export async function getCurrentUser(): Promise<StackUser | null> {
+  return stackGetCurrentUser();
 }
 
+/**
+ * Get the current session (tokens).
+ */
 export async function getCurrentSession() {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  if (error) throw error;
-  return session;
+  const tokens = await stackAuth.getTokens();
+  if (!tokens) return null;
+
+  const user = await stackGetCurrentUser();
+  return user ? { user, tokens } : null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Deep Link Handling
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Handle a deep link callback from OAuth or magic link.
+ * Call this when the app receives a deep link.
+ */
+export async function handleAuthCallback(url: string): Promise<AuthResult | null> {
+  console.log('[Auth] Handling callback URL:', url);
+
+  const { queryParams } = Linking.parse(url);
+
+  // OAuth callback with authorization code
+  const code = queryParams?.code as string | undefined;
+  if (code) {
+    console.log('[Auth] Found authorization code in callback');
+    return exchangeCodeForTokens(code);
+  }
+
+  // Magic link callback (if Stack Auth sends clickable links)
+  const token = queryParams?.token as string | undefined;
+  const email = queryParams?.email as string | undefined;
+  if (token && email) {
+    console.log('[Auth] Found magic link token in callback');
+    return stackVerifyOtp(email, token);
+  }
+
+  console.log('[Auth] No auth params in callback URL');
+  return null;
 }

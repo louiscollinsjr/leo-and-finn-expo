@@ -1,38 +1,30 @@
-import React from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, TextInput, Pressable, StyleSheet, Alert, TouchableOpacity, Platform } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useRouter } from 'expo-router';
-import { sendMagicLink, startOAuth, verifyEmailOtp, type EmailSignInMode } from '@/lib/auth';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { sendMagicLink, startOAuth, verifyEmailOtp } from '@/lib/auth';
+import { useStackAuth } from '@/providers/StackAuthProvider';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Alert, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function EmailAuthScreen() {
   const [email, setEmail] = React.useState('');
   const [busy, setBusy] = React.useState<null | 'email' | 'apple' | 'google' | 'verify-otp'>(null);
-  const [emailSent, setEmailSent] = React.useState(false);
-  const [flowMode, setFlowMode] = React.useState<EmailSignInMode>(Platform.OS === 'web' ? 'magic-link' : 'otp');
   const [otpRequested, setOtpRequested] = React.useState(false);
   const [otp, setOtp] = React.useState('');
   const router = useRouter();
   const theme = useColorScheme() ?? 'light';
+  const { refreshUser } = useStackAuth();
 
   const onContinue = async () => {
     try {
       const trimmedEmail = email.trim();
       if (!trimmedEmail) return;
       setBusy('email');
-      const { mode: nextMode } = await sendMagicLink(trimmedEmail);
-      setFlowMode(nextMode);
-      if (nextMode === 'magic-link') {
-        setEmailSent(true);
-        setOtpRequested(false);
-      } else {
-        setEmailSent(false);
-        setOtpRequested(true);
-      }
+      await sendMagicLink(trimmedEmail);
+      setOtpRequested(true);
     } catch (e: any) {
       console.warn(e);
-      let errorMessage = 'Unable to send magic link';
+      let errorMessage = 'Unable to send code';
       
       if (e.message?.includes('rate limit')) {
         errorMessage = 'Too many attempts. Please wait a moment and try again.';
@@ -52,6 +44,7 @@ export default function EmailAuthScreen() {
     try {
       setBusy(provider);
       await startOAuth(provider);
+      await refreshUser();
       router.replace('/(tabs)/home');
     } catch (e: any) {
       console.warn(e);
@@ -69,10 +62,6 @@ export default function EmailAuthScreen() {
     }
   };
 
-  const handleResend = async () => {
-    await onContinue();
-  };
-
   const onVerifyOtp = async () => {
     try {
       const trimmedEmail = email.trim();
@@ -80,6 +69,7 @@ export default function EmailAuthScreen() {
       if (!trimmedEmail || code.length < 4) return;
       setBusy('verify-otp');
       await verifyEmailOtp(trimmedEmail, code);
+      await refreshUser();
       setOtp('');
       setOtpRequested(false);
       router.replace('/(tabs)/home');
@@ -100,68 +90,34 @@ export default function EmailAuthScreen() {
   const resetEmailFlow = () => {
     setOtp('');
     setOtpRequested(false);
-    setEmailSent(false);
-    setFlowMode(Platform.OS === 'web' ? 'magic-link' : 'otp');
   };
-
-  const isOtpFlow = flowMode === 'otp';
-  const showMagicLinkSuccess = flowMode === 'magic-link' && emailSent;
-  const showOtpEntry = isOtpFlow && otpRequested;
-  const primaryBtnLabel = isOtpFlow ? 'Send code' : 'Send login link';
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme === 'dark' ? '#000' : '#fff' }]}> 
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme === 'dark' ? '#fff' : '#111827' }]}>
-          {showMagicLinkSuccess ? 'Check your email' : 'Log in or sign up'}
+          Log in or sign up
         </Text>
       </View>
 
       <View style={styles.content}>
-        {showMagicLinkSuccess ? (
-          <View style={styles.successContainer}>
-            <View style={styles.successIconContainer}>
-              <MaterialIcons name="email" size={48} color="#10b981" />
-            </View>
-            <Text style={[styles.successTitle, { color: theme === 'dark' ? '#fff' : '#111827' }]}>
-              Check your email
-            </Text>
-            <Text style={[styles.successMessage, { color: theme === 'dark' ? '#9ca3af' : '#6b7280' }]}>
-              We sent a magic link to {email}
-            </Text>
-            <Text style={[styles.successInstructions, { color: theme === 'dark' ? '#9ca3af' : '#6b7280' }]}>
-              Click the link to sign in. The link will expire in 24 hours.
-            </Text>
-            
-            <Pressable 
-              onPress={handleResend} 
-              disabled={busy === 'email'}
-              style={({ pressed }) => [styles.resendBtn, { opacity: pressed || busy === 'email' ? 0.6 : 1 }]}
-            >
-              <Text style={styles.resendBtnText}>
-                {busy === 'email' ? 'Sending…' : "Didn't receive it? Resend"}
-              </Text>
-            </Pressable>
-
-            <Pressable 
-              onPress={() => setEmailSent(false)} 
-              style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.8 : 1 }]}
-            >
-              <Text style={styles.backBtnText}>Try a different email</Text>
-            </Pressable>
-          </View>
-        ) : showOtpEntry ? (
+        {otpRequested ? (
           <View style={styles.otpContainer}>
-            <Text style={[styles.otpTitle, { color: theme === 'dark' ? '#fff' : '#111827' }]}>Enter your code</Text>
+            <Text style={[styles.otpTitle, { color: theme === 'dark' ? '#fff' : '#111827' }]}>
+              Enter your code
+            </Text>
             <Text style={[styles.otpHint, { color: theme === 'dark' ? '#9ca3af' : '#6b7280' }]}>
               We sent a 6-digit code to {email}. Enter it below to continue.
             </Text>
             <TextInput
               value={otp}
-              onChangeText={(value) => setOtp(value.replace(/[^0-9]/g, '').slice(0, 6))}
+              onChangeText={(value) =>
+                setOtp(value.replace(/[^0-9a-zA-Z]/g, '').toUpperCase().slice(0, 6))
+              }
               keyboardType="number-pad"
               returnKeyType="done"
               maxLength={6}
+              autoCapitalize="characters"
               style={[
                 styles.otpInput,
                 { color: theme === 'dark' ? '#ffffff' : '#111827' },
@@ -223,7 +179,7 @@ export default function EmailAuthScreen() {
                 ]}
               >
                 <Text style={styles.primaryBtnText}>
-                  {busy === 'email' ? 'Sending…' : primaryBtnLabel}
+                  {busy === 'email' ? 'Sending…' : 'Send code'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -286,7 +242,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 16,
-    // Color will be set dynamically
   },
   primaryBtn: { backgroundColor: '#111827', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 4 },
   primaryBtnWrapper: { marginTop: 12 },
@@ -315,19 +270,6 @@ const styles = StyleSheet.create({
     borderColor: '#374151',
     backgroundColor: 'rgba(55, 65, 81, 0.35)',
   },
-  // Success state styles
-  successContainer: { alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 20 },
-  successIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#d1fae5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  successTitle: { fontSize: 24, fontWeight: '700', textAlign: 'center' },
-  successMessage: { fontSize: 16, textAlign: 'center', marginBottom: 8 },
-  successInstructions: { fontSize: 14, textAlign: 'center', marginBottom: 24 },
   resendBtn: { 
     backgroundColor: '#111827', 
     borderRadius: 10, 

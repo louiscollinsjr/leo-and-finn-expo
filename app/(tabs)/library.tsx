@@ -3,7 +3,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -100,56 +100,23 @@ export default function LibraryScreen() {
   const fetchStories = useCallback(async (userId: string) => {
     console.log(`[Library] Fetching stories for user ${userId}…`);
 
-    const storiesPromise = supabase
-      .from('user_story_progress')
-      .select(
-        `
-        updated_at,
-        story:stories (
-          id,
-          title,
-          author,
-          description,
-          updated_at,
-          story_covers!left (
-            file_name,
-            storage_path,
-            cdn_url,
-            is_primary
-          )
-        )
-      `
-      )
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false, nullsFirst: false });
+    const storiesPromise = db.getUserLibrary(userId);
+    const stories = await withTimeout(storiesPromise);
 
-    const storiesResult = await withTimeout(storiesPromise as unknown as Promise<any>);
-    const { data: storiesData, error: storiesError } = storiesResult as { data: any[]; error: any };
-    if (storiesError) throw storiesError;
-
-    console.log('[Library] Supabase user_story_progress query result', {
+    console.log('[Library] Query result', {
       userId,
-      count: storiesData?.length ?? 0,
-      stories: storiesData,
+      count: stories.length,
     });
 
-    const transformedData: Story[] = (storiesData ?? [])
-      .map((row: any) => {
-        const story = row.story;
-        if (!story) return null;
-        const coverEntries = Array.isArray(story.story_covers) ? story.story_covers : story.story_covers ? [story.story_covers] : [];
-        const primaryCover = coverEntries.find((entry: any) => entry?.is_primary) ?? coverEntries[0] ?? null;
-        return {
-          id: story.id,
-          title: story.title ?? 'Untitled story',
-          author: story.author ?? null,
-          description: story.description ?? null,
-          coverFilename: story.filename ?? null,
-          coverUrl: primaryCover?.cdn_url ?? null,
-          updated_at: row.updated_at ?? story.updated_at ?? null,
-        };
-      })
-      .filter(Boolean) as Story[];
+    const transformedData: Story[] = stories.map((row) => ({
+      id: row.id,
+      title: row.title ?? 'Untitled story',
+      author: row.author ?? null,
+      description: row.description ?? null,
+      coverFilename: row.coverFilename ?? null,
+      coverUrl: row.coverUrl ?? null,
+      updated_at: row.updated_at ?? null,
+    }));
 
     console.log(`[Library] Loaded ${transformedData.length} stories`);
     return transformedData;

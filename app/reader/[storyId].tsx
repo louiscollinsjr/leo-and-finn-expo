@@ -1,8 +1,8 @@
+import { WordContextBottomSheet } from '@/components/overlays/WordContextBottomSheet';
 import ReaderView from '@/components/ReaderView';
 import StoryContent from '@/components/StoryContent';
-import { WordContextBottomSheet } from '@/components/overlays/WordContextBottomSheet';
 import { ThemedView } from '@/components/ThemedView';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 import { useReaderUI } from '@/providers/ReaderProvider';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -40,16 +40,18 @@ export default function ReaderScreen() {
         return;
       }
       setLoading(true);
-      const { data, error } = await supabase
-        .from('stories')
-        .select('title,author')
-        .eq('id', storyId)
-        .single();
-      if (!isMounted) return;
-      if (error) setError(error.message);
-      else {
-        setTitle(data?.title ?? '');
-        setAuthor(data?.author ?? null);
+      try {
+        const story = await db.getStoryById(storyId);
+        if (!isMounted) return;
+        if (!story) {
+          setError('Story not found');
+        } else {
+          setTitle(story.title ?? '');
+          setAuthor(story.author ?? null);
+        }
+      } catch (err: any) {
+        if (!isMounted) return;
+        setError(err?.message ?? 'Failed to load story');
       }
       setLoading(false);
     };

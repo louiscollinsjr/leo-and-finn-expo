@@ -1,6 +1,6 @@
 import { DISCOVER_LAST_SEEN_EVENT } from '@/constants/events';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 import { Badge, Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { DeviceEventEmitter } from 'react-native';
@@ -29,26 +29,14 @@ export default function TabLayout() {
     }
 
     try {
-      const { data: settingsData, error: settingsError } = await supabase
-        .from('user_settings')
-        .select('last_seen_discover_at')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (settingsError) throw settingsError;
-
-      const lastSeen = settingsData?.last_seen_discover_at ?? null;
+      const settings = await db.getUserSettings(user.id);
+      const lastSeen = settings?.last_seen_discover_at ?? null;
       const since = lastSeen ?? new Date(0).toISOString();
 
-      const { count, error: storiesError } = await supabase
-        .from('stories')
-        .select('id', { count: 'exact', head: true })
-        .gt('updated_at', since);
-
-      if (storiesError) throw storiesError;
+      const count = await db.countStoriesUpdatedSince(since);
 
       if (isMountedRef.current) {
-        setDiscoverBadge(count ?? 0);
+        setDiscoverBadge(count);
       }
     } catch (err) {
       console.error('[Tabs] Failed to load Discover badge', err);
@@ -72,44 +60,8 @@ export default function TabLayout() {
     };
   }, [loadDiscoverBadge]);
 
-  useEffect(() => {
-    if (!user?.id) {
-      return;
-    }
-
-    const channel = supabase
-      .channel('discover-badge-stories')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'stories' }, () => {
-        loadDiscoverBadge();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, loadDiscoverBadge]);
-
-  useEffect(() => {
-    if (!user?.id) {
-      return;
-    }
-
-    const channel = supabase
-      .channel(`discover-badge-settings-${user.id}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_settings',
-        filter: `user_id=eq.${user.id}`,
-      }, () => {
-        loadDiscoverBadge();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, loadDiscoverBadge]);
+  // Note: Realtime subscriptions removed (Neon doesn't support Supabase Realtime).
+  // Badge updates on screen focus and when DISCOVER_LAST_SEEN_EVENT is emitted.
 
   return (
     <NativeTabs>

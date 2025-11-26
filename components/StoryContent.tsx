@@ -1,13 +1,13 @@
+import { NeonContentSource } from '@/adapters/neon';
 import { ThemedText } from '@/components/ThemedText';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { createDefaultRegistry, renderWithRegistry } from '@/lib/blockRegistry';
+import { paginateBlocks } from '@/lib/pagination';
+import { useReaderPrefs } from '@/providers/ReaderProvider';
+import type { ContentSource } from '@/types/reader';
+import { Block } from '@/types/reader';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, View, useWindowDimensions } from 'react-native';
-import { Block } from '@/types/reader';
-import { paginateBlocks } from '@/lib/pagination';
-import { createDefaultRegistry, renderWithRegistry } from '@/lib/blockRegistry';
-import type { ContentSource } from '@/types/reader';
-import { SupabaseContentSource } from '@/adapters/supabase';
-import { useReaderPrefs } from '@/providers/ReaderProvider';
-import { useColorScheme } from '@/hooks/useColorScheme';
 
 type Props = {
   storyId: string;
@@ -64,7 +64,7 @@ export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks
           return;
         }
         setLoading(true);
-        const source: ContentSource = contentSource ?? new SupabaseContentSource();
+        const source: ContentSource = contentSource ?? new NeonContentSource();
         const out = await source.loadStoryBlocks(storyId);
         if (!isMountedRef.current) return;
         setLocalBlocks(out);

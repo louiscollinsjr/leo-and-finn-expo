@@ -1,11 +1,11 @@
-import React from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, View, Text, Pressable, TextInput, Platform } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '@/hooks/useAuth';
-import { startOAuth, sendMagicLink, signOut } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { sendMagicLink, startOAuth } from '@/lib/auth';
+import { useStackAuth } from '@/providers/StackAuthProvider';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -62,6 +62,7 @@ function ListItem({
 
 export default function AccountScreen() {
   const { user } = useAuth();
+  const { signOut } = useStackAuth();
   const router = useRouter();
   const [email, setEmail] = React.useState('');
   const [busy, setBusy] = React.useState<'apple' | 'google' | 'email' | 'signout' | null>(null);
