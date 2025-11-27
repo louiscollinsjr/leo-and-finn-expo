@@ -123,7 +123,6 @@ export const WordContextBottomSheet = forwardRef<
     if (sheetRef.current) {
       sheetRef.current.close();
     }
-    onClose?.();
   };
   
   // Legacy handler for backward compatibility
