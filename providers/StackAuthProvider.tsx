@@ -19,6 +19,7 @@ type StackAuthContextType = {
   loading: boolean;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  setUser: (user: StackUser | null) => void;
 };
 
 const StackAuthContext = createContext<StackAuthContextType | null>(null);
@@ -87,6 +88,7 @@ export function StackAuthProvider({ children }: StackAuthProviderProps) {
     loading,
     signOut,
     refreshUser,
+    setUser,
   };
 
   return (

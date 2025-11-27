@@ -11,17 +11,19 @@ export default function EmailAuthScreen() {
   const [busy, setBusy] = React.useState<null | 'email' | 'apple' | 'google' | 'verify-otp'>(null);
   const [otpRequested, setOtpRequested] = React.useState(false);
   const [otp, setOtp] = React.useState('');
+  const [nonce, setNonce] = React.useState<string | null>(null);
   const router = useRouter();
   const theme = useColorScheme() ?? 'light';
-  const { refreshUser } = useStackAuth();
+  const { setUser } = useStackAuth();
 
   const onContinue = async () => {
     try {
       const trimmedEmail = email.trim();
       if (!trimmedEmail) return;
       setBusy('email');
-      await sendMagicLink(trimmedEmail);
+      const { nonce } = await sendMagicLink(trimmedEmail);
       setOtpRequested(true);
+      setNonce(nonce);
     } catch (e: any) {
       console.warn(e);
       let errorMessage = 'Unable to send code';
@@ -43,8 +45,8 @@ export default function EmailAuthScreen() {
   const onOAuth = async (provider: 'apple' | 'google') => {
     try {
       setBusy(provider);
-      await startOAuth(provider);
-      await refreshUser();
+      const result = await startOAuth(provider);
+      setUser(result.user);
       router.replace('/(tabs)/home');
     } catch (e: any) {
       console.warn(e);
@@ -66,12 +68,13 @@ export default function EmailAuthScreen() {
     try {
       const trimmedEmail = email.trim();
       const code = otp.trim();
-      if (!trimmedEmail || code.length < 4) return;
+      if (!trimmedEmail || code.length < 4 || !nonce) return;
       setBusy('verify-otp');
-      await verifyEmailOtp(trimmedEmail, code);
-      await refreshUser();
+      const result = await verifyEmailOtp(trimmedEmail, code, nonce);
+      setUser(result.user);
       setOtp('');
       setOtpRequested(false);
+      setNonce(null);
       router.replace('/(tabs)/home');
     } catch (e: any) {
       console.warn(e);
@@ -90,6 +93,7 @@ export default function EmailAuthScreen() {
   const resetEmailFlow = () => {
     setOtp('');
     setOtpRequested(false);
+    setNonce(null);
   };
 
   return (

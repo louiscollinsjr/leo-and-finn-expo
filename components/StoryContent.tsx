@@ -6,7 +6,7 @@ import { paginateBlocks } from '@/lib/pagination';
 import { useReaderPrefs } from '@/providers/ReaderProvider';
 import type { ContentSource } from '@/types/reader';
 import { Block } from '@/types/reader';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, View, useWindowDimensions } from 'react-native';
 
 type Props = {
@@ -15,12 +15,12 @@ type Props = {
   hMargin?: number;
   blocks?: Block[]; // optional pre-provided content (skips fetching)
   contentSource?: ContentSource; // optional adapter, defaults to Supabase
-  onWordLongPress?: (word: string, tokenId?: string, anchor?: { x: number; y: number; width: number; height: number }) => void;
+  knownWords?: Set<string>; // words the user has marked as known
+  onWordLongPress?: (word: string, tokenId?: string) => void;
   onWordTap?: (word: string, tokenId?: string) => void;
-  onWordSwipeUp?: (word: string, tokenId?: string) => void;
 };
 
-export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks: providedBlocks, contentSource, onWordLongPress, onWordTap, onWordSwipeUp }: Props) {
+export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks: providedBlocks, contentSource, knownWords, onWordLongPress, onWordTap }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [localBlocks, setLocalBlocks] = useState<Block[]>([]);
@@ -33,18 +33,36 @@ export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks
   const colorScheme = useColorScheme();
   const baseMargin = hMargin ?? Math.round(screenWidth * 0.08);
   const sidePad = Math.max(20, Math.round(baseMargin * (prefs.marginScale || 1)));
-  const registry = createDefaultRegistry({
-    sidePad,
-    fontScale: prefs.fontScale,
-    lineHeightScale: prefs.lineHeightScale,
-    typeface: prefs.typeface,
-    boldText: prefs.boldText,
-    charSpacing: prefs.charSpacing,
-    theme: (prefs.theme === 'system' ? (colorScheme ?? 'light') : prefs.theme) as any,
-    onWordLongPress,
-    onWordTap,
-    onWordSwipeUp,
-  });
+  const effectiveTheme = prefs.theme === 'system' ? (colorScheme ?? 'light') : prefs.theme;
+  
+  // Memoize registry to prevent recreation on every render
+  const registry = useMemo(
+    () =>
+      createDefaultRegistry({
+        sidePad,
+        fontScale: prefs.fontScale,
+        lineHeightScale: prefs.lineHeightScale,
+        typeface: prefs.typeface,
+        boldText: prefs.boldText,
+        charSpacing: prefs.charSpacing,
+        theme: effectiveTheme as any,
+        knownWords,
+        onWordLongPress,
+        onWordTap,
+      }),
+    [
+      sidePad,
+      prefs.fontScale,
+      prefs.lineHeightScale,
+      prefs.typeface,
+      prefs.boldText,
+      prefs.charSpacing,
+      effectiveTheme,
+      knownWords,
+      onWordLongPress,
+      onWordTap,
+    ]
+  );
   const dataBlocks = providedBlocks ?? localBlocks;
 
   useEffect(() => {

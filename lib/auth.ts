@@ -75,27 +75,27 @@ export type EmailSignInMode = 'otp';
  * Send a magic link / OTP to the user's email.
  * Stack Auth uses OTP codes for React Native (not clickable links).
  */
-export async function sendMagicLink(email: string): Promise<{ mode: EmailSignInMode }> {
+export async function sendMagicLink(email: string): Promise<{ mode: EmailSignInMode; nonce: string }> {
   if (!stackAuth.projectId) {
     throw new Error('Stack Auth not configured');
   }
 
-  await stackSendMagicLink(email);
+  const nonce = await stackSendMagicLink(email);
   console.log('[Auth] OTP sent to', email);
 
   // Stack Auth sends OTP codes for mobile apps
-  return { mode: 'otp' };
+  return { mode: 'otp', nonce };
 }
 
 /**
  * Verify the OTP code sent to the user's email.
  */
-export async function verifyEmailOtp(email: string, code: string): Promise<AuthResult> {
+export async function verifyEmailOtp(email: string, code: string, nonce: string): Promise<AuthResult> {
   if (!stackAuth.projectId) {
     throw new Error('Stack Auth not configured');
   }
 
-  const result = await stackVerifyOtp(email, code);
+  const result = await stackVerifyOtp(email, code, nonce);
   console.log('[Auth] OTP verified for', result.user.email);
 
   return result;
@@ -151,11 +151,13 @@ export async function handleAuthCallback(url: string): Promise<AuthResult | null
   }
 
   // Magic link callback (if Stack Auth sends clickable links)
+  // Note: Magic links use a 45-char code that doesn't need a nonce
   const token = queryParams?.token as string | undefined;
   const email = queryParams?.email as string | undefined;
+  const nonce = queryParams?.nonce as string | undefined;
   if (token && email) {
     console.log('[Auth] Found magic link token in callback');
-    return stackVerifyOtp(email, token);
+    return stackVerifyOtp(email, token, nonce ?? '');
   }
 
   console.log('[Auth] No auth params in callback URL');

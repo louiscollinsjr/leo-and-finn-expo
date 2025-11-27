@@ -8,7 +8,15 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { useReaderOverlay, useReaderPrefs, useReaderUI } from '@/providers/ReaderProvider';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
+import Animated, {
+    Easing,
+    runOnJS,
+    useAnimatedScrollHandler,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type ReaderViewProps = {
@@ -61,20 +69,22 @@ export default function ReaderView(props: ReaderViewProps) {
   const [showOverlay, setShowOverlay] = useState(overlayVisible);
   const [menuPresented, setMenuPresented] = useState(false);
   const [bottomOverlayHeight, setBottomOverlayHeight] = useState(0);
-  const overlayOpacity = useRef(new Animated.Value(overlayVisible ? 1 : 0)).current;
-  const bottomActionsOpacity = useRef(new Animated.Value(overlayVisible ? 1 : 0)).current;
   const overlayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reanimated shared values for overlay animations
+  const overlayOpacity = useSharedValue(overlayVisible ? 1 : 0);
+  const bottomActionsOpacity = useSharedValue(overlayVisible ? 1 : 0);
 
   const showOverlays = useCallback(() => {
     setShowOverlay(true);
     setOverlayVisible(true);
-    Animated.timing(overlayOpacity, { toValue: 1, duration: 160, useNativeDriver: true }).start();
+    overlayOpacity.value = withTiming(1, { duration: 160 });
     if (overlayTimer.current) clearTimeout(overlayTimer.current);
     overlayTimer.current = setTimeout(() => {
-      Animated.timing(overlayOpacity, { toValue: 0, duration: 220, useNativeDriver: true }).start(({ finished }) => {
+      overlayOpacity.value = withTiming(0, { duration: 220 }, (finished) => {
         if (finished) {
-          setShowOverlay(false);
-          setOverlayVisible(false);
+          runOnJS(setShowOverlay)(false);
+          runOnJS(setOverlayVisible)(false);
         }
       });
     }, 3500);
@@ -82,10 +92,10 @@ export default function ReaderView(props: ReaderViewProps) {
 
   const hideOverlays = useCallback(() => {
     if (overlayTimer.current) clearTimeout(overlayTimer.current);
-    Animated.timing(overlayOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start(({ finished }) => {
+    overlayOpacity.value = withTiming(0, { duration: 200 }, (finished) => {
       if (finished) {
-        setShowOverlay(false);
-        setOverlayVisible(false);
+        runOnJS(setShowOverlay)(false);
+        runOnJS(setOverlayVisible)(false);
       }
     });
   }, [overlayOpacity, setOverlayVisible]);
@@ -93,7 +103,7 @@ export default function ReaderView(props: ReaderViewProps) {
   useEffect(() => {
     if (overlayVisible) {
       setShowOverlay(true);
-      Animated.timing(overlayOpacity, { toValue: 1, duration: 160, useNativeDriver: true }).start();
+      overlayOpacity.value = withTiming(1, { duration: 160 });
     } else {
       hideOverlays();
     }
@@ -101,7 +111,7 @@ export default function ReaderView(props: ReaderViewProps) {
 
   useEffect(() => {
     const target = !showOverlay ? 0 : menuVisible ? (menuPresented ? 0 : 1) : 1;
-    Animated.timing(bottomActionsOpacity, { toValue: target, duration: 180, useNativeDriver: true }).start();
+    bottomActionsOpacity.value = withTiming(target, { duration: 180 });
   }, [showOverlay, menuVisible, menuPresented, bottomActionsOpacity]);
 
   useEffect(() => {
@@ -110,35 +120,68 @@ export default function ReaderView(props: ReaderViewProps) {
     }
   }, [menuVisible, themePopoverVisible, settingsVisible, showOverlays]);
 
-  const scrollRef = useRef<ScrollView | null>(null);
+  // Reanimated shared values for scroll tracking (runs on UI thread)
+  const scrollRef = useRef<Animated.ScrollView>(null);
+  const scrollY = useSharedValue(0);
+  const contentHeight = useSharedValue(1);
+  const viewportHeight = useSharedValue(1);
+  
+  // Use refs for scroll state to avoid reading shared values on JS thread
   const isDraggingRef = useRef(false);
   const lastScrollAtRef = useRef(0);
-  const [contentHeight, setContentHeight] = useState(1);
-  const [viewportHeight, setViewportHeight] = useState(1);
-  const [scrollY, setScrollY] = useState(0);
+  const touchStartTimeRef = useRef(0);
 
-  const setScrollRef = useCallback((node: ScrollView | null) => {
-    scrollRef.current = node;
-  }, []);
+  // For JS-side display (pages left label), we need a React state
+  const [jsProgress, setJsProgress] = useState(0);
+  const updateJsProgress = useCallback((p: number) => setJsProgress(p), []);
 
-  const progress = Math.max(0, Math.min(1, contentHeight <= viewportHeight ? 1 : scrollY / (contentHeight - viewportHeight)));
-  const totalPages = Math.max(1, Math.ceil(contentHeight / Math.max(1, viewportHeight)));
-  const currentPage = Math.max(1, Math.min(totalPages, Math.floor(progress * totalPages) + 1));
-  const pagesLeft = Math.max(0, totalPages - currentPage);
+  // Callbacks for scroll state updates (called from worklets via runOnJS)
+  const setDragging = useCallback((v: boolean) => { isDraggingRef.current = v; }, []);
+  const setLastScrollAt = useCallback((t: number) => { lastScrollAtRef.current = t; }, []);
+
+  // Animated scroll handler - runs entirely on UI thread
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      'worklet';
+      scrollY.value = event.contentOffset.y;
+      // Throttled update to JS for label display
+      const newProgress = contentHeight.value <= viewportHeight.value
+        ? 1
+        : Math.max(0, Math.min(1, event.contentOffset.y / (contentHeight.value - viewportHeight.value)));
+      runOnJS(updateJsProgress)(newProgress);
+    },
+    onBeginDrag: () => {
+      'worklet';
+      runOnJS(setDragging)(true);
+    },
+    onEndDrag: () => {
+      'worklet';
+      runOnJS(setDragging)(false);
+      runOnJS(setLastScrollAt)(Date.now());
+    },
+    onMomentumEnd: () => {
+      'worklet';
+      runOnJS(setDragging)(false);
+      runOnJS(setLastScrollAt)(Date.now());
+    },
+  });
+
+  const totalPages = Math.max(1, Math.ceil(1 / Math.max(0.01, 1 - jsProgress + 0.001)));
+  const pagesLeft = Math.max(0, Math.round((1 - jsProgress) * totalPages));
   const centerLabel = `${pagesLeft} pages left`;
 
   const scrubTo = useCallback(
     (p: number) => {
       const node = scrollRef.current;
       if (!node) return;
-      const target = (contentHeight - viewportHeight) * Math.max(0, Math.min(1, p));
-      node.scrollTo({ y: target, animated: false });
+      const maxScroll = contentHeight.value - viewportHeight.value;
+      const target = maxScroll * Math.max(0, Math.min(1, p));
+      (node as any).scrollTo({ y: target, animated: false });
     },
     [contentHeight, viewportHeight]
   );
 
   useEffect(() => () => {
-    scrollRef.current = null;
     if (overlayTimer.current) clearTimeout(overlayTimer.current);
   }, []);
 
@@ -146,16 +189,17 @@ export default function ReaderView(props: ReaderViewProps) {
   const bgColor = effectiveTheme === 'dark' ? '#49494d' : effectiveTheme === 'sepia' ? '#f6ecd7' : '#ffffff';
   const statusStyle = effectiveTheme === 'dark' ? 'light' : 'dark';
 
+  // Dim overlay opacity (Reanimated)
   const targetDimOpacity = Math.max(0, 1 - (prefs.brightness ?? 1)) * 0.9;
-  const dimOpacity = useRef(new Animated.Value(targetDimOpacity)).current;
+  const dimOpacity = useSharedValue(targetDimOpacity);
   useEffect(() => {
-    Animated.timing(dimOpacity, {
-      toValue: targetDimOpacity,
-      duration: 160,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
+    dimOpacity.value = withTiming(targetDimOpacity, { duration: 160, easing: Easing.out(Easing.quad) });
   }, [targetDimOpacity, dimOpacity]);
+
+  // Animated styles
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({ opacity: overlayOpacity.value }));
+  const bottomActionsAnimatedStyle = useAnimatedStyle(() => ({ opacity: bottomActionsOpacity.value }));
+  const dimAnimatedStyle = useAnimatedStyle(() => ({ opacity: dimOpacity.value }));
 
   if (loading) {
     return <ReaderLoadingState />;
@@ -173,45 +217,35 @@ export default function ReaderView(props: ReaderViewProps) {
         <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, backgroundColor: bgColor, zIndex: 5 }} />
       )}
 
-      <ScrollView
-        ref={setScrollRef}
+      <Animated.ScrollView
+        ref={scrollRef}
         contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: Math.max(80, bottomOverlayHeight + 32) }}
         style={{ backgroundColor: bgColor }}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
-        onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
-        onContentSizeChange={(_w, h) => setContentHeight(h)}
-        onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
-        onScrollBeginDrag={() => {
-          isDraggingRef.current = true;
+        onLayout={(e) => { viewportHeight.value = e.nativeEvent.layout.height; }}
+        onContentSizeChange={(_w, h) => { contentHeight.value = h; }}
+        onScroll={scrollHandler}
+        onTouchStart={() => {
+          touchStartTimeRef.current = Date.now();
         }}
-        onScrollEndDrag={() => {
-          isDraggingRef.current = false;
-          lastScrollAtRef.current = Date.now();
-        }}
-        onMomentumScrollEnd={() => {
-          isDraggingRef.current = false;
-          lastScrollAtRef.current = Date.now();
+        onTouchEnd={() => {
+          // Toggle overlay on tap (not during scroll or long-press)
+          const now = Date.now();
+          const touchDuration = now - touchStartTimeRef.current;
+          const recentlyScrolled = now - lastScrollAtRef.current < 200;
+          const wasLongPress = touchDuration > 280; // slightly less than long-press delay
+          if (isDraggingRef.current || recentlyScrolled || wasLongPress) return;
+          if (showOverlay) hideOverlays(); else showOverlays();
         }}
       >
-        <Pressable
-          style={{ flex: 1, minHeight: '100%' }}
-          onPress={() => {
-            const now = Date.now();
-            const recentlyScrolled = now - lastScrollAtRef.current < 150;
-            if (isDraggingRef.current || recentlyScrolled) return;
-            if (showOverlay) hideOverlays(); else showOverlays();
-          }}
-          delayLongPress={200}
-        >
-          {children}
-        </Pressable>
-      </ScrollView>
+        {children}
+      </Animated.ScrollView>
 
-      <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'black', opacity: dimOpacity }} />
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'black' }, dimAnimatedStyle]} />
 
       {showOverlay && (
-        <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, opacity: overlayOpacity }}>
+        <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0 }, overlayAnimatedStyle]}>
           {renderTopOverlay ? (
             renderTopOverlay({ insets, title, onBack })
           ) : (
@@ -223,7 +257,7 @@ export default function ReaderView(props: ReaderViewProps) {
       {showOverlay && (
         <Animated.View
           pointerEvents={showOverlay && !menuVisible ? 'auto' : 'none'}
-          style={{ position: 'absolute', left: 0, right: 0, bottom: 0, opacity: bottomActionsOpacity, zIndex: 5 }}
+          style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 5 }, bottomActionsAnimatedStyle]}
           onLayout={(e) => setBottomOverlayHeight(e.nativeEvent.layout.height)}
         >
           {renderBottomOverlay ? (
@@ -256,7 +290,7 @@ export default function ReaderView(props: ReaderViewProps) {
             setThemePopoverVisible(true);
           }, 160);
         }}
-        progress={progress}
+        progress={jsProgress}
         onScrub={scrubTo}
         onSetMode={() => {
           setMenuVisible(false);

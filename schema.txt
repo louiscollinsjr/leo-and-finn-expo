@@ -1,0 +1,974 @@
+CREATE SCHEMA "public";
+CREATE SCHEMA "auth";
+CREATE SCHEMA "extensions";
+CREATE SCHEMA "graphql";
+CREATE SCHEMA "graphql_public";
+CREATE SCHEMA "pgbouncer";
+CREATE SCHEMA "realtime";
+CREATE SCHEMA "storage";
+CREATE SCHEMA "supabase_migrations";
+CREATE SCHEMA "vault";
+CREATE TYPE "auth"."aal_level" AS ENUM('aal1', 'aal2', 'aal3');
+CREATE TYPE "auth"."code_challenge_method" AS ENUM('s256', 'plain');
+CREATE TYPE "auth"."factor_status" AS ENUM('unverified', 'verified');
+CREATE TYPE "auth"."factor_type" AS ENUM('totp', 'webauthn', 'phone');
+CREATE TYPE "auth"."oauth_authorization_status" AS ENUM('pending', 'approved', 'denied', 'expired');
+CREATE TYPE "auth"."oauth_client_type" AS ENUM('public', 'confidential');
+CREATE TYPE "auth"."oauth_registration_type" AS ENUM('dynamic', 'manual');
+CREATE TYPE "auth"."oauth_response_type" AS ENUM('code');
+CREATE TYPE "auth"."one_time_token_type" AS ENUM('confirmation_token', 'reauthentication_token', 'recovery_token', 'email_change_token_new', 'email_change_token_current', 'phone_change_token');
+CREATE TYPE "realtime"."action" AS ENUM('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'ERROR');
+CREATE TYPE "realtime"."equality_op" AS ENUM('eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'in');
+CREATE TYPE "storage"."buckettype" AS ENUM('STANDARD', 'ANALYTICS', 'VECTOR');
+CREATE TABLE "audio_assets" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"story_revision_id" uuid NOT NULL,
+	"kind" text DEFAULT 'narration',
+	"url" text NOT NULL,
+	"meta" jsonb
+);
+CREATE TABLE "chapters" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"story_id" uuid NOT NULL UNIQUE,
+	"title" text,
+	"position" integer NOT NULL UNIQUE,
+	"created_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "chapters_story_id_position_key" UNIQUE("story_id","position")
+);
+ALTER TABLE "chapters" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "collections" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"user_id" uuid NOT NULL,
+	"title" text NOT NULL,
+	"description" text,
+	"is_public" boolean DEFAULT false,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now(),
+	"image_url" text
+);
+ALTER TABLE "collections" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "documents" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"collection_id" uuid NOT NULL,
+	"user_id" uuid NOT NULL,
+	"title" text NOT NULL,
+	"content" jsonb NOT NULL,
+	"original_text" text NOT NULL,
+	"word_count" integer DEFAULT 0,
+	"paragraph_count" integer DEFAULT 0,
+	"is_public" boolean DEFAULT false,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now(),
+	"image_url" text,
+	"description" text,
+	"language_code" varchar(5) DEFAULT 'ro' NOT NULL
+);
+ALTER TABLE "documents" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "format_spans" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"story_revision_id" uuid NOT NULL,
+	"segment_id" uuid NOT NULL,
+	"start_tok_index" integer NOT NULL,
+	"end_tok_index" integer NOT NULL,
+	"style" jsonb NOT NULL
+);
+CREATE TABLE "languages" (
+	"code" text PRIMARY KEY,
+	"name" text NOT NULL
+);
+CREATE TABLE "lesson_stats" (
+	"document_id" uuid PRIMARY KEY,
+	"total_tokens" integer DEFAULT 0 NOT NULL,
+	"total_types" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+ALTER TABLE "lesson_stats" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "lesson_word_counts" (
+	"document_id" uuid,
+	"normalized_word" text,
+	"occurrence_count" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "lesson_word_counts_pkey" PRIMARY KEY("document_id","normalized_word")
+);
+ALTER TABLE "lesson_word_counts" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "lexemes" (
+	"lemma_key" text PRIMARY KEY,
+	"language_code" text,
+	"lemma" text NOT NULL,
+	"extra" jsonb
+);
+CREATE TABLE "profiles" (
+	"id" uuid PRIMARY KEY,
+	"updated_at" timestamp with time zone,
+	"full_name" text,
+	"avatar_url" text,
+	"website" text,
+	"native_language" varchar(5) DEFAULT 'en' NOT NULL
+);
+ALTER TABLE "profiles" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "segments" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"story_revision_id" uuid NOT NULL UNIQUE,
+	"chapter_id" uuid NOT NULL UNIQUE,
+	"seg_index" integer NOT NULL UNIQUE,
+	"kind" text DEFAULT 'paragraph',
+	"attrs" jsonb,
+	CONSTRAINT "segments_story_revision_id_chapter_id_seg_index_key" UNIQUE("story_revision_id","chapter_id","seg_index")
+);
+CREATE TABLE "stories" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"title" text NOT NULL,
+	"author" text,
+	"source" text,
+	"license" text,
+	"language_code" text,
+	"description" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+ALTER TABLE "stories" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "story_covers" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"story_id" uuid NOT NULL,
+	"storage_path" text,
+	"file_name" text,
+	"mime_type" text,
+	"width" integer,
+	"height" integer,
+	"cdn_url" text,
+	"is_primary" boolean DEFAULT false,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now()
+);
+CREATE TABLE "story_genre_links" (
+	"story_id" uuid,
+	"genre_id" uuid,
+	CONSTRAINT "story_genre_links_pkey" PRIMARY KEY("story_id","genre_id")
+);
+ALTER TABLE "story_genre_links" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "story_genres" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"name" text NOT NULL CONSTRAINT "story_genres_name_key" UNIQUE
+);
+ALTER TABLE "story_genres" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "story_revisions" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"story_id" uuid NOT NULL UNIQUE,
+	"rev" integer NOT NULL UNIQUE,
+	"note" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "story_revisions_story_id_rev_key" UNIQUE("story_id","rev")
+);
+CREATE TABLE "story_tag_links" (
+	"story_id" uuid,
+	"tag_id" uuid,
+	CONSTRAINT "story_tag_links_pkey" PRIMARY KEY("story_id","tag_id")
+);
+CREATE TABLE "story_tags" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"name" text NOT NULL CONSTRAINT "story_tags_name_key" UNIQUE,
+	"type" text,
+	"description" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+CREATE TABLE "token_timings" (
+	"audio_id" uuid,
+	"token_id" text,
+	"t_start_ms" integer NOT NULL,
+	"t_end_ms" integer NOT NULL,
+	CONSTRAINT "token_timings_pkey" PRIMARY KEY("audio_id","token_id")
+);
+CREATE TABLE "tokens" (
+	"id" text PRIMARY KEY,
+	"story_revision_id" uuid NOT NULL UNIQUE,
+	"segment_id" uuid NOT NULL,
+	"seg_index" integer NOT NULL UNIQUE,
+	"tok_index" integer NOT NULL UNIQUE,
+	"text" text NOT NULL,
+	"norm" text,
+	"lemma_key" text,
+	"token_type" text DEFAULT 'word',
+	"style" jsonb,
+	"chapter_id" uuid NOT NULL UNIQUE,
+	CONSTRAINT "tokens_story_rev_chap_seg_tok_unique" UNIQUE("story_revision_id","chapter_id","seg_index","tok_index")
+);
+ALTER TABLE "tokens" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "user_highlights" (
+	"user_id" uuid,
+	"token_id" text,
+	"color" text,
+	"status" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "user_highlights_pkey" PRIMARY KEY("user_id","token_id")
+);
+CREATE TABLE "user_notes" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"user_id" uuid NOT NULL,
+	"story_revision_id" uuid NOT NULL,
+	"token_id" text,
+	"segment_id" uuid,
+	"body" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+CREATE TABLE "user_settings" (
+	"user_id" uuid PRIMARY KEY,
+	"last_seen_discover_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now()
+);
+CREATE TABLE "user_story_progress" (
+	"user_id" uuid,
+	"story_id" uuid,
+	"latest_revision_id" uuid,
+	"last_chapter_id" uuid,
+	"last_seg_index" integer,
+	"last_tok_index" integer,
+	"percent" numeric,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "user_story_progress_pkey" PRIMARY KEY("user_id","story_id")
+);
+ALTER TABLE "user_story_progress" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "user_token_translations" (
+	"user_id" uuid,
+	"token_id" text,
+	"translation" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "user_token_translations_pkey" PRIMARY KEY("user_id","token_id")
+);
+CREATE TABLE "user_translations" (
+	"user_id" uuid,
+	"lemma_key" text,
+	"translation" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "user_translations_pkey" PRIMARY KEY("user_id","lemma_key")
+);
+ALTER TABLE "user_translations" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "user_vocabulary" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"user_id" uuid NOT NULL UNIQUE,
+	"romanian_word" text NOT NULL UNIQUE,
+	"eng_translation" text,
+	"known" boolean DEFAULT false,
+	"first_learned_at" timestamp with time zone,
+	"updated_at" timestamp with time zone DEFAULT now(),
+	"created_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "user_vocabulary_user_id_romanian_word_key" UNIQUE("user_id","romanian_word")
+);
+ALTER TABLE "user_vocabulary" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "word_translations" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"user_id" uuid NOT NULL UNIQUE,
+	"document_id" uuid NOT NULL UNIQUE,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now(),
+	"original_word" text DEFAULT '' NOT NULL,
+	"normalized_word" text DEFAULT '' NOT NULL UNIQUE,
+	"language_code" text DEFAULT 'ro' NOT NULL UNIQUE,
+	"context" text,
+	"status" text DEFAULT 'confirmed' NOT NULL,
+	"confidence_score" double precision DEFAULT 1.0,
+	"translation" text NOT NULL,
+	"occurrence_ids" text[] DEFAULT '{}' NOT NULL,
+	"context_left" text,
+	"context_right" text,
+	CONSTRAINT "word_translations_user_id_document_id_normalized_word_lang_key" UNIQUE("user_id","document_id","normalized_word","language_code"),
+	CONSTRAINT "word_translations_status_check" CHECK (CHECK ((status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'rejected'::text]))))
+);
+ALTER TABLE "word_translations" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."audit_log_entries" (
+	"instance_id" uuid,
+	"id" uuid PRIMARY KEY,
+	"payload" json,
+	"created_at" timestamp with time zone,
+	"ip_address" varchar(64) DEFAULT '' NOT NULL
+);
+ALTER TABLE "auth"."audit_log_entries" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."flow_state" (
+	"id" uuid PRIMARY KEY,
+	"user_id" uuid,
+	"auth_code" text NOT NULL,
+	"code_challenge_method" auth.code_challenge_method NOT NULL,
+	"code_challenge" text NOT NULL,
+	"provider_type" text NOT NULL,
+	"provider_access_token" text,
+	"provider_refresh_token" text,
+	"created_at" timestamp with time zone,
+	"updated_at" timestamp with time zone,
+	"authentication_method" text NOT NULL,
+	"auth_code_issued_at" timestamp with time zone
+);
+ALTER TABLE "auth"."flow_state" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."identities" (
+	"provider_id" text NOT NULL UNIQUE,
+	"user_id" uuid NOT NULL,
+	"identity_data" jsonb NOT NULL,
+	"provider" text NOT NULL UNIQUE,
+	"last_sign_in_at" timestamp with time zone,
+	"created_at" timestamp with time zone,
+	"updated_at" timestamp with time zone,
+	"email" text GENERATED ALWAYS AS (lower((identity_data ->> 'email'::text))) STORED,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	CONSTRAINT "identities_provider_id_provider_unique" UNIQUE("provider_id","provider")
+);
+ALTER TABLE "auth"."identities" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."instances" (
+	"id" uuid PRIMARY KEY,
+	"uuid" uuid,
+	"raw_base_config" text,
+	"created_at" timestamp with time zone,
+	"updated_at" timestamp with time zone
+);
+ALTER TABLE "auth"."instances" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."mfa_amr_claims" (
+	"session_id" uuid NOT NULL UNIQUE,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
+	"authentication_method" text NOT NULL UNIQUE,
+	"id" uuid,
+	CONSTRAINT "amr_id_pk" PRIMARY KEY("id"),
+	CONSTRAINT "mfa_amr_claims_session_id_authentication_method_pkey" UNIQUE("session_id","authentication_method")
+);
+ALTER TABLE "auth"."mfa_amr_claims" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."mfa_challenges" (
+	"id" uuid PRIMARY KEY,
+	"factor_id" uuid NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"verified_at" timestamp with time zone,
+	"ip_address" inet NOT NULL,
+	"otp_code" text,
+	"web_authn_session_data" jsonb
+);
+ALTER TABLE "auth"."mfa_challenges" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."mfa_factors" (
+	"id" uuid PRIMARY KEY,
+	"user_id" uuid NOT NULL,
+	"friendly_name" text,
+	"factor_type" auth.factor_type NOT NULL,
+	"status" auth.factor_status NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
+	"secret" text,
+	"phone" text,
+	"last_challenged_at" timestamp with time zone CONSTRAINT "mfa_factors_last_challenged_at_key" UNIQUE,
+	"web_authn_credential" jsonb,
+	"web_authn_aaguid" uuid
+);
+ALTER TABLE "auth"."mfa_factors" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."oauth_authorizations" (
+	"id" uuid PRIMARY KEY,
+	"authorization_id" text NOT NULL CONSTRAINT "oauth_authorizations_authorization_id_key" UNIQUE,
+	"client_id" uuid NOT NULL,
+	"user_id" uuid,
+	"redirect_uri" text NOT NULL,
+	"scope" text NOT NULL,
+	"state" text,
+	"resource" text,
+	"code_challenge" text,
+	"code_challenge_method" auth.code_challenge_method,
+	"response_type" auth.oauth_response_type DEFAULT 'code' NOT NULL,
+	"status" auth.oauth_authorization_status DEFAULT 'pending' NOT NULL,
+	"authorization_code" text CONSTRAINT "oauth_authorizations_authorization_code_key" UNIQUE,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"expires_at" timestamp with time zone DEFAULT (now() + '00:03:00'::interval) NOT NULL,
+	"approved_at" timestamp with time zone,
+	CONSTRAINT "oauth_authorizations_authorization_code_length" CHECK (CHECK ((char_length(authorization_code) <= 255))),
+	CONSTRAINT "oauth_authorizations_code_challenge_length" CHECK (CHECK ((char_length(code_challenge) <= 128))),
+	CONSTRAINT "oauth_authorizations_expires_at_future" CHECK (CHECK ((expires_at > created_at))),
+	CONSTRAINT "oauth_authorizations_redirect_uri_length" CHECK (CHECK ((char_length(redirect_uri) <= 2048))),
+	CONSTRAINT "oauth_authorizations_resource_length" CHECK (CHECK ((char_length(resource) <= 2048))),
+	CONSTRAINT "oauth_authorizations_scope_length" CHECK (CHECK ((char_length(scope) <= 4096))),
+	CONSTRAINT "oauth_authorizations_state_length" CHECK (CHECK ((char_length(state) <= 4096)))
+);
+CREATE TABLE "auth"."oauth_clients" (
+	"id" uuid PRIMARY KEY,
+	"client_secret_hash" text,
+	"registration_type" auth.oauth_registration_type NOT NULL,
+	"redirect_uris" text NOT NULL,
+	"grant_types" text NOT NULL,
+	"client_name" text,
+	"client_uri" text,
+	"logo_uri" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"deleted_at" timestamp with time zone,
+	"client_type" auth.oauth_client_type DEFAULT 'confidential' NOT NULL,
+	CONSTRAINT "oauth_clients_client_name_length" CHECK (CHECK ((char_length(client_name) <= 1024))),
+	CONSTRAINT "oauth_clients_client_uri_length" CHECK (CHECK ((char_length(client_uri) <= 2048))),
+	CONSTRAINT "oauth_clients_logo_uri_length" CHECK (CHECK ((char_length(logo_uri) <= 2048)))
+);
+CREATE TABLE "auth"."oauth_consents" (
+	"id" uuid PRIMARY KEY,
+	"user_id" uuid NOT NULL UNIQUE,
+	"client_id" uuid NOT NULL UNIQUE,
+	"scopes" text NOT NULL,
+	"granted_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"revoked_at" timestamp with time zone,
+	CONSTRAINT "oauth_consents_user_client_unique" UNIQUE("user_id","client_id"),
+	CONSTRAINT "oauth_consents_revoked_after_granted" CHECK (CHECK (((revoked_at IS NULL) OR (revoked_at >= granted_at)))),
+	CONSTRAINT "oauth_consents_scopes_length" CHECK (CHECK ((char_length(scopes) <= 2048))),
+	CONSTRAINT "oauth_consents_scopes_not_empty" CHECK (CHECK ((char_length(TRIM(BOTH FROM scopes)) > 0)))
+);
+CREATE TABLE "auth"."one_time_tokens" (
+	"id" uuid PRIMARY KEY,
+	"user_id" uuid NOT NULL,
+	"token_type" auth.one_time_token_type NOT NULL,
+	"token_hash" text NOT NULL,
+	"relates_to" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "one_time_tokens_token_hash_check" CHECK (CHECK ((char_length(token_hash) > 0)))
+);
+ALTER TABLE "auth"."one_time_tokens" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."refresh_tokens" (
+	"instance_id" uuid,
+	"id" bigserial PRIMARY KEY,
+	"token" varchar(255) CONSTRAINT "refresh_tokens_token_unique" UNIQUE,
+	"user_id" varchar(255),
+	"revoked" boolean,
+	"created_at" timestamp with time zone,
+	"updated_at" timestamp with time zone,
+	"parent" varchar(255),
+	"session_id" uuid
+);
+ALTER TABLE "auth"."refresh_tokens" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."saml_providers" (
+	"id" uuid PRIMARY KEY,
+	"sso_provider_id" uuid NOT NULL,
+	"entity_id" text NOT NULL CONSTRAINT "saml_providers_entity_id_key" UNIQUE,
+	"metadata_xml" text NOT NULL,
+	"metadata_url" text,
+	"attribute_mapping" jsonb,
+	"created_at" timestamp with time zone,
+	"updated_at" timestamp with time zone,
+	"name_id_format" text,
+	CONSTRAINT "entity_id not empty" CHECK (CHECK ((char_length(entity_id) > 0))),
+	CONSTRAINT "metadata_url not empty" CHECK (CHECK (((metadata_url = NULL::text) OR (char_length(metadata_url) > 0)))),
+	CONSTRAINT "metadata_xml not empty" CHECK (CHECK ((char_length(metadata_xml) > 0)))
+);
+ALTER TABLE "auth"."saml_providers" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."saml_relay_states" (
+	"id" uuid PRIMARY KEY,
+	"sso_provider_id" uuid NOT NULL,
+	"request_id" text NOT NULL,
+	"for_email" text,
+	"redirect_to" text,
+	"created_at" timestamp with time zone,
+	"updated_at" timestamp with time zone,
+	"flow_state_id" uuid,
+	CONSTRAINT "request_id not empty" CHECK (CHECK ((char_length(request_id) > 0)))
+);
+ALTER TABLE "auth"."saml_relay_states" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."schema_migrations" (
+	"version" varchar(255) PRIMARY KEY
+);
+ALTER TABLE "auth"."schema_migrations" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."sessions" (
+	"id" uuid PRIMARY KEY,
+	"user_id" uuid NOT NULL,
+	"created_at" timestamp with time zone,
+	"updated_at" timestamp with time zone,
+	"factor_id" uuid,
+	"aal" auth.aal_level,
+	"not_after" timestamp with time zone,
+	"refreshed_at" timestamp,
+	"user_agent" text,
+	"ip" inet,
+	"tag" text,
+	"oauth_client_id" uuid
+);
+ALTER TABLE "auth"."sessions" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."sso_domains" (
+	"id" uuid PRIMARY KEY,
+	"sso_provider_id" uuid NOT NULL,
+	"domain" text NOT NULL,
+	"created_at" timestamp with time zone,
+	"updated_at" timestamp with time zone,
+	CONSTRAINT "domain not empty" CHECK (CHECK ((char_length(domain) > 0)))
+);
+ALTER TABLE "auth"."sso_domains" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."sso_providers" (
+	"id" uuid PRIMARY KEY,
+	"resource_id" text,
+	"created_at" timestamp with time zone,
+	"updated_at" timestamp with time zone,
+	"disabled" boolean,
+	CONSTRAINT "resource_id not empty" CHECK (CHECK (((resource_id = NULL::text) OR (char_length(resource_id) > 0))))
+);
+ALTER TABLE "auth"."sso_providers" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "auth"."users" (
+	"instance_id" uuid,
+	"id" uuid PRIMARY KEY,
+	"aud" varchar(255),
+	"role" varchar(255),
+	"email" varchar(255),
+	"encrypted_password" varchar(255),
+	"email_confirmed_at" timestamp with time zone,
+	"invited_at" timestamp with time zone,
+	"confirmation_token" varchar(255),
+	"confirmation_sent_at" timestamp with time zone,
+	"recovery_token" varchar(255),
+	"recovery_sent_at" timestamp with time zone,
+	"email_change_token_new" varchar(255),
+	"email_change" varchar(255),
+	"email_change_sent_at" timestamp with time zone,
+	"last_sign_in_at" timestamp with time zone,
+	"raw_app_meta_data" jsonb,
+	"raw_user_meta_data" jsonb,
+	"is_super_admin" boolean,
+	"created_at" timestamp with time zone,
+	"updated_at" timestamp with time zone,
+	"phone" text DEFAULT NULL CONSTRAINT "users_phone_key" UNIQUE,
+	"phone_confirmed_at" timestamp with time zone,
+	"phone_change" text DEFAULT '',
+	"phone_change_token" varchar(255) DEFAULT '',
+	"phone_change_sent_at" timestamp with time zone,
+	"confirmed_at" timestamp with time zone GENERATED ALWAYS AS (LEAST(email_confirmed_at, phone_confirmed_at)) STORED,
+	"email_change_token_current" varchar(255) DEFAULT '',
+	"email_change_confirm_status" smallint DEFAULT 0,
+	"banned_until" timestamp with time zone,
+	"reauthentication_token" varchar(255) DEFAULT '',
+	"reauthentication_sent_at" timestamp with time zone,
+	"is_sso_user" boolean DEFAULT false NOT NULL,
+	"deleted_at" timestamp with time zone,
+	"is_anonymous" boolean DEFAULT false NOT NULL,
+	CONSTRAINT "users_email_change_confirm_status_check" CHECK (CHECK (((email_change_confirm_status >= 0) AND (email_change_confirm_status <= 2))))
+);
+ALTER TABLE "auth"."users" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "realtime"."messages" (
+	"topic" text NOT NULL,
+	"extension" text NOT NULL,
+	"payload" jsonb,
+	"event" text,
+	"private" boolean DEFAULT false,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"inserted_at" timestamp DEFAULT now(),
+	"id" uuid DEFAULT gen_random_uuid(),
+	CONSTRAINT "messages_pkey" PRIMARY KEY("id","inserted_at")
+);
+ALTER TABLE "realtime"."messages" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "realtime"."messages_2025_10_05" (
+	"topic" text NOT NULL,
+	"extension" text NOT NULL,
+	"payload" jsonb,
+	"event" text,
+	"private" boolean DEFAULT false,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"inserted_at" timestamp DEFAULT now(),
+	"id" uuid DEFAULT gen_random_uuid(),
+	CONSTRAINT "messages_2025_10_05_pkey" PRIMARY KEY("id","inserted_at")
+);
+CREATE TABLE "realtime"."messages_2025_10_06" (
+	"topic" text NOT NULL,
+	"extension" text NOT NULL,
+	"payload" jsonb,
+	"event" text,
+	"private" boolean DEFAULT false,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"inserted_at" timestamp DEFAULT now(),
+	"id" uuid DEFAULT gen_random_uuid(),
+	CONSTRAINT "messages_2025_10_06_pkey" PRIMARY KEY("id","inserted_at")
+);
+CREATE TABLE "realtime"."messages_2025_10_07" (
+	"topic" text NOT NULL,
+	"extension" text NOT NULL,
+	"payload" jsonb,
+	"event" text,
+	"private" boolean DEFAULT false,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"inserted_at" timestamp DEFAULT now(),
+	"id" uuid DEFAULT gen_random_uuid(),
+	CONSTRAINT "messages_2025_10_07_pkey" PRIMARY KEY("id","inserted_at")
+);
+CREATE TABLE "realtime"."messages_2025_10_08" (
+	"topic" text NOT NULL,
+	"extension" text NOT NULL,
+	"payload" jsonb,
+	"event" text,
+	"private" boolean DEFAULT false,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"inserted_at" timestamp DEFAULT now(),
+	"id" uuid DEFAULT gen_random_uuid(),
+	CONSTRAINT "messages_2025_10_08_pkey" PRIMARY KEY("id","inserted_at")
+);
+CREATE TABLE "realtime"."messages_2025_10_09" (
+	"topic" text NOT NULL,
+	"extension" text NOT NULL,
+	"payload" jsonb,
+	"event" text,
+	"private" boolean DEFAULT false,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"inserted_at" timestamp DEFAULT now(),
+	"id" uuid DEFAULT gen_random_uuid(),
+	CONSTRAINT "messages_2025_10_09_pkey" PRIMARY KEY("id","inserted_at")
+);
+CREATE TABLE "realtime"."messages_2025_10_10" (
+	"topic" text NOT NULL,
+	"extension" text NOT NULL,
+	"payload" jsonb,
+	"event" text,
+	"private" boolean DEFAULT false,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"inserted_at" timestamp DEFAULT now(),
+	"id" uuid DEFAULT gen_random_uuid(),
+	CONSTRAINT "messages_2025_10_10_pkey" PRIMARY KEY("id","inserted_at")
+);
+CREATE TABLE "realtime"."schema_migrations" (
+	"version" bigint PRIMARY KEY,
+	"inserted_at" timestamp
+);
+CREATE TABLE "realtime"."subscription" (
+	"id" bigint GENERATED ALWAYS AS IDENTITY (sequence name "realtime"."subscription_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 1 CACHE 1),
+	"subscription_id" uuid NOT NULL,
+	"entity" regclass NOT NULL,
+	"filters" realtime.user_defined_filter[] DEFAULT '{}' NOT NULL,
+	"claims" jsonb NOT NULL,
+	"claims_role" regrole GENERATED ALWAYS AS (realtime.to_regrole((claims ->> 'role'::text))) STORED NOT NULL,
+	"created_at" timestamp DEFAULT timezone('utc'::text, now()) NOT NULL,
+	CONSTRAINT "pk_subscription" PRIMARY KEY("id")
+);
+CREATE TABLE "storage"."buckets" (
+	"id" text PRIMARY KEY,
+	"name" text NOT NULL,
+	"owner" uuid,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now(),
+	"public" boolean DEFAULT false,
+	"avif_autodetection" boolean DEFAULT false,
+	"file_size_limit" bigint,
+	"allowed_mime_types" text[],
+	"owner_id" text,
+	"type" storage.buckettype DEFAULT 'STANDARD' NOT NULL
+);
+ALTER TABLE "storage"."buckets" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "storage"."buckets_analytics" (
+	"name" text NOT NULL,
+	"type" storage.buckettype DEFAULT 'ANALYTICS' NOT NULL,
+	"format" text DEFAULT 'ICEBERG' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"deleted_at" timestamp with time zone
+);
+ALTER TABLE "storage"."buckets_analytics" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "storage"."buckets_vectors" (
+	"id" text PRIMARY KEY,
+	"type" storage.buckettype DEFAULT 'VECTOR' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+ALTER TABLE "storage"."buckets_vectors" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "storage"."migrations" (
+	"id" integer PRIMARY KEY,
+	"name" varchar(100) NOT NULL CONSTRAINT "migrations_name_key" UNIQUE,
+	"hash" varchar(40) NOT NULL,
+	"executed_at" timestamp DEFAULT CURRENT_TIMESTAMP
+);
+ALTER TABLE "storage"."migrations" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "storage"."objects" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"bucket_id" text,
+	"name" text,
+	"owner" uuid,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now(),
+	"last_accessed_at" timestamp with time zone DEFAULT now(),
+	"metadata" jsonb,
+	"path_tokens" text[] GENERATED ALWAYS AS (string_to_array(name, '/'::text)) STORED,
+	"version" text,
+	"owner_id" text,
+	"user_metadata" jsonb,
+	"level" integer
+);
+ALTER TABLE "storage"."objects" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "storage"."prefixes" (
+	"bucket_id" text,
+	"name" text,
+	"level" integer GENERATED ALWAYS AS (storage.get_level(name)) STORED,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "prefixes_pkey" PRIMARY KEY("bucket_id","level","name")
+);
+ALTER TABLE "storage"."prefixes" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "storage"."s3_multipart_uploads" (
+	"id" text PRIMARY KEY,
+	"in_progress_size" bigint DEFAULT 0 NOT NULL,
+	"upload_signature" text NOT NULL,
+	"bucket_id" text NOT NULL,
+	"key" text NOT NULL,
+	"version" text NOT NULL,
+	"owner_id" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"user_metadata" jsonb
+);
+ALTER TABLE "storage"."s3_multipart_uploads" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "storage"."s3_multipart_uploads_parts" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"upload_id" text NOT NULL,
+	"size" bigint DEFAULT 0 NOT NULL,
+	"part_number" integer NOT NULL,
+	"bucket_id" text NOT NULL,
+	"key" text NOT NULL,
+	"etag" text NOT NULL,
+	"owner_id" text,
+	"version" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+ALTER TABLE "storage"."s3_multipart_uploads_parts" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "storage"."vector_indexes" (
+	"id" text PRIMARY KEY DEFAULT gen_random_uuid(),
+	"name" text NOT NULL,
+	"bucket_id" text NOT NULL,
+	"data_type" text NOT NULL,
+	"dimension" integer NOT NULL,
+	"distance_metric" text NOT NULL,
+	"metadata_configuration" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+ALTER TABLE "storage"."vector_indexes" ENABLE ROW LEVEL SECURITY;
+CREATE TABLE "supabase_migrations"."schema_migrations" (
+	"version" text PRIMARY KEY,
+	"statements" text[],
+	"name" text
+);
+ALTER TABLE "audio_assets" ADD CONSTRAINT "audio_assets_story_revision_id_fkey" FOREIGN KEY ("story_revision_id") REFERENCES "story_revisions"("id") ON DELETE CASCADE;
+ALTER TABLE "chapters" ADD CONSTRAINT "chapters_story_id_fkey" FOREIGN KEY ("story_id") REFERENCES "stories"("id") ON DELETE CASCADE;
+ALTER TABLE "collections" ADD CONSTRAINT "collections_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "documents" ADD CONSTRAINT "documents_collection_id_fkey" FOREIGN KEY ("collection_id") REFERENCES "collections"("id") ON DELETE CASCADE;
+ALTER TABLE "documents" ADD CONSTRAINT "documents_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "format_spans" ADD CONSTRAINT "format_spans_segment_id_fkey" FOREIGN KEY ("segment_id") REFERENCES "segments"("id") ON DELETE CASCADE;
+ALTER TABLE "format_spans" ADD CONSTRAINT "format_spans_story_revision_id_fkey" FOREIGN KEY ("story_revision_id") REFERENCES "story_revisions"("id") ON DELETE CASCADE;
+ALTER TABLE "lesson_stats" ADD CONSTRAINT "lesson_stats_document_id_fkey" FOREIGN KEY ("document_id") REFERENCES "documents"("id") ON DELETE CASCADE;
+ALTER TABLE "lesson_word_counts" ADD CONSTRAINT "lesson_word_counts_document_id_fkey" FOREIGN KEY ("document_id") REFERENCES "documents"("id") ON DELETE CASCADE;
+ALTER TABLE "lexemes" ADD CONSTRAINT "lexemes_language_code_fkey" FOREIGN KEY ("language_code") REFERENCES "languages"("code");
+ALTER TABLE "profiles" ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "segments" ADD CONSTRAINT "segments_chapter_id_fkey" FOREIGN KEY ("chapter_id") REFERENCES "chapters"("id") ON DELETE CASCADE;
+ALTER TABLE "segments" ADD CONSTRAINT "segments_story_revision_id_fkey" FOREIGN KEY ("story_revision_id") REFERENCES "story_revisions"("id") ON DELETE CASCADE;
+ALTER TABLE "stories" ADD CONSTRAINT "stories_language_code_fkey" FOREIGN KEY ("language_code") REFERENCES "languages"("code");
+ALTER TABLE "story_covers" ADD CONSTRAINT "story_covers_story_id_fkey" FOREIGN KEY ("story_id") REFERENCES "stories"("id") ON DELETE CASCADE;
+ALTER TABLE "story_genre_links" ADD CONSTRAINT "story_genre_links_genre_id_fkey" FOREIGN KEY ("genre_id") REFERENCES "story_genres"("id") ON DELETE CASCADE;
+ALTER TABLE "story_genre_links" ADD CONSTRAINT "story_genre_links_story_id_fkey" FOREIGN KEY ("story_id") REFERENCES "stories"("id") ON DELETE CASCADE;
+ALTER TABLE "story_revisions" ADD CONSTRAINT "story_revisions_story_id_fkey" FOREIGN KEY ("story_id") REFERENCES "stories"("id") ON DELETE CASCADE;
+ALTER TABLE "story_tag_links" ADD CONSTRAINT "story_tag_links_story_id_fkey" FOREIGN KEY ("story_id") REFERENCES "stories"("id") ON DELETE CASCADE;
+ALTER TABLE "story_tag_links" ADD CONSTRAINT "story_tag_links_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "story_tags"("id") ON DELETE CASCADE;
+ALTER TABLE "token_timings" ADD CONSTRAINT "token_timings_audio_id_fkey" FOREIGN KEY ("audio_id") REFERENCES "audio_assets"("id") ON DELETE CASCADE;
+ALTER TABLE "token_timings" ADD CONSTRAINT "token_timings_token_id_fkey" FOREIGN KEY ("token_id") REFERENCES "tokens"("id") ON DELETE CASCADE;
+ALTER TABLE "tokens" ADD CONSTRAINT "tokens_chapter_id_fkey" FOREIGN KEY ("chapter_id") REFERENCES "chapters"("id") ON DELETE CASCADE;
+ALTER TABLE "tokens" ADD CONSTRAINT "tokens_segment_id_fkey" FOREIGN KEY ("segment_id") REFERENCES "segments"("id") ON DELETE CASCADE;
+ALTER TABLE "tokens" ADD CONSTRAINT "tokens_story_revision_id_fkey" FOREIGN KEY ("story_revision_id") REFERENCES "story_revisions"("id") ON DELETE CASCADE;
+ALTER TABLE "user_highlights" ADD CONSTRAINT "user_highlights_token_id_fkey" FOREIGN KEY ("token_id") REFERENCES "tokens"("id") ON DELETE CASCADE;
+ALTER TABLE "user_highlights" ADD CONSTRAINT "user_highlights_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "user_notes" ADD CONSTRAINT "user_notes_segment_id_fkey" FOREIGN KEY ("segment_id") REFERENCES "segments"("id") ON DELETE SET NULL;
+ALTER TABLE "user_notes" ADD CONSTRAINT "user_notes_story_revision_id_fkey" FOREIGN KEY ("story_revision_id") REFERENCES "story_revisions"("id") ON DELETE CASCADE;
+ALTER TABLE "user_notes" ADD CONSTRAINT "user_notes_token_id_fkey" FOREIGN KEY ("token_id") REFERENCES "tokens"("id") ON DELETE SET NULL;
+ALTER TABLE "user_notes" ADD CONSTRAINT "user_notes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "user_story_progress" ADD CONSTRAINT "user_story_progress_last_chapter_id_fkey" FOREIGN KEY ("last_chapter_id") REFERENCES "chapters"("id");
+ALTER TABLE "user_story_progress" ADD CONSTRAINT "user_story_progress_latest_revision_id_fkey" FOREIGN KEY ("latest_revision_id") REFERENCES "story_revisions"("id");
+ALTER TABLE "user_story_progress" ADD CONSTRAINT "user_story_progress_story_id_fkey" FOREIGN KEY ("story_id") REFERENCES "stories"("id") ON DELETE CASCADE;
+ALTER TABLE "user_story_progress" ADD CONSTRAINT "user_story_progress_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "user_token_translations" ADD CONSTRAINT "user_token_translations_token_id_fkey" FOREIGN KEY ("token_id") REFERENCES "tokens"("id") ON DELETE CASCADE;
+ALTER TABLE "user_token_translations" ADD CONSTRAINT "user_token_translations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "user_translations" ADD CONSTRAINT "user_translations_lemma_key_fkey" FOREIGN KEY ("lemma_key") REFERENCES "lexemes"("lemma_key") ON DELETE CASCADE;
+ALTER TABLE "user_translations" ADD CONSTRAINT "user_translations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "user_vocabulary" ADD CONSTRAINT "user_vocabulary_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "word_translations" ADD CONSTRAINT "word_translations_document_id_fkey" FOREIGN KEY ("document_id") REFERENCES "documents"("id") ON DELETE CASCADE;
+ALTER TABLE "word_translations" ADD CONSTRAINT "word_translations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."identities" ADD CONSTRAINT "identities_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."mfa_amr_claims" ADD CONSTRAINT "mfa_amr_claims_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "auth"."sessions"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."mfa_challenges" ADD CONSTRAINT "mfa_challenges_auth_factor_id_fkey" FOREIGN KEY ("factor_id") REFERENCES "auth"."mfa_factors"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."mfa_factors" ADD CONSTRAINT "mfa_factors_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."oauth_authorizations" ADD CONSTRAINT "oauth_authorizations_client_id_fkey" FOREIGN KEY ("client_id") REFERENCES "auth"."oauth_clients"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."oauth_authorizations" ADD CONSTRAINT "oauth_authorizations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."oauth_consents" ADD CONSTRAINT "oauth_consents_client_id_fkey" FOREIGN KEY ("client_id") REFERENCES "auth"."oauth_clients"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."oauth_consents" ADD CONSTRAINT "oauth_consents_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."one_time_tokens" ADD CONSTRAINT "one_time_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."refresh_tokens" ADD CONSTRAINT "refresh_tokens_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "auth"."sessions"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."saml_providers" ADD CONSTRAINT "saml_providers_sso_provider_id_fkey" FOREIGN KEY ("sso_provider_id") REFERENCES "auth"."sso_providers"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."saml_relay_states" ADD CONSTRAINT "saml_relay_states_flow_state_id_fkey" FOREIGN KEY ("flow_state_id") REFERENCES "auth"."flow_state"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."saml_relay_states" ADD CONSTRAINT "saml_relay_states_sso_provider_id_fkey" FOREIGN KEY ("sso_provider_id") REFERENCES "auth"."sso_providers"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."sessions" ADD CONSTRAINT "sessions_oauth_client_id_fkey" FOREIGN KEY ("oauth_client_id") REFERENCES "auth"."oauth_clients"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE "auth"."sso_domains" ADD CONSTRAINT "sso_domains_sso_provider_id_fkey" FOREIGN KEY ("sso_provider_id") REFERENCES "auth"."sso_providers"("id") ON DELETE CASCADE;
+ALTER TABLE "storage"."objects" ADD CONSTRAINT "objects_bucketId_fkey" FOREIGN KEY ("bucket_id") REFERENCES "storage"."buckets"("id");
+ALTER TABLE "storage"."prefixes" ADD CONSTRAINT "prefixes_bucketId_fkey" FOREIGN KEY ("bucket_id") REFERENCES "storage"."buckets"("id");
+ALTER TABLE "storage"."s3_multipart_uploads" ADD CONSTRAINT "s3_multipart_uploads_bucket_id_fkey" FOREIGN KEY ("bucket_id") REFERENCES "storage"."buckets"("id");
+ALTER TABLE "storage"."s3_multipart_uploads_parts" ADD CONSTRAINT "s3_multipart_uploads_parts_bucket_id_fkey" FOREIGN KEY ("bucket_id") REFERENCES "storage"."buckets"("id");
+ALTER TABLE "storage"."s3_multipart_uploads_parts" ADD CONSTRAINT "s3_multipart_uploads_parts_upload_id_fkey" FOREIGN KEY ("upload_id") REFERENCES "storage"."s3_multipart_uploads"("id") ON DELETE CASCADE;
+ALTER TABLE "storage"."vector_indexes" ADD CONSTRAINT "vector_indexes_bucket_id_fkey" FOREIGN KEY ("bucket_id") REFERENCES "storage"."buckets_vectors"("id");
+CREATE UNIQUE INDEX "audio_assets_pkey" ON "audio_assets" ("id");
+CREATE UNIQUE INDEX "chapters_pkey" ON "chapters" ("id");
+CREATE UNIQUE INDEX "chapters_story_id_position_key" ON "chapters" ("story_id","position");
+CREATE UNIQUE INDEX "collections_pkey" ON "collections" ("id");
+CREATE INDEX "idx_collections_is_public" ON "collections" ("is_public");
+CREATE INDEX "idx_collections_user_id" ON "collections" ("user_id");
+CREATE UNIQUE INDEX "documents_pkey" ON "documents" ("id");
+CREATE INDEX "idx_documents_collection_id" ON "documents" ("collection_id");
+CREATE INDEX "idx_documents_is_public" ON "documents" ("is_public");
+CREATE INDEX "idx_documents_user_id" ON "documents" ("user_id");
+CREATE UNIQUE INDEX "format_spans_pkey" ON "format_spans" ("id");
+CREATE UNIQUE INDEX "languages_pkey" ON "languages" ("code");
+CREATE UNIQUE INDEX "lesson_stats_pkey" ON "lesson_stats" ("document_id");
+CREATE INDEX "idx_lwc_document_id" ON "lesson_word_counts" ("document_id");
+CREATE INDEX "idx_lwc_normalized_word" ON "lesson_word_counts" ("normalized_word");
+CREATE UNIQUE INDEX "lesson_word_counts_pkey" ON "lesson_word_counts" ("document_id","normalized_word");
+CREATE UNIQUE INDEX "lexemes_pkey" ON "lexemes" ("lemma_key");
+CREATE UNIQUE INDEX "profiles_pkey" ON "profiles" ("id");
+CREATE UNIQUE INDEX "segments_pkey" ON "segments" ("id");
+CREATE UNIQUE INDEX "segments_story_revision_id_chapter_id_seg_index_key" ON "segments" ("story_revision_id","chapter_id","seg_index");
+CREATE UNIQUE INDEX "stories_pkey" ON "stories" ("id");
+CREATE UNIQUE INDEX "story_covers_pkey" ON "story_covers" ("id");
+CREATE UNIQUE INDEX "story_covers_primary_idx" ON "story_covers" ("story_id");
+CREATE UNIQUE INDEX "story_genre_links_pkey" ON "story_genre_links" ("story_id","genre_id");
+CREATE UNIQUE INDEX "story_genres_name_key" ON "story_genres" ("name");
+CREATE UNIQUE INDEX "story_genres_pkey" ON "story_genres" ("id");
+CREATE UNIQUE INDEX "story_revisions_pkey" ON "story_revisions" ("id");
+CREATE UNIQUE INDEX "story_revisions_story_id_rev_key" ON "story_revisions" ("story_id","rev");
+CREATE UNIQUE INDEX "story_tag_links_pkey" ON "story_tag_links" ("story_id","tag_id");
+CREATE INDEX "story_tag_links_story_id_idx" ON "story_tag_links" ("story_id");
+CREATE INDEX "story_tag_links_tag_id_idx" ON "story_tag_links" ("tag_id");
+CREATE UNIQUE INDEX "story_tags_name_key" ON "story_tags" ("name");
+CREATE UNIQUE INDEX "story_tags_pkey" ON "story_tags" ("id");
+CREATE INDEX "story_tags_type_idx" ON "story_tags" ("type");
+CREATE UNIQUE INDEX "token_timings_pkey" ON "token_timings" ("audio_id","token_id");
+CREATE INDEX "tokens_lemma_idx" ON "tokens" ("lemma_key");
+CREATE UNIQUE INDEX "tokens_pkey" ON "tokens" ("id");
+CREATE INDEX "tokens_seg_idx" ON "tokens" ("segment_id","tok_index");
+CREATE UNIQUE INDEX "tokens_story_rev_chap_seg_tok_unique" ON "tokens" ("story_revision_id","chapter_id","seg_index","tok_index");
+CREATE INDEX "tokens_story_rev_idx" ON "tokens" ("story_revision_id");
+CREATE UNIQUE INDEX "user_highlights_pkey" ON "user_highlights" ("user_id","token_id");
+CREATE UNIQUE INDEX "user_notes_pkey" ON "user_notes" ("id");
+CREATE UNIQUE INDEX "user_settings_pkey" ON "user_settings" ("user_id");
+CREATE UNIQUE INDEX "user_story_progress_pkey" ON "user_story_progress" ("user_id","story_id");
+CREATE UNIQUE INDEX "user_token_translations_pkey" ON "user_token_translations" ("user_id","token_id");
+CREATE UNIQUE INDEX "user_translations_pkey" ON "user_translations" ("user_id","lemma_key");
+CREATE INDEX "idx_user_vocabulary_known" ON "user_vocabulary" ("user_id","known");
+CREATE INDEX "idx_user_vocabulary_user_id" ON "user_vocabulary" ("user_id");
+CREATE INDEX "idx_user_vocabulary_user_word" ON "user_vocabulary" ("user_id","romanian_word");
+CREATE UNIQUE INDEX "user_vocabulary_pkey" ON "user_vocabulary" ("id");
+CREATE UNIQUE INDEX "user_vocabulary_user_id_romanian_word_key" ON "user_vocabulary" ("user_id","romanian_word");
+CREATE INDEX "idx_word_translations_normalized_word" ON "word_translations" ("normalized_word");
+CREATE INDEX "idx_word_translations_occurrence_ids" ON "word_translations" USING gin ("occurrence_ids");
+CREATE INDEX "idx_word_translations_user_document" ON "word_translations" ("user_id","document_id");
+CREATE INDEX "idx_word_translations_user_word" ON "word_translations" ("user_id","normalized_word","language_code");
+CREATE UNIQUE INDEX "word_translations_pkey" ON "word_translations" ("id");
+CREATE UNIQUE INDEX "word_translations_user_id_document_id_normalized_word_lang_key" ON "word_translations" ("user_id","document_id","normalized_word","language_code");
+CREATE UNIQUE INDEX "audit_log_entries_pkey" ON "auth"."audit_log_entries" ("id");
+CREATE INDEX "audit_logs_instance_id_idx" ON "auth"."audit_log_entries" ("instance_id");
+CREATE INDEX "flow_state_created_at_idx" ON "auth"."flow_state" ("created_at");
+CREATE UNIQUE INDEX "flow_state_pkey" ON "auth"."flow_state" ("id");
+CREATE INDEX "idx_auth_code" ON "auth"."flow_state" ("auth_code");
+CREATE INDEX "idx_user_id_auth_method" ON "auth"."flow_state" ("user_id","authentication_method");
+CREATE INDEX "identities_email_idx" ON "auth"."identities" ("email");
+CREATE UNIQUE INDEX "identities_pkey" ON "auth"."identities" ("id");
+CREATE UNIQUE INDEX "identities_provider_id_provider_unique" ON "auth"."identities" ("provider_id","provider");
+CREATE INDEX "identities_user_id_idx" ON "auth"."identities" ("user_id");
+CREATE UNIQUE INDEX "instances_pkey" ON "auth"."instances" ("id");
+CREATE UNIQUE INDEX "amr_id_pk" ON "auth"."mfa_amr_claims" ("id");
+CREATE UNIQUE INDEX "mfa_amr_claims_session_id_authentication_method_pkey" ON "auth"."mfa_amr_claims" ("session_id","authentication_method");
+CREATE INDEX "mfa_challenge_created_at_idx" ON "auth"."mfa_challenges" ("created_at");
+CREATE UNIQUE INDEX "mfa_challenges_pkey" ON "auth"."mfa_challenges" ("id");
+CREATE INDEX "factor_id_created_at_idx" ON "auth"."mfa_factors" ("user_id","created_at");
+CREATE UNIQUE INDEX "mfa_factors_last_challenged_at_key" ON "auth"."mfa_factors" ("last_challenged_at");
+CREATE UNIQUE INDEX "mfa_factors_pkey" ON "auth"."mfa_factors" ("id");
+CREATE UNIQUE INDEX "mfa_factors_user_friendly_name_unique" ON "auth"."mfa_factors" ("friendly_name","user_id");
+CREATE INDEX "mfa_factors_user_id_idx" ON "auth"."mfa_factors" ("user_id");
+CREATE UNIQUE INDEX "unique_phone_factor_per_user" ON "auth"."mfa_factors" ("user_id","phone");
+CREATE INDEX "oauth_auth_pending_exp_idx" ON "auth"."oauth_authorizations" ("expires_at");
+CREATE UNIQUE INDEX "oauth_authorizations_authorization_code_key" ON "auth"."oauth_authorizations" ("authorization_code");
+CREATE UNIQUE INDEX "oauth_authorizations_authorization_id_key" ON "auth"."oauth_authorizations" ("authorization_id");
+CREATE UNIQUE INDEX "oauth_authorizations_pkey" ON "auth"."oauth_authorizations" ("id");
+CREATE INDEX "oauth_clients_deleted_at_idx" ON "auth"."oauth_clients" ("deleted_at");
+CREATE UNIQUE INDEX "oauth_clients_pkey" ON "auth"."oauth_clients" ("id");
+CREATE INDEX "oauth_consents_active_client_idx" ON "auth"."oauth_consents" ("client_id");
+CREATE INDEX "oauth_consents_active_user_client_idx" ON "auth"."oauth_consents" ("user_id","client_id");
+CREATE UNIQUE INDEX "oauth_consents_pkey" ON "auth"."oauth_consents" ("id");
+CREATE UNIQUE INDEX "oauth_consents_user_client_unique" ON "auth"."oauth_consents" ("user_id","client_id");
+CREATE INDEX "oauth_consents_user_order_idx" ON "auth"."oauth_consents" ("user_id","granted_at");
+CREATE UNIQUE INDEX "one_time_tokens_pkey" ON "auth"."one_time_tokens" ("id");
+CREATE INDEX "one_time_tokens_relates_to_hash_idx" ON "auth"."one_time_tokens" USING hash ("relates_to");
+CREATE INDEX "one_time_tokens_token_hash_hash_idx" ON "auth"."one_time_tokens" USING hash ("token_hash");
+CREATE UNIQUE INDEX "one_time_tokens_user_id_token_type_key" ON "auth"."one_time_tokens" ("user_id","token_type");
+CREATE INDEX "refresh_tokens_instance_id_idx" ON "auth"."refresh_tokens" ("instance_id");
+CREATE INDEX "refresh_tokens_instance_id_user_id_idx" ON "auth"."refresh_tokens" ("instance_id","user_id");
+CREATE INDEX "refresh_tokens_parent_idx" ON "auth"."refresh_tokens" ("parent");
+CREATE UNIQUE INDEX "refresh_tokens_pkey" ON "auth"."refresh_tokens" ("id");
+CREATE INDEX "refresh_tokens_session_id_revoked_idx" ON "auth"."refresh_tokens" ("session_id","revoked");
+CREATE UNIQUE INDEX "refresh_tokens_token_unique" ON "auth"."refresh_tokens" ("token");
+CREATE INDEX "refresh_tokens_updated_at_idx" ON "auth"."refresh_tokens" ("updated_at");
+CREATE UNIQUE INDEX "saml_providers_entity_id_key" ON "auth"."saml_providers" ("entity_id");
+CREATE UNIQUE INDEX "saml_providers_pkey" ON "auth"."saml_providers" ("id");
+CREATE INDEX "saml_providers_sso_provider_id_idx" ON "auth"."saml_providers" ("sso_provider_id");
+CREATE INDEX "saml_relay_states_created_at_idx" ON "auth"."saml_relay_states" ("created_at");
+CREATE INDEX "saml_relay_states_for_email_idx" ON "auth"."saml_relay_states" ("for_email");
+CREATE UNIQUE INDEX "saml_relay_states_pkey" ON "auth"."saml_relay_states" ("id");
+CREATE INDEX "saml_relay_states_sso_provider_id_idx" ON "auth"."saml_relay_states" ("sso_provider_id");
+CREATE UNIQUE INDEX "schema_migrations_pkey" ON "auth"."schema_migrations" ("version");
+CREATE INDEX "sessions_not_after_idx" ON "auth"."sessions" ("not_after");
+CREATE INDEX "sessions_oauth_client_id_idx" ON "auth"."sessions" ("oauth_client_id");
+CREATE UNIQUE INDEX "sessions_pkey" ON "auth"."sessions" ("id");
+CREATE INDEX "sessions_user_id_idx" ON "auth"."sessions" ("user_id");
+CREATE INDEX "user_id_created_at_idx" ON "auth"."sessions" ("user_id","created_at");
+CREATE UNIQUE INDEX "sso_domains_domain_idx" ON "auth"."sso_domains" ("lower(domain)");
+CREATE UNIQUE INDEX "sso_domains_pkey" ON "auth"."sso_domains" ("id");
+CREATE INDEX "sso_domains_sso_provider_id_idx" ON "auth"."sso_domains" ("sso_provider_id");
+CREATE UNIQUE INDEX "sso_providers_pkey" ON "auth"."sso_providers" ("id");
+CREATE UNIQUE INDEX "sso_providers_resource_id_idx" ON "auth"."sso_providers" ("lower(resource_id)");
+CREATE INDEX "sso_providers_resource_id_pattern_idx" ON "auth"."sso_providers" ("resource_id");
+CREATE UNIQUE INDEX "confirmation_token_idx" ON "auth"."users" ("confirmation_token");
+CREATE UNIQUE INDEX "email_change_token_current_idx" ON "auth"."users" ("email_change_token_current");
+CREATE UNIQUE INDEX "email_change_token_new_idx" ON "auth"."users" ("email_change_token_new");
+CREATE UNIQUE INDEX "reauthentication_token_idx" ON "auth"."users" ("reauthentication_token");
+CREATE UNIQUE INDEX "recovery_token_idx" ON "auth"."users" ("recovery_token");
+CREATE UNIQUE INDEX "users_email_partial_key" ON "auth"."users" ("email");
+CREATE INDEX "users_instance_id_email_idx" ON "auth"."users" ("instance_id","lower((email)::text)");
+CREATE INDEX "users_instance_id_idx" ON "auth"."users" ("instance_id");
+CREATE INDEX "users_is_anonymous_idx" ON "auth"."users" ("is_anonymous");
+CREATE UNIQUE INDEX "users_phone_key" ON "auth"."users" ("phone");
+CREATE UNIQUE INDEX "users_pkey" ON "auth"."users" ("id");
+CREATE INDEX "messages_2025_10_05_inserted_at_topic_idx" ON "realtime"."messages_2025_10_05" ("inserted_at","topic");
+CREATE UNIQUE INDEX "messages_2025_10_05_pkey" ON "realtime"."messages_2025_10_05" ("id","inserted_at");
+CREATE INDEX "messages_2025_10_06_inserted_at_topic_idx" ON "realtime"."messages_2025_10_06" ("inserted_at","topic");
+CREATE UNIQUE INDEX "messages_2025_10_06_pkey" ON "realtime"."messages_2025_10_06" ("id","inserted_at");
+CREATE INDEX "messages_2025_10_07_inserted_at_topic_idx" ON "realtime"."messages_2025_10_07" ("inserted_at","topic");
+CREATE UNIQUE INDEX "messages_2025_10_07_pkey" ON "realtime"."messages_2025_10_07" ("id","inserted_at");
+CREATE INDEX "messages_2025_10_08_inserted_at_topic_idx" ON "realtime"."messages_2025_10_08" ("inserted_at","topic");
+CREATE UNIQUE INDEX "messages_2025_10_08_pkey" ON "realtime"."messages_2025_10_08" ("id","inserted_at");
+CREATE INDEX "messages_2025_10_09_inserted_at_topic_idx" ON "realtime"."messages_2025_10_09" ("inserted_at","topic");
+CREATE UNIQUE INDEX "messages_2025_10_09_pkey" ON "realtime"."messages_2025_10_09" ("id","inserted_at");
+CREATE INDEX "messages_2025_10_10_inserted_at_topic_idx" ON "realtime"."messages_2025_10_10" ("inserted_at","topic");
+CREATE UNIQUE INDEX "messages_2025_10_10_pkey" ON "realtime"."messages_2025_10_10" ("id","inserted_at");
+CREATE UNIQUE INDEX "schema_migrations_pkey" ON "realtime"."schema_migrations" ("version");
+CREATE INDEX "ix_realtime_subscription_entity" ON "realtime"."subscription" ("entity");
+CREATE UNIQUE INDEX "pk_subscription" ON "realtime"."subscription" ("id");
+CREATE UNIQUE INDEX "subscription_subscription_id_entity_filters_key" ON "realtime"."subscription" ("subscription_id","entity","filters");
+CREATE UNIQUE INDEX "bname" ON "storage"."buckets" ("name");
+CREATE UNIQUE INDEX "buckets_pkey" ON "storage"."buckets" ("id");
+CREATE UNIQUE INDEX "buckets_analytics_pkey" ON "storage"."buckets_analytics" ("id");
+CREATE UNIQUE INDEX "buckets_analytics_unique_name_idx" ON "storage"."buckets_analytics" ("name");
+CREATE UNIQUE INDEX "buckets_vectors_pkey" ON "storage"."buckets_vectors" ("id");
+CREATE UNIQUE INDEX "migrations_name_key" ON "storage"."migrations" ("name");
+CREATE UNIQUE INDEX "migrations_pkey" ON "storage"."migrations" ("id");
+CREATE UNIQUE INDEX "bucketid_objname" ON "storage"."objects" ("bucket_id","name");
+CREATE UNIQUE INDEX "idx_name_bucket_level_unique" ON "storage"."objects" ("name","bucket_id","level");
+CREATE INDEX "idx_objects_bucket_id_name" ON "storage"."objects" ("bucket_id","name");
+CREATE INDEX "idx_objects_lower_name" ON "storage"."objects" ("path_tokens[level]","lower(name)","bucket_id","level");
+CREATE INDEX "name_prefix_search" ON "storage"."objects" ("name");
+CREATE UNIQUE INDEX "objects_bucket_id_level_idx" ON "storage"."objects" ("bucket_id","level","name");
+CREATE UNIQUE INDEX "objects_pkey" ON "storage"."objects" ("id");
+CREATE INDEX "idx_prefixes_lower_name" ON "storage"."prefixes" ("bucket_id","level","(string_to_array(name, '/'::text))[level]","lower(name)");
+CREATE UNIQUE INDEX "prefixes_pkey" ON "storage"."prefixes" ("bucket_id","level","name");
+CREATE INDEX "idx_multipart_uploads_list" ON "storage"."s3_multipart_uploads" ("bucket_id","key","created_at");
+CREATE UNIQUE INDEX "s3_multipart_uploads_pkey" ON "storage"."s3_multipart_uploads" ("id");
+CREATE UNIQUE INDEX "s3_multipart_uploads_parts_pkey" ON "storage"."s3_multipart_uploads_parts" ("id");
+CREATE UNIQUE INDEX "vector_indexes_name_bucket_id_idx" ON "storage"."vector_indexes" ("name","bucket_id");
+CREATE UNIQUE INDEX "vector_indexes_pkey" ON "storage"."vector_indexes" ("id");
+CREATE UNIQUE INDEX "schema_migrations_pkey" ON "supabase_migrations"."schema_migrations" ("version");
+CREATE VIEW "books" TABLESPACE public AS (SELECT id, title, author, source, license, language_code, description, created_at, updated_at FROM stories);
+CREATE VIEW "extensions"."pg_stat_statements" TABLESPACE extensions AS (SELECT userid, dbid, toplevel, queryid, query, plans, total_plan_time, min_plan_time, max_plan_time, mean_plan_time, stddev_plan_time, calls, total_exec_time, min_exec_time, max_exec_time, mean_exec_time, stddev_exec_time, rows, shared_blks_hit, shared_blks_read, shared_blks_dirtied, shared_blks_written, local_blks_hit, local_blks_read, local_blks_dirtied, local_blks_written, temp_blks_read, temp_blks_written, shared_blk_read_time, shared_blk_write_time, local_blk_read_time, local_blk_write_time, temp_blk_read_time, temp_blk_write_time, wal_records, wal_fpi, wal_bytes, wal_buffers_full, jit_functions, jit_generation_time, jit_inlining_count, jit_inlining_time, jit_optimization_count, jit_optimization_time, jit_emission_count, jit_emission_time, jit_deform_count, jit_deform_time, parallel_workers_to_launch, parallel_workers_launched, stats_since, minmax_stats_since FROM extensions.pg_stat_statements(true) pg_stat_statements(userid, dbid, toplevel, queryid, query, plans, total_plan_time, min_plan_time, max_plan_time, mean_plan_time, stddev_plan_time, calls, total_exec_time, min_exec_time, max_exec_time, mean_exec_time, stddev_exec_time, rows, shared_blks_hit, shared_blks_read, shared_blks_dirtied, shared_blks_written, local_blks_hit, local_blks_read, local_blks_dirtied, local_blks_written, temp_blks_read, temp_blks_written, shared_blk_read_time, shared_blk_write_time, local_blk_read_time, local_blk_write_time, temp_blk_read_time, temp_blk_write_time, wal_records, wal_fpi, wal_bytes, wal_buffers_full, jit_functions, jit_generation_time, jit_inlining_count, jit_inlining_time, jit_optimization_count, jit_optimization_time, jit_emission_count, jit_emission_time, jit_deform_count, jit_deform_time, parallel_workers_to_launch, parallel_workers_launched, stats_since, minmax_stats_since));
+CREATE VIEW "extensions"."pg_stat_statements_info" TABLESPACE extensions AS (SELECT dealloc, stats_reset FROM extensions.pg_stat_statements_info() pg_stat_statements_info(dealloc, stats_reset));s

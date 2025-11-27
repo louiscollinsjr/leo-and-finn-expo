@@ -1,12 +1,11 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, View } from 'react-native';
-import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
+import InteractiveParagraph from '@/components/InteractiveParagraph';
 import { ThemedText } from '@/components/ThemedText';
-import type { Block } from '@/types/reader';
+import { QuickThemeSwatches } from '@/constants/Colors';
 import { defaultTypography } from '@/lib/typography';
 import type { ThemeMode, Typeface } from '@/providers/ReaderProvider';
-import { QuickThemeSwatches } from '@/constants/Colors';
-import { runOnJS } from 'react-native-reanimated';
+import type { Block, Token } from '@/types/reader';
+import React from 'react';
+import { View } from 'react-native';
 
 export type BlockRenderer = (block: Block) => React.ReactNode;
 export type BlockRegistry = Record<Block['type'], BlockRenderer>;
@@ -19,127 +18,36 @@ export function createDefaultRegistry(opts: {
   boldText?: boolean;
   charSpacing?: number;
   theme?: ThemeMode;
-  onWordLongPress?: (word: string, tokenId?: string, anchor?: { x: number; y: number; width: number; height: number }) => void;
-  onWordSwipeUp?: (word: string, tokenId?: string) => void;
+  knownWords?: Set<string>;
+  onWordLongPress?: (word: string, tokenId?: string) => void;
   onWordTap?: (word: string, tokenId?: string) => void;
 }): BlockRegistry {
-  const { sidePad, fontScale = 1, lineHeightScale = 1, /* typeface, boldText = false, */ charSpacing = 0, theme, onWordLongPress, onWordSwipeUp, onWordTap } = opts;
+  const { sidePad, fontScale = 1, lineHeightScale = 1, charSpacing = 0, theme, knownWords, onWordLongPress, onWordTap } = opts;
 
   const baseFontSize = defaultTypography.fontSize;
   const baseLineHeight = defaultTypography.lineHeight;
-  const baseRatio = baseLineHeight / baseFontSize; // keep consistent LH/FS ratio across scales
+  const baseRatio = baseLineHeight / baseFontSize;
   const paraFontSize = Math.round(baseFontSize * fontScale);
   const paraLineHeight = Math.round(paraFontSize * baseRatio * lineHeightScale);
   const headingFontSize = Math.round(paraFontSize * 1.1);
 
-  // Text color by reading theme (align dark with Quiet swatch fg)
+  // Text color by reading theme
   let textColor = '#111827';
+  let knownWordColor = '#4a4a4a'; // Dark gray for known words
   switch (theme) {
     case 'dark':
-      textColor = QuickThemeSwatches.quiet.fg; // #abadb5
+      textColor = QuickThemeSwatches.quiet.fg;
+      knownWordColor = '#6a6a6a'; // Lighter gray for dark mode
       break;
     case 'sepia':
       textColor = '#362F2D';
+      knownWordColor = '#5a5550'; // Sepia-tinted gray
       break;
     case 'light':
     default:
       textColor = '#111827';
+      knownWordColor = '#4a4a4a';
   }
-
-  const WordToken = ({
-    text,
-    tokenId,
-    showSpace,
-  }: {
-    text: string;
-    tokenId?: string;
-    showSpace: boolean;
-  }) => {
-    const [highlight, setHighlight] = useState(false);
-    const containerRef = useRef<View>(null);
-
-    const handleTap = useCallback(() => {
-      setHighlight((v) => !v);
-      if (onWordTap && text) {
-        onWordTap(text, tokenId);
-      }
-    }, [text, tokenId]);
-
-    const handleLongPress = useCallback(() => {
-      if (!text || !onWordLongPress) {
-        return;
-      }
-
-      const node = containerRef.current;
-      if (node && 'measureInWindow' in node && typeof (node as any).measureInWindow === 'function') {
-        (node as any).measureInWindow((x: number, y: number, width: number, height: number) => {
-          onWordLongPress(text, tokenId, { x, y, width, height });
-        });
-      } else {
-        onWordLongPress(text, tokenId);
-      }
-    }, [text, tokenId]);
-
-    const handleSwipeUp = useCallback(() => {
-      if (onWordSwipeUp && text) {
-        onWordSwipeUp(text, tokenId);
-      }
-    }, [text, tokenId]);
-
-    const gesture = useMemo(() => {
-      const tapGesture = Gesture.Tap()
-        .onEnd((_event, success) => {
-          if (success) {
-            runOnJS(handleTap)();
-          }
-        });
-
-      const longPressGesture = Gesture.LongPress()
-        .minDuration(220)
-        .onEnd((_event, success) => {
-          if (success) {
-            runOnJS(handleLongPress)();
-          }
-        });
-
-      if (!onWordSwipeUp) {
-        return Gesture.Simultaneous(longPressGesture, tapGesture);
-      }
-
-      const flingGesture = Gesture.Fling()
-        .direction(Directions.UP)
-        .onEnd((_event, success) => {
-          if (success) {
-            runOnJS(handleSwipeUp)();
-          }
-        });
-
-      return Gesture.Simultaneous(longPressGesture, flingGesture, tapGesture);
-    }, [handleTap, handleLongPress, handleSwipeUp]);
-
-    return (
-      <GestureDetector gesture={gesture}>
-        <View ref={containerRef} style={{ flexDirection: 'row' }}>
-          <ThemedText
-            style={{
-              fontSize: paraFontSize,
-              lineHeight: paraLineHeight,
-              letterSpacing: charSpacing,
-              color: textColor,
-              backgroundColor: highlight ? 'rgba(180, 200, 255, 0.35)' : 'transparent',
-              borderRadius: highlight ? 4 : 0,
-              paddingHorizontal: 2,
-            }}
-          >
-            {text}
-          </ThemedText>
-          {showSpace ? (
-            <ThemedText style={{ fontSize: paraFontSize, lineHeight: paraLineHeight, letterSpacing: charSpacing, color: textColor }}> </ThemedText>
-          ) : null}
-        </View>
-      </GestureDetector>
-    );
-  };
 
   return {
     chapter: (b) => (
@@ -153,32 +61,23 @@ export function createDefaultRegistry(opts: {
       </View>
     ),
     paragraph: (b) => {
-      // Prefer renderer with token metadata (includes token ids for precise actions)
-      const hasTokens = (b as any).tokens && Array.isArray((b as any).tokens) && (b as any).tokens.length > 0;
-      if (hasTokens) {
-        const tokens = (b as any).tokens as { id: string; text: string }[];
-        return (
-          <View key={b.key} style={{ marginBottom: defaultTypography.paraBottomMargin, paddingHorizontal: sidePad }}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-              {tokens.map((t, i) => (
-                <WordToken key={`${b.key}-t-${t.id}-${i}`} text={t.text} tokenId={t.id} showSpace={i < tokens.length - 1} />
-              ))}
-            </View>
-          </View>
-        );
-      }
-
-      // Fallback: split text by spaces (no token id information)
-      const tokens = (b.text || '').split(/\s+/);
-      const clean = (w: string) => w.replace(/^[^A-Za-zÀ-ÿ0-9']+|[^A-Za-zÀ-ÿ0-9']+$/g, '');
+      const tokens = (b as any).tokens as Token[] | undefined;
       return (
-        <View key={b.key} style={{ marginBottom: defaultTypography.paraBottomMargin, paddingHorizontal: sidePad }}>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            {tokens.map((w, i) => (
-              <WordToken key={`${b.key}-w-${i}`} text={clean(w)} tokenId={undefined} showSpace={i < tokens.length - 1} />
-            ))}
-          </View>
-        </View>
+        <InteractiveParagraph
+          key={b.key}
+          blockKey={b.key}
+          tokens={tokens || []}
+          text={b.text || ''}
+          fontSize={paraFontSize}
+          lineHeight={paraLineHeight}
+          letterSpacing={charSpacing}
+          textColor={textColor}
+          knownWordColor={knownWordColor}
+          sidePad={sidePad}
+          knownWords={knownWords}
+          onWordLongPress={onWordLongPress}
+          onWordTap={onWordTap}
+        />
       );
     },
   };

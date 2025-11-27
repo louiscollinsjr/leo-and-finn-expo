@@ -33,6 +33,36 @@ function ensureConnection() {
   return sql;
 }
 
+/**
+ * Ensure a user exists in the local users table.
+ * Stack Auth manages users externally, so we need to sync them to our DB
+ * before any user-related operations (due to FK constraints).
+ */
+async function ensureUserExists(
+  userId: string,
+  userData?: { email?: string | null; displayName?: string | null; profileImageUrl?: string | null }
+): Promise<void> {
+  const db = ensureConnection();
+  const now = new Date().toISOString();
+  
+  await db`
+    INSERT INTO users (id, email, display_name, profile_image_url, created_at, updated_at)
+    VALUES (
+      ${userId}, 
+      ${userData?.email ?? null}, 
+      ${userData?.displayName ?? null}, 
+      ${userData?.profileImageUrl ?? null}, 
+      ${now}, 
+      ${now}
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      email = COALESCE(EXCLUDED.email, users.email),
+      display_name = COALESCE(EXCLUDED.display_name, users.display_name),
+      profile_image_url = COALESCE(EXCLUDED.profile_image_url, users.profile_image_url),
+      updated_at = ${now}
+  `;
+}
+
 export class NeonAdapter implements DatabaseAdapter {
   async getStories(): Promise<StoryWithCover[]> {
     const db = ensureConnection();
@@ -138,6 +168,9 @@ export class NeonAdapter implements DatabaseAdapter {
   async upsertUserSettings(userId: string, settings: Partial<UserSettings>): Promise<void> {
     const db = ensureConnection();
     const now = new Date().toISOString();
+    
+    // Ensure user exists in local DB before FK-constrained insert
+    await ensureUserExists(userId);
     
     await db`
       INSERT INTO user_settings (user_id, last_seen_discover_at, updated_at)
@@ -260,6 +293,9 @@ export class NeonAdapter implements DatabaseAdapter {
   async upsertTranslation(tokenId: string, userId: string, translation: string): Promise<void> {
     const db = ensureConnection();
     
+    // Ensure user exists in local DB before FK-constrained insert
+    await ensureUserExists(userId);
+    
     await db`
       INSERT INTO user_token_translations (token_id, user_id, translation)
       VALUES (${tokenId}, ${userId}, ${translation})
@@ -291,6 +327,9 @@ export class NeonAdapter implements DatabaseAdapter {
 
   async upsertVocabularyEntry(userId: string, word: string, known: boolean): Promise<void> {
     const db = ensureConnection();
+    
+    // Ensure user exists in local DB before FK-constrained insert
+    await ensureUserExists(userId);
     
     await db`
       INSERT INTO user_vocabulary (user_id, romanian_word, known)

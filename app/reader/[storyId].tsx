@@ -1,18 +1,16 @@
 import { WordContextBottomSheet } from '@/components/overlays/WordContextBottomSheet';
 import ReaderView from '@/components/ReaderView';
-import StoryContent from '@/components/StoryContent';
 import { ThemedView } from '@/components/ThemedView';
 import { db } from '@/lib/db';
 import { useReaderUI } from '@/providers/ReaderProvider';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 
 export default function ReaderScreen() {
   const { storyId } = useLocalSearchParams<{ storyId: string }>();
   const [title, setTitle] = useState<string>('');
-  const [author, setAuthor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { wordContext, openWordContext, closeWordContext } = useReaderUI();
@@ -21,10 +19,13 @@ export default function ReaderScreen() {
   const { width } = useWindowDimensions();
   const hMargin = Math.max(24, Math.round(width * 0.10));
 
-  // After the selected word is set and committed, open the sheet so the
-  // first visible frame already includes the word, avoiding a perceived delay.
+  // TODO: Load known words from user's vocabulary
+  const knownWords = useMemo(() => new Set<string>(), []);
+
+  // Open/close bottom sheet based on word context
   useEffect(() => {
     if (wordContext.word) {
+      // Snap to index 1 (75%) for a better initial view
       requestAnimationFrame(() => bottomSheetRef.current?.snapToIndex(1));
     } else {
       bottomSheetRef.current?.close();
@@ -47,7 +48,6 @@ export default function ReaderScreen() {
           setError('Story not found');
         } else {
           setTitle(story.title ?? '');
-          setAuthor(story.author ?? null);
         }
       } catch (err: any) {
         if (!isMounted) return;
@@ -61,29 +61,33 @@ export default function ReaderScreen() {
     };
   }, [storyId]);
 
+  // Handle word long-press from InteractiveParagraph
+  const handleWordLongPress = useCallback((word: string, tokenId?: string) => {
+    openWordContext({ word, tokenId });
+  }, [openWordContext]);
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <ReaderView
-          title={title}
-          loading={loading}
-          error={error}
-          onBack={() => router.back()}
-          onOpenContents={() => { /* TODO: open contents */ }}
-          onOpenSearch={() => { /* TODO: open search */ }}
-          onOpenSettings={() => { /* TODO: open settings */ }}
-        >
-          <StoryContent
-            key={`${storyId}-scroll`}
-            storyId={storyId as string}
-            mode="scroll"
-            hMargin={hMargin}
-            onWordLongPress={(w, tokenId, anchor) => {
-              openWordContext({ word: w, tokenId, anchor });
-            }}
-          />
-        </ReaderView>
+        title={title}
+        loading={loading}
+        error={error}
+        onBack={() => router.back()}
+        onOpenContents={() => { /* TODO: open contents */ }}
+        onOpenSearch={() => { /* TODO: open search */ }}
+        onOpenSettings={() => { /* TODO: open settings */ }}
+      >
+        <StoryContent41
+          key={`${storyId}-scroll`}
+          storyId={storyId as string}
+          mode="scroll"
+          hMargin={hMargin}
+          knownWords={knownWords}
+          onWordLongPress={handleWordLongPress}
+        />
+      </ReaderView>
 
-      {/* WordContextBottomSheet at root level to avoid z-index/clipping issues */}
+      {/* Word context bottom sheet */}
       <WordContextBottomSheet
         ref={bottomSheetRef}
         word={wordContext.word}

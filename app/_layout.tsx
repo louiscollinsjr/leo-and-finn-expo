@@ -10,13 +10,22 @@ import { Link, Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
 import React from 'react';
-import { Pressable, Text } from 'react-native';
+import { LogBox, Pressable, Text } from 'react-native';
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-url-polyfill/auto';
 import '../global.css';
+
+// Suppress known harmless warnings from @gorhom/bottom-sheet, expo-video, and deprecated APIs
+LogBox.ignoreLogs([
+  "Couldn't find the scrollable node handle id!",
+  "Sending `onAnimatedValueUpdate` with no listeners registered",
+  "Error pausing video on cleanup",
+  "SafeAreaView has been deprecated",
+  "VisionKitCore",
+]);
 
 // Inner component that can use auth hooks
 function RootLayoutInner() {

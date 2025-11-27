@@ -49,6 +49,7 @@ export default function WelcomeScreen() {
   const onOAuth = async (provider: "apple" | "google") => {
     try {
       await startOAuth(provider);
+      sheetRef.current?.dismiss();
       router.replace("/(tabs)/home");
     } catch (e) {
       console.warn(e);
@@ -177,7 +178,10 @@ export default function WelcomeScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push("/auth/email")}
+              onPress={() => {
+                sheetRef.current?.dismiss();
+                router.push("/auth/email");
+              }}
               style={[styles.btn, styles.loginBtn]}
             >
               <Text style={[styles.btnText, { color: "#ffffff" }]}>Log in</Text>

@@ -214,16 +214,18 @@ export async function exchangeCodeForTokens(code: string): Promise<AuthResult> {
     refreshToken: response.refresh_token,
   };
 
+  // Save tokens securely
+  await saveTokens(tokens);
+  if (response.user) {
+    await saveUserId(response.user.id);
+  }
+
   const user: StackUser = {
     id: response.user.id,
     email: response.user.primary_email,
     displayName: response.user.display_name,
     profileImageUrl: response.user.profile_image_url,
   };
-
-  // Save tokens securely
-  await saveTokens(tokens);
-  await saveUserId(user.id);
 
   return { user, tokens };
 }
@@ -235,8 +237,8 @@ export async function exchangeCodeForTokens(code: string): Promise<AuthResult> {
 /**
  * Send a sign-in OTP code to the user's email.
  */
-export async function sendMagicLink(email: string): Promise<void> {
-  await apiRequest('/auth/otp/send-sign-in-code', {
+export async function sendMagicLink(email: string): Promise<string> {
+  const response = await apiRequest<{ nonce: string }>('/auth/otp/send-sign-in-code', {
     method: 'POST',
     body: JSON.stringify({
       email,
@@ -244,16 +246,18 @@ export async function sendMagicLink(email: string): Promise<void> {
     }),
   });
   console.log('[Stack Auth] OTP sent to', email);
+  return response.nonce;
 }
 
 /**
  * Verify the OTP code and get tokens.
  */
-export async function verifyOtp(email: string, code: string): Promise<AuthResult> {
+export async function verifyOtp(email: string, code: string, nonce: string): Promise<AuthResult> {
   const response = await apiRequest<{
     access_token: string;
     refresh_token: string;
-    user: {
+    user_id?: string;
+    user?: {
       id: string;
       primary_email: string | null;
       display_name: string | null;
@@ -262,8 +266,7 @@ export async function verifyOtp(email: string, code: string): Promise<AuthResult
   }>('/auth/otp/sign-in', {
     method: 'POST',
     body: JSON.stringify({
-      email,
-      code,
+      code: `${code}${nonce}`,
     }),
   });
 
@@ -272,16 +275,25 @@ export async function verifyOtp(email: string, code: string): Promise<AuthResult
     refreshToken: response.refresh_token,
   };
 
-  const user: StackUser = {
-    id: response.user.id,
-    email: response.user.primary_email,
-    displayName: response.user.display_name,
-    profileImageUrl: response.user.profile_image_url,
-  };
-
-  // Save tokens securely
+  // Persist tokens
   await saveTokens(tokens);
-  await saveUserId(user.id);
+  if (response.user_id) {
+    await saveUserId(response.user_id);
+  }
+
+  const user: StackUser = response.user
+    ? {
+        id: response.user.id,
+        email: response.user.primary_email,
+        displayName: response.user.display_name,
+        profileImageUrl: response.user.profile_image_url,
+      }
+    : {
+        id: response.user_id ?? (await getUserId()) ?? 'unknown',
+        email: email ?? null,
+        displayName: null,
+        profileImageUrl: null,
+      };
 
   return { user, tokens };
 }
@@ -307,8 +319,9 @@ export async function refreshAccessToken(): Promise<StackTokens | null> {
     }>('/auth/sessions/current/refresh', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${currentTokens.refreshToken}`,
+        'X-Stack-Refresh-Token': currentTokens.refreshToken,
       },
+      body: JSON.stringify({}),
     });
 
     const newTokens: StackTokens = {
@@ -348,7 +361,7 @@ export async function getCurrentUser(): Promise<StackUser | null> {
       profile_image_url: string | null;
     }>('/users/me', {
       headers: {
-        'Authorization': `Bearer ${tokens.accessToken}`,
+        'X-Stack-Access-Token': tokens.accessToken,
       },
     });
 
@@ -381,7 +394,7 @@ export async function signOut(): Promise<void> {
       await apiRequest('/auth/sessions/current', {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${tokens.accessToken}`,
+          'X-Stack-Access-Token': tokens.accessToken,
         },
       });
     } catch (e) {
