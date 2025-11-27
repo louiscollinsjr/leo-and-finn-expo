@@ -155,8 +155,12 @@ const InteractiveParagraph = memo(({
     
     if (result && onWordLongPress) {
       setSelectedIndex(result.index);
-      console.log('[InteractiveParagraph] Long press on token:', result.token.text, 'id:', result.token.id);
-      onWordLongPress(result.token.text, result.token.id);
+      // Strip leading/trailing punctuation from the word for display
+      const cleanWord = result.token.text.replace(/^[^\w]+|[^\w]+$/g, '');
+      if (cleanWord) {
+        console.log('[InteractiveParagraph] Long press on token:', cleanWord, 'id:', result.token.id);
+        onWordLongPress(cleanWord, result.token.id);
+      }
       
       // Keep highlight visible longer
       setTimeout(() => setSelectedIndex(null), 800);

@@ -5,20 +5,20 @@ import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { useWordTranslations } from "@/hooks/useWordTranslations";
 import BottomSheet, {
-    BottomSheetBackdrop,
-    BottomSheetScrollView,
+  BottomSheetBackdrop,
+  BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Keyboard,
-    KeyboardEvent,
-    LayoutAnimation,
-    Platform,
-    Pressable,
-    StyleSheet,
-    TextInput,
-    View
+  ActivityIndicator,
+  Keyboard,
+  KeyboardEvent,
+  LayoutAnimation,
+  Platform,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 // Platform-specific components to avoid web Skia errors
@@ -101,13 +101,37 @@ export const WordContextBottomSheet = forwardRef<
     };
   }, []);
   
-  // Define handleSaveTranslation before it's used in renderTextInput
+  // Confidence threshold: after seeing a word this many times, show "I know this word!"
+  // Set to 0 for now - behaves like Option C (input-based), but ready for future tracking
+  const CONFIDENCE_THRESHOLD = 0;
+  const [wordSeenCount] = useState(0); // TODO: fetch from user_vocabulary when tracking is implemented
+  
+  const hasTranslationInput = translation.trim().length > 0;
+  const isConfident = wordSeenCount >= CONFIDENCE_THRESHOLD && !hasTranslationInput;
+  
+  // Smart action: save translation if input has text, otherwise mark as known
+  const handleSmartAction = async () => {
+    if (hasTranslationInput && tokenId) {
+      console.log('[WordContext] Saving translation for tokenId:', tokenId, 'word:', word);
+      await saveTranslation(tokenId, translation);
+      setTranslation("");
+    } else if (word) {
+      console.log('[WordContext] Marking as known:', word);
+      await markKnown(word);
+    }
+    // Close the sheet after action
+    if (sheetRef.current) {
+      sheetRef.current.close();
+    }
+    onClose?.();
+  };
+  
+  // Legacy handler for backward compatibility
   const handleSaveTranslation = async () => {
     if (translation.trim() === "" || !tokenId) return;
     console.log('[WordContext] Saving translation for tokenId:', tokenId, 'word:', word);
     await saveTranslation(tokenId, translation);
     setTranslation("");
-    // Optionally close the sheet after saving
     if (sheetRef.current) {
       sheetRef.current.close();
     }
@@ -368,10 +392,10 @@ export const WordContextBottomSheet = forwardRef<
             <ThemedText style={styles.wordTitle}>
               Your story, your words...
             </ThemedText>
-            <View style={{ alignSelf: "stretch", marginBottom: 0 }}>
+            <View style={{ alignSelf: "stretch", marginBottom: 12 }}>
               <ThemedText style={styles.helperText}>
-                Add words you recognize. If you know it by heart, tap 'I know this
-                word!'
+                Add words you recognize — if you already know it by heart, tap the
+                button below.
               </ThemedText>
             </View>
             <ThemedText
@@ -384,13 +408,14 @@ export const WordContextBottomSheet = forwardRef<
 
             {renderTextInput()}
 
+            {/* Single smart button: shows "Save Translation" when input has text, "I know this word!" otherwise */}
             <ThemedButton
-              title="Update Translation"
-              onPress={handleSaveTranslation}
+              title={hasTranslationInput ? "Save Translation" : "I know this word!"}
+              onPress={handleSmartAction}
               disabled={mutationLoading}
               style={{
                 marginBottom: 8,
-                backgroundColor: "#1c1e31",
+                backgroundColor: "#000000",
                 paddingVertical: 14,
                 borderRadius: 18,
               }}
@@ -401,20 +426,6 @@ export const WordContextBottomSheet = forwardRef<
             {mutationError && (
               <ThemedText style={styles.errorText}>{mutationError}</ThemedText>
             )}
-
-            <ThemedButton
-              title="I know this word!"
-              onPress={handleMarkAsKnown}
-              disabled={mutationLoading}
-              variant="secondary"
-              style={{
-                marginVertical: 6,
-                backgroundColor: "#f5f5f5",
-                paddingVertical: 14,
-                borderRadius: 12,
-              }}
-              textStyle={{ color: "#999", fontSize: 20, letterSpacing: 0.25 }}
-            />
           </View>
         ) : (
           // Native version - use a regular View for now
@@ -432,13 +443,9 @@ export const WordContextBottomSheet = forwardRef<
             >
               <ThemedText style={{ fontSize: 20, lineHeight: 20 }}>✕</ThemedText>
             </Pressable>
-            {/* <ThemedText style={styles.wordTitle}>
-              Your story, your words...
-            </ThemedText> */}
-            <View style={{ alignSelf: "stretch", marginBottom: 0 }}>
+            <View style={{ alignSelf: "stretch", marginBottom: 12 }}>
               <ThemedText style={styles.helperText}>
-                Add words you recognize. If you know it by heart, tap 'I know this
-                word!'
+                Add a translation, or tap below if you already know this word.
               </ThemedText>
             </View>
             <ThemedText
@@ -451,37 +458,24 @@ export const WordContextBottomSheet = forwardRef<
 
             {renderTextInput()}
 
+            {/* Single smart button: shows "Save Translation" when input has text, "I know this word!" otherwise */}
             <ThemedButton
-              title="Update Translation"
-              onPress={handleSaveTranslation}
+              title={hasTranslationInput ? "Save Translation" : "I know this word!"}
+              onPress={handleSmartAction}
               disabled={mutationLoading}
               style={{
                 marginBottom: 8,
-                backgroundColor: "#1c1e31",
+                backgroundColor: hasTranslationInput ? "#000000" : "#000000",
                 paddingVertical: 14,
                 borderRadius: 18,
               }}
-              textStyle={{ color: "#fff", fontSize: 20, letterSpacing: 0.25 }}
+              textStyle={{ color: "#ffffff", fontSize: 20, letterSpacing: 0.25 }}
             />
 
             {mutationLoading && <ActivityIndicator style={{ marginTop: 15 }} />}
             {mutationError && (
               <ThemedText style={styles.errorText}>{mutationError}</ThemedText>
             )}
-
-            <ThemedButton
-              title="I know this word!"
-              onPress={handleMarkAsKnown}
-              disabled={mutationLoading}
-              variant="secondary"
-              style={{
-                marginVertical: 6,
-                backgroundColor: "#f5f5f5",
-                paddingVertical: 14,
-                borderRadius: 12,
-              }}
-              textStyle={{ color: "#999", fontSize: 20, letterSpacing: 0.25 }}
-            />
           </View>
         )}
       </BottomSheetScrollView>
@@ -536,15 +530,11 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.04)",
   },
   helperText: {
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 20,
-    fontWeight: "normal",
-    color: "#000",
+    fontWeight: "500",
+    color: "#5a5a5a",
     textAlign: "center",
-    paddingHorizontal: 0,
-    letterSpacing: 0.2,
-    marginBottom: 8,
-    width: "80%",
   },
   input: {
     backgroundColor: "#f3f3f3",
