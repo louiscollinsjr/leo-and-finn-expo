@@ -2,7 +2,7 @@ import InteractiveParagraph from '@/components/InteractiveParagraph';
 import { ThemedText } from '@/components/ThemedText';
 import { QuickThemeSwatches } from '@/constants/Colors';
 import { defaultTypography } from '@/lib/typography';
-import type { ThemeMode, Typeface } from '@/providers/ReaderProvider';
+import type { ReadingMode, ThemeMode, Typeface } from '@/providers/ReaderProvider';
 import type { Block, Token } from '@/types/reader';
 import React from 'react';
 import { View } from 'react-native';
@@ -21,8 +21,9 @@ export function createDefaultRegistry(opts: {
   knownWords?: Set<string>;
   onWordLongPress?: (word: string, tokenId?: string) => void;
   onWordTap?: (word: string, tokenId?: string) => void;
+  readingMode?: ReadingMode;
 }): BlockRegistry {
-  const { sidePad, fontScale = 1, lineHeightScale = 1, charSpacing = 0, theme, knownWords, onWordLongPress, onWordTap } = opts;
+  const { sidePad, fontScale = 1, lineHeightScale = 1, charSpacing = 0, theme, knownWords, onWordLongPress, onWordTap, readingMode = 'normal' } = opts;
 
   const baseFontSize = defaultTypography.fontSize;
   const baseLineHeight = defaultTypography.lineHeight;
@@ -77,6 +78,7 @@ export function createDefaultRegistry(opts: {
           knownWords={knownWords}
           onWordLongPress={onWordLongPress}
           onWordTap={onWordTap}
+          readingMode={readingMode}
         />
       );
     },

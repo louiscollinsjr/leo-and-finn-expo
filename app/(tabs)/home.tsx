@@ -14,17 +14,17 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
-  PlatformColor,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
 import {
   SafeAreaView,
@@ -32,8 +32,8 @@ import {
 } from "react-native-safe-area-context";
 import { Circle, Svg } from "react-native-svg";
 
-import { Button, Gauge, Host, Text as SwiftText } from "@expo/ui/swift-ui";
-import { frame, glassEffect, padding, scaleEffect } from "@expo/ui/swift-ui/modifiers";
+import { Button, Host, Text as SwiftText } from "@expo/ui/swift-ui";
+import { frame, glassEffect, padding } from "@expo/ui/swift-ui/modifiers";
 
 // Animatable BlurView for the header background
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
@@ -154,28 +154,56 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const router = useRouter();
 
+  const fadeStart = 0;
+  const fadeHold = 12;
+  const fadeEnd = 48;
+
   const titleOpacity = scrollY.interpolate({
-    inputRange: [0, 80],
+    inputRange: [0, fadeEnd],
     outputRange: [0, 1],
     extrapolate: "clamp",
   });
 
   const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 80],
+    inputRange: [0, fadeEnd],
     outputRange: [0, 1],
     extrapolate: "clamp",
   });
 
-  // The solid white overlay starts fully opaque and fades out by half the header height
-  const whiteOverlayOpacity = scrollY.interpolate({
-    inputRange: [0, 24, HEADER_HEIGHT * 6],
-    outputRange: [1, 1, 0],
+  const headerBackgroundOpacity = scrollY.interpolate({
+    inputRange: [0, 60],
+    outputRange: [0, 1],
     extrapolate: "clamp",
   });
 
   const largeTitleOpacity = scrollY.interpolate({
-    inputRange: [0, 20, 80],
+    inputRange: [fadeStart, fadeHold, fadeEnd],
     outputRange: [1, 1, 0],
+    extrapolate: "clamp",
+  });
+
+  const largeTitleScale = scrollY.interpolate({
+    inputRange: [fadeStart, fadeEnd],
+    outputRange: [1, 0.95],
+    extrapolate: "clamp",
+  });
+
+  const profileOpacity = scrollY.interpolate({
+    inputRange: [fadeStart, fadeHold, fadeEnd],
+    outputRange: [1, 1, 0],
+    extrapolate: "clamp",
+  });
+
+  const profileScale = scrollY.interpolate({
+    inputRange: [fadeStart, fadeEnd],
+    outputRange: [1, 0.9],
+    extrapolate: "clamp",
+  });
+
+  // Header slides up and fades out as content pushes it
+  const headerTranslateY = scrollY.interpolate({
+    inputRange: [0, fadeEnd],
+    outputRange: [0, -30],
     extrapolate: "clamp",
   });
 
@@ -195,29 +223,33 @@ export default function HomeScreen() {
           scrollEventThrottle={16}
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: true }
+            { useNativeDriver: false }
           )}
-          style={{ backgroundColor: background }}
+          style={{ flex: 1, backgroundColor: background }}
           contentContainerStyle={{
-            paddingTop: HEADER_HEIGHT,
+            paddingTop: insets.top + 4,
             paddingBottom: 96,
             paddingHorizontal: 20,
           }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Content header row: Title + Progress + Account */}
-          <View
+          {/* Header row: Title + Profile - scrolls with content */}
+          <Animated.View
             style={{
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "space-between",
-              marginTop: 8,
-              marginBottom: 24,
+              paddingTop: 12,
+              paddingBottom: 16,
+              opacity: largeTitleOpacity,
+              transform: [{ translateY: headerTranslateY }],
             }}
           >
-            {/* Title */}
             <Animated.View
-              style={[{ opacity: largeTitleOpacity as any }, { flex: 1 }]}
+              style={{
+                flex: 1,
+                transform: [{ scale: largeTitleScale }],
+              }}
             >
               <Text
                 className="text-[34px] font-extrabold text-zinc-900"
@@ -232,7 +264,6 @@ export default function HomeScreen() {
               </Text>
             </Animated.View>
 
-            {/* Right side elements */}
             <View
               style={{
                 flexDirection: "row",
@@ -240,37 +271,24 @@ export default function HomeScreen() {
                 flexShrink: 0,
               }}
             >
-              {user && (
-                <View style={{ paddingTop: 1, marginRight: 12 }}>
-                  {/* <ProgressRing size={30} value={11} total={30} /> */}
-                  <Host matchContents>
-                    <Gauge
-                      max={{ value: 100, label: "50" }}
-                      min={{ value: 0, label: "0" }}
-                      current={{ value: 20 }}
-                      color={[
-                        // PlatformColor("systemRed"),
-                        // PlatformColor("systemYellow"),
-                        PlatformColor("systemGreen"),
-                      ]}
-                      type="circular"
-                      modifiers={[frame({ width: 44, height: 44 }), scaleEffect(0.6)]}
-                    />
-                  </Host>
-                </View>
-              )}
               {user ? (
-                <Link href="/account" asChild>
-                  <Pressable hitSlop={8}>
-                    <IconSymbol
-                      size={36}
-                      name="person.crop.circle"
-                      color={colorScheme === "dark" ? "#fff" : "#111827"}
-                    />
-                  </Pressable>
-                </Link>
+                <Animated.View
+                  style={{
+                    transform: [{ scale: profileScale }],
+                  }}
+                >
+                  <Link href="/account" asChild>
+                    <Pressable hitSlop={8}>
+                      <IconSymbol
+                        size={36}
+                        name="person.crop.circle"
+                        color={colorScheme === "dark" ? "#fff" : "#111827"}
+                      />
+                    </Pressable>
+                  </Link>
+                </Animated.View>
               ) : (
-                <View>
+                <Animated.View style={{ opacity: largeTitleOpacity }}>
                   <Host matchContents>
                     <Button
                       variant="glass"
@@ -286,10 +304,10 @@ export default function HomeScreen() {
                       <SwiftText size={16}>Sign up</SwiftText>
                     </Button>
                   </Host>
-                </View>
+                </Animated.View>
               )}
             </View>
-          </View>
+          </Animated.View>
 
           {/* Featured Stories */}
           <View
@@ -449,65 +467,26 @@ export default function HomeScreen() {
           ))} */}
         </Animated.ScrollView>
 
-        {/* Absolute navbar overlay (transparent -> blur) */}
-        <Animated.View
+        {/* Gradient overlay - content fades off at top edge of screen */}
+        <View
           pointerEvents="none"
           style={{
             position: "absolute",
             top: 0,
             left: 0,
             right: 0,
-            height: HEADER_HEIGHT,
-            paddingTop: insets.top,
-            alignItems: "center",
-            justifyContent: "center",
+            height: insets.top + 16,
           }}
         >
-          {/* The new blur background */}
-          <AnimatedBlurView
-            tint={theme === "dark" ? "dark" : "default"}
-            intensity={100}
-            style={{
-              ...StyleSheet.absoluteFillObject,
-              opacity: headerOpacity,
-            }}
+          <LinearGradient
+            colors={
+              theme === "dark"
+                ? ["rgba(0,0,0,0.85)", "transparent"]
+                : ["rgba(255,255,255,0.1)", "transparent"]
+            }
+            style={StyleSheet.absoluteFillObject}
           />
-
-          {/* The custom white tint overlay */}
-          <Animated.View
-            style={{
-              ...StyleSheet.absoluteFillObject,
-              // Apple's systemGray6 with 85% opacity
-              backgroundColor: navOverlayColor,
-              opacity: whiteOverlayOpacity, // Start solid, fade to clear by HEADER_HEIGHT/2
-            }}
-          />
-
-          {/* Fading bottom border */}
-          <Animated.View
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: StyleSheet.hairlineWidth,
-              backgroundColor: "rgba(0,0,0,0.15)",
-              opacity: headerOpacity,
-            }}
-          />
-
-          {/* The title text */}
-          <Animated.Text
-            style={{
-              fontSize: 17,
-              fontWeight: "600",
-              color: theme === "dark" ? "#ffffff" : "#111827",
-              opacity: titleOpacity,
-            }}
-          >
-            Home
-          </Animated.Text>
-        </Animated.View>
+        </View>
       </View>
       {/* Rating Sheet */}
       <RatingSheet

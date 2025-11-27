@@ -25,6 +25,7 @@ export function createInMemoryStorageAdapter(): StorageAdapter {
 export type ThemeMode = 'system' | 'light' | 'dark' | 'sepia';
 export type PageMode = 'scroll' | 'slide' | 'curl' | 'fast-fade';
 export type Typeface = 'system' | 'serif' | 'sans' | 'inter' | 'tisa';
+export type ReadingMode = 'normal' | 'focused' | 'pronunciation' | 'translations';
 
 export type ReaderPrefs = {
   fontScale: number; // 1.0 = base size
@@ -92,6 +93,8 @@ type ReaderUIContextValue = {
   wordContext: WordContextValue;
   openWordContext: (payload: WordContextPayload) => void;
   closeWordContext: () => void;
+  readingMode: ReadingMode;
+  setReadingMode: (mode: ReadingMode) => void;
 };
 
 const ReaderPrefsContext = createContext<ReaderPrefsContextValue | undefined>(undefined);
@@ -105,6 +108,7 @@ export function ReaderProvider({ children, storage }: ReaderProviderProps) {
   const [themePopoverVisible, setThemePopoverVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [wordContext, setWordContext] = useState<WordContextValue>({ word: null, tokenId: null, anchor: null });
+  const [readingMode, setReadingMode] = useState<ReadingMode>('normal');
   const loadedRef = useRef(false);
 
   // Load on mount
@@ -167,6 +171,8 @@ export function ReaderProvider({ children, storage }: ReaderProviderProps) {
       wordContext,
       openWordContext,
       closeWordContext,
+      readingMode,
+      setReadingMode,
     }),
     [
       overlayVisible,
@@ -176,6 +182,7 @@ export function ReaderProvider({ children, storage }: ReaderProviderProps) {
       wordContext,
       openWordContext,
       closeWordContext,
+      readingMode,
     ]
   );
 

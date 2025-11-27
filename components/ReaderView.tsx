@@ -10,12 +10,12 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import Animated, {
-    Easing,
-    runOnJS,
-    useAnimatedScrollHandler,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  Easing,
+  runOnJS,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -269,9 +269,6 @@ export default function ReaderView(props: ReaderViewProps) {
                 setMenuPresented(false);
                 setMenuVisible(true);
               }}
-              onSetMode={() => {
-                showOverlays();
-              }}
             />
           )}
         </Animated.View>
@@ -292,9 +289,6 @@ export default function ReaderView(props: ReaderViewProps) {
         }}
         progress={jsProgress}
         onScrub={scrubTo}
-        onSetMode={() => {
-          setMenuVisible(false);
-        }}
         onPresented={() => setMenuPresented(true)}
         bottomOffset={Math.max(0, bottomOverlayHeight) - 24}
       />

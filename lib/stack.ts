@@ -43,7 +43,7 @@ if (!PROJECT_ID || !PUBLISHABLE_KEY) {
 
 export type StackTokens = {
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
 };
 
 export type StackUser = {
@@ -64,10 +64,14 @@ export type AuthResult = {
 
 async function saveTokens(tokens: StackTokens): Promise<void> {
   try {
-    await Promise.all([
+    const promises: Promise<void>[] = [
       AsyncStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken),
-      AsyncStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken),
-    ]);
+    ];
+    // Only save refresh token if it exists
+    if (tokens.refreshToken) {
+      promises.push(AsyncStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken));
+    }
+    await Promise.all(promises);
     console.log('[Stack Auth] Tokens saved');
   } catch (e) {
     console.error('[Stack Auth] Failed to save tokens', e);
@@ -81,8 +85,8 @@ async function getTokens(): Promise<StackTokens | null> {
       AsyncStorage.getItem(ACCESS_TOKEN_KEY),
       AsyncStorage.getItem(REFRESH_TOKEN_KEY),
     ]);
-    if (accessToken && refreshToken) {
-      return { accessToken, refreshToken };
+    if (accessToken) {
+      return { accessToken, refreshToken: refreshToken ?? undefined };
     }
     return null;
   } catch (e) {
@@ -326,7 +330,8 @@ export async function refreshAccessToken(): Promise<StackTokens | null> {
 
     const newTokens: StackTokens = {
       accessToken: response.access_token,
-      refreshToken: response.refresh_token,
+      // Keep existing refresh token if API doesn't return a new one
+      refreshToken: response.refresh_token || currentTokens.refreshToken,
     };
 
     await saveTokens(newTokens);

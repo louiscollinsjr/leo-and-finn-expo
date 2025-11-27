@@ -6,17 +6,19 @@
  * while preserving word-level interactions needed for the Birkenbihl method.
  */
 import { defaultTypography } from '@/lib/typography';
+import type { ReadingMode } from '@/providers/ReaderProvider';
 import type { Token } from '@/types/reader';
 import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 import {
-    GestureResponderEvent,
-    NativeSyntheticEvent,
-    Pressable,
-    Text,
-    TextLayoutEventData,
-    TextStyle,
-    View,
+  GestureResponderEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  Text,
+  TextLayoutEventData,
+  TextStyle,
+  View,
 } from 'react-native';
+import PronunciationWord from './PronunciationWord';
 
 interface InteractiveParagraphProps {
   blockKey: string;
@@ -31,6 +33,8 @@ interface InteractiveParagraphProps {
   knownWords?: Set<string>; // words the user has marked as known
   onWordLongPress?: (word: string, tokenId?: string) => void;
   onWordTap?: (word: string, tokenId?: string) => void;
+  readingMode?: ReadingMode;
+  translationColor?: string;
 }
 
 interface TextLine {
@@ -53,6 +57,8 @@ const InteractiveParagraph = memo(({
   sidePad,
   knownWords,
   onWordLongPress,
+  readingMode = 'normal',
+  translationColor = '#666666',
 }: InteractiveParagraphProps) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const textLinesRef = useRef<TextLine[]>([]);
@@ -170,7 +176,7 @@ const InteractiveParagraph = memo(({
     setTimeout(() => { longPressActiveRef.current = false; }, 100);
   }, [findTokenAtPosition, onWordLongPress]);
 
-  // Render tokens with appropriate styling
+  // Render tokens with appropriate styling based on reading mode
   const renderContent = useMemo(() => {
     const baseStyle: TextStyle = {
       fontSize,
@@ -178,6 +184,79 @@ const InteractiveParagraph = memo(({
       letterSpacing,
     };
 
+    // Pronunciation mode: render each word with phoneme segments
+    if (readingMode === 'pronunciation') {
+      return tokenList.map((token, i) => {
+        const isKnown = knownWords?.has(token.text.toLowerCase());
+        const cleanWord = token.text.replace(/^[^\w]+|[^\w]+$/g, '');
+        const leadingPunct = token.text.match(/^[^\w]+/)?.[0] || '';
+        const trailingPunct = token.text.match(/[^\w]+$/)?.[0] || '';
+        
+        // Skip pure punctuation tokens
+        if (!cleanWord) {
+          return (
+            <Text key={`${blockKey}-${token.id}-${i}`} style={[baseStyle, { color: textColor }]}>
+              {token.text}
+            </Text>
+          );
+        }
+
+        return (
+          <View key={`${blockKey}-${token.id}-${i}`} style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            {leadingPunct ? (
+              <Text style={[baseStyle, { color: textColor }]}>{leadingPunct}</Text>
+            ) : null}
+            <PronunciationWord
+              word={cleanWord}
+              fontSize={fontSize}
+              textColor={textColor}
+              isKnown={isKnown}
+              knownWordColor={knownWordColor}
+            />
+            {trailingPunct ? (
+              <Text style={[baseStyle, { color: textColor, marginRight: 4 }]}>{trailingPunct}</Text>
+            ) : null}
+          </View>
+        );
+      });
+    }
+
+    // Translations mode: show translation below unknown words
+    if (readingMode === 'translations') {
+      return tokenList.map((token, i) => {
+        const isKnown = knownWords?.has(token.text.toLowerCase());
+        const isSelected = selectedIndex === i;
+        // TODO: Get actual translation from user_translations or token data
+        const translation = (token as any).translation;
+        const showTranslation = !isKnown && translation;
+        
+        const tokenStyle: TextStyle = {
+          ...baseStyle,
+          color: isKnown ? knownWordColor : textColor,
+          backgroundColor: isSelected ? 'rgba(100, 150, 255, 0.35)' : 'transparent',
+        };
+
+        if (showTranslation) {
+          return (
+            <View key={`${blockKey}-${token.id}-${i}`} style={{ alignItems: 'center', marginRight: 4 }}>
+              <Text style={tokenStyle}>{token.text}</Text>
+              <Text style={{ fontSize: fontSize * 0.55, color: translationColor }}>
+                {translation}
+              </Text>
+            </View>
+          );
+        }
+
+        return (
+          <Text key={`${blockKey}-${token.id}-${i}`} style={tokenStyle}>
+            {token.text}
+            {i < tokenList.length - 1 ? ' ' : ''}
+          </Text>
+        );
+      });
+    }
+
+    // Normal and Focused modes: standard inline text
     return tokenList.map((token, i) => {
       const isKnown = knownWords?.has(token.text.toLowerCase());
       const isSelected = selectedIndex === i;
@@ -186,6 +265,8 @@ const InteractiveParagraph = memo(({
         ...baseStyle,
         color: isKnown ? knownWordColor : textColor,
         backgroundColor: isSelected ? 'rgba(100, 150, 255, 0.35)' : 'transparent',
+        // Focused mode: slightly bolder text
+        ...(readingMode === 'focused' && { fontWeight: '500' }),
       };
 
       return (
@@ -195,7 +276,10 @@ const InteractiveParagraph = memo(({
         </Text>
       );
     });
-  }, [tokenList, fontSize, lineHeight, letterSpacing, textColor, knownWordColor, knownWords, selectedIndex, blockKey]);
+  }, [tokenList, fontSize, lineHeight, letterSpacing, textColor, knownWordColor, knownWords, selectedIndex, blockKey, readingMode, translationColor]);
+
+  // Use flex wrap for pronunciation/translations modes
+  const useFlexWrap = readingMode === 'pronunciation' || readingMode === 'translations';
 
   return (
     <View style={{ marginBottom: defaultTypography.paraBottomMargin, paddingHorizontal: sidePad }}>
@@ -203,12 +287,18 @@ const InteractiveParagraph = memo(({
         onLongPress={handleLongPress}
         delayLongPress={300}
       >
-        <Text 
-          selectable={false}
-          onTextLayout={handleTextLayout}
-        >
-          {renderContent}
-        </Text>
+        {useFlexWrap ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            {renderContent}
+          </View>
+        ) : (
+          <Text 
+            selectable={false}
+            onTextLayout={handleTextLayout}
+          >
+            {renderContent}
+          </Text>
+        )}
       </Pressable>
     </View>
   );
@@ -221,7 +311,8 @@ const InteractiveParagraph = memo(({
     prev.fontSize === next.fontSize &&
     prev.textColor === next.textColor &&
     prev.knownWordColor === next.knownWordColor &&
-    prev.knownWords === next.knownWords
+    prev.knownWords === next.knownWords &&
+    prev.readingMode === next.readingMode
   );
 });
 

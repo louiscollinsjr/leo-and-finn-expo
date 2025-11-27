@@ -2,12 +2,14 @@
 // Left column: two full-opacity buttons (Contents, Themes & Settings) and 4 mode buttons.
 // Right column: vertical scrub gutter. No search, no horizontal progress slider.
 import { ThemedText } from '@/components/ThemedText';
+import type { ReadingMode } from '@/providers/ReaderProvider';
+import { useReaderUI } from '@/providers/ReaderProvider';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, View, Animated, Easing } from 'react-native';
+import { Animated, Easing, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type Mode = 'normal' | 'focused' | 'pronunciation' | 'translations';
+type Mode = ReadingMode;
 
 export default function ReaderMenuSheet({
   visible,
@@ -15,7 +17,6 @@ export default function ReaderMenuSheet({
   onOpenThemePopover,
   progress,
   onScrub,
-  onSetMode,
   onPresented,
   bottomOffset,
 }: {
@@ -24,11 +25,11 @@ export default function ReaderMenuSheet({
   onOpenThemePopover: () => void;
   progress: number; // 0..1
   onScrub: (v: number) => void;
-  onSetMode?: (m: Mode) => void;
   onPresented?: () => void;
   bottomOffset?: number;
 }) {
   const insets = useSafeAreaInsets();
+  const { readingMode, setReadingMode } = useReaderUI();
   // Call onPresented when becoming visible (without animation)
   React.useEffect(() => {
     if (visible) onPresented && onPresented();
@@ -145,16 +146,16 @@ export default function ReaderMenuSheet({
             {/* Mode buttons row */}
             <View style={{ marginTop: 12, flexDirection: 'row', justifyContent: 'space-between' }}>
               <View style={{ width: '22%', aspectRatio: 1.2 }}>
-                <ModeButton label="" icon="menu-book" onPress={() => onSetMode && onSetMode('normal')} />
+                <ModeButton label="" icon="menu-book" mode="normal" activeMode={readingMode} onPress={() => { setReadingMode('normal'); onClose(); }} />
               </View>
               <View style={{ width: '22%', aspectRatio: 1.2 }}>
-                <ModeButton label="" icon="center-focus-strong" onPress={() => onSetMode && onSetMode('focused')} />
+                <ModeButton label="" icon="center-focus-strong" mode="focused" activeMode={readingMode} onPress={() => { setReadingMode('focused'); onClose(); }} />
               </View>
               <View style={{ width: '22%', aspectRatio: 1.2 }}>
-                <ModeButton label="" icon="record-voice-over" onPress={() => onSetMode && onSetMode('pronunciation')} />
+                <ModeButton label="" icon="record-voice-over" mode="pronunciation" activeMode={readingMode} onPress={() => { setReadingMode('pronunciation'); onClose(); }} />
               </View>
               <View style={{ width: '22%', aspectRatio: 1.2 }}>
-                <ModeButton label="" icon="translate" onPress={() => onSetMode && onSetMode('translations')} />
+                <ModeButton label="" icon="translate" mode="translations" activeMode={readingMode} onPress={() => { setReadingMode('translations'); onClose(); }} />
               </View>
             </View>
           </View>
@@ -176,13 +177,22 @@ export default function ReaderMenuSheet({
   );
 }
 
-function ModeButton({ label, icon, onPress }: { label?: string; icon: any; onPress: () => void }) {
+function ModeButton({ label, icon, mode, activeMode, onPress }: { label?: string; icon: any; mode: Mode; activeMode: Mode; onPress: () => void }) {
+  const isActive = mode === activeMode;
+  
   return (
     <Pressable
       onPress={onPress}
-      style={{ flex: 1, backgroundColor: 'rgba(217,217,217,1.0)', borderRadius: 12, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
+      style={{ 
+        flex: 1, 
+        backgroundColor: isActive ? 'rgba(100, 150, 255, 0.6)' : 'rgba(217,217,217,1.0)', 
+        borderRadius: 12, 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        overflow: 'hidden' 
+      }}
     >
-      <MaterialIcons name={icon} size={20} color="#000" style={{ opacity: 0.65 }} />
+      <MaterialIcons name={icon} size={20} color="#000" style={{ opacity: isActive ? 1 : 0.65 }} />
       {label ? (
         <ThemedText style={{ marginTop: 4, fontSize: 12, fontWeight: '400' }}>{label}</ThemedText>
       ) : null}

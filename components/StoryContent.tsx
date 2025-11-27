@@ -3,7 +3,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { createDefaultRegistry, renderWithRegistry } from '@/lib/blockRegistry';
 import { paginateBlocks } from '@/lib/pagination';
-import { useReaderPrefs } from '@/providers/ReaderProvider';
+import { useReaderPrefs, useReaderUI } from '@/providers/ReaderProvider';
 import type { ContentSource } from '@/types/reader';
 import { Block } from '@/types/reader';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -30,6 +30,7 @@ export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks
   const [pages, setPages] = useState<Block[][]>([]);
   const { width: screenWidth } = useWindowDimensions();
   const { prefs } = useReaderPrefs();
+  const { readingMode } = useReaderUI();
   const colorScheme = useColorScheme();
   const baseMargin = hMargin ?? Math.round(screenWidth * 0.08);
   const sidePad = Math.max(20, Math.round(baseMargin * (prefs.marginScale || 1)));
@@ -49,6 +50,7 @@ export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks
         knownWords,
         onWordLongPress,
         onWordTap,
+        readingMode,
       }),
     [
       sidePad,
@@ -61,6 +63,7 @@ export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks
       knownWords,
       onWordLongPress,
       onWordTap,
+      readingMode,
     ]
   );
   const dataBlocks = providedBlocks ?? localBlocks;
