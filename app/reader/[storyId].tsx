@@ -1,5 +1,6 @@
 import { WordContextBottomSheet } from '@/components/overlays/WordContextBottomSheet';
 import ReaderView from '@/components/ReaderView';
+import StoryContent from '@/components/StoryContent';
 import { ThemedView } from '@/components/ThemedView';
 import { db } from '@/lib/db';
 import { useReaderUI } from '@/providers/ReaderProvider';
@@ -77,7 +78,7 @@ export default function ReaderScreen() {
         onOpenSearch={() => { /* TODO: open search */ }}
         onOpenSettings={() => { /* TODO: open settings */ }}
       >
-        <StoryContent41
+        <StoryContent
           key={`${storyId}-scroll`}
           storyId={storyId as string}
           mode="scroll"
