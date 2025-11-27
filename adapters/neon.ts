@@ -43,13 +43,29 @@ export class NeonContentSource implements ContentSource {
   async loadStoryBlocks(storyId: string): Promise<Block[]> {
     // Check memory cache
     const cachedMem = memoryCache.get(storyId);
-    if (cachedMem && isFresh(cachedMem)) return cachedMem.blocks;
+    if (cachedMem && isFresh(cachedMem)) {
+      console.log('[NeonContentSource] Using memory cache for story:', storyId);
+      // Check if cached blocks have tokens
+      const firstPara = cachedMem.blocks.find(b => b.type === 'paragraph');
+      if (firstPara && !(firstPara as any).tokens?.length) {
+        console.log('[NeonContentSource] Cache has no tokens, invalidating...');
+      } else {
+        return cachedMem.blocks;
+      }
+    }
 
     // Check persisted cache
     const persisted = await readPersistedCache(storyId);
     if (persisted && isFresh(persisted)) {
-      memoryCache.set(storyId, persisted);
-      return persisted.blocks;
+      // Check if cached blocks have tokens
+      const firstPara = persisted.blocks.find(b => b.type === 'paragraph');
+      if (firstPara && !(firstPara as any).tokens?.length) {
+        console.log('[NeonContentSource] Persisted cache has no tokens, fetching fresh...');
+      } else {
+        console.log('[NeonContentSource] Using persisted cache for story:', storyId);
+        memoryCache.set(storyId, persisted);
+        return persisted.blocks;
+      }
     }
 
     // 1) Get all revisions for this story (desc by rev)
@@ -84,6 +100,7 @@ export class NeonContentSource implements ContentSource {
 
     // Choose segments from the latest available revision per chapter
     let segments: Seg[] = [];
+    console.log('[NeonContentSource] Revisions available:', Array.from(revById.entries()));
     for (const [cid, arr] of byChapterAll) {
       const byRev = new Map<string, Seg[]>();
       for (const s of arr) {
@@ -100,6 +117,7 @@ export class NeonContentSource implements ContentSource {
           bestRevId = rid;
         }
       }
+      console.log('[NeonContentSource] Chapter', cid, 'using revision', bestRevId, '(rev', bestRevNum, ')');
       const chosen = (bestRevId ? byRev.get(bestRevId) : []) ?? [];
       chosen.sort((a, b) => (a.seg_index ?? 0) - (b.seg_index ?? 0));
       segments = segments.concat(chosen);
@@ -111,13 +129,40 @@ export class NeonContentSource implements ContentSource {
     const selectedSegIds = segments.map((s) => s.id);
     
     if (selectedSegIds.length > 0) {
-      const tokens = await db.getTokensBySegmentIds(selectedSegIds);
+      console.log('[NeonContentSource] Selected segment IDs sample:', selectedSegIds.slice(0, 3));
+      let tokens = await db.getTokensBySegmentIds(selectedSegIds);
+      console.log('[NeonContentSource] Tokens found for selected segments:', tokens.length);
+      
+      // If no tokens found for selected segments, fall back to fetching ALL tokens for the story's revisions
+      // and use those segment IDs instead
+      if (tokens.length === 0) {
+        console.log('[NeonContentSource] No tokens for selected segments, fetching all tokens for revisions...');
+        // Get all segment IDs that have tokens
+        const allSegmentIds = allSegments.map(s => s.id);
+        tokens = await db.getTokensBySegmentIds(allSegmentIds);
+        console.log('[NeonContentSource] Tokens found for all segments:', tokens.length);
+        
+        if (tokens.length > 0) {
+          // Find which segments actually have tokens and use those
+          const segIdsWithTokens = new Set(tokens.map(t => t.segment_id));
+          console.log('[NeonContentSource] Segments with tokens:', segIdsWithTokens.size);
+          
+          // Rebuild segments list to only include those with tokens
+          const segmentsWithTokens = allSegments.filter(s => segIdsWithTokens.has(s.id));
+          if (segmentsWithTokens.length > 0) {
+            segments = segmentsWithTokens as Seg[];
+            console.log('[NeonContentSource] Using', segments.length, 'segments that have tokens');
+          }
+        }
+      }
+      
       tokens.forEach((t) => {
         const arr = tokensBySeg.get(t.segment_id) ?? [];
         const ttype = (t.token_type ?? 'word').toLowerCase();
         arr.push({ id: t.id, text: t.text ?? '', type: ttype });
         tokensBySeg.set(t.segment_id, arr);
       });
+      console.log('[NeonContentSource] tokensBySeg has', tokensBySeg.size, 'segments');
     }
 
     // Sort segments by (chapter.position, seg_index)
@@ -223,9 +268,19 @@ export class NeonContentSource implements ContentSource {
         }
         if (kind === 'paragraph') {
           const segTokens = tokensBySeg.get(seg.id) ?? [];
+          console.log('[NeonContentSource] Segment', seg.id, 'has', segTokens.length, 'tokens');
           const tokensForBlock = segTokens.length ? segTokens.map((t) => ({ id: t.id, text: t.text, type: t.type })) : undefined;
           flushParagraph();
-          if (text) out.push({ key: `p-${paraIndex++}`, type: 'paragraph', text, tokens: tokensForBlock });
+          if (text) {
+            // Log first paragraph's tokens for debugging
+            if (paraIndex < 2) {
+              console.log('[NeonContentSource] Paragraph', paraIndex, 'tokensForBlock:', tokensForBlock ? tokensForBlock.length : 'undefined');
+              if (tokensForBlock) {
+                console.log('[NeonContentSource] First tokens:', tokensForBlock.slice(0, 3));
+              }
+            }
+            out.push({ key: `p-${paraIndex++}`, type: 'paragraph', text, tokens: tokensForBlock });
+          }
           continue;
         }
         if (text) {

@@ -104,6 +104,7 @@ export const WordContextBottomSheet = forwardRef<
   // Define handleSaveTranslation before it's used in renderTextInput
   const handleSaveTranslation = async () => {
     if (translation.trim() === "" || !tokenId) return;
+    console.log('[WordContext] Saving translation for tokenId:', tokenId, 'word:', word);
     await saveTranslation(tokenId, translation);
     setTranslation("");
     // Optionally close the sheet after saving

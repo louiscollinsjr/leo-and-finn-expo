@@ -242,12 +242,24 @@ export class NeonAdapter implements DatabaseAdapter {
     
     const db = ensureConnection();
     
+    console.log('[NeonAdapter] getTokensBySegmentIds called with', segmentIds.length, 'segment IDs');
+    console.log('[NeonAdapter] First 3 segment IDs:', segmentIds.slice(0, 3));
+    
     const rows = await db`
       SELECT id, segment_id, tok_index, text, token_type
       FROM tokens
       WHERE segment_id = ANY(${segmentIds})
       ORDER BY segment_id ASC, tok_index ASC
     `;
+    
+    console.log('[NeonAdapter] getTokensBySegmentIds returned', rows.length, 'tokens');
+    if (rows.length > 0) {
+      console.log('[NeonAdapter] First token sample:', rows[0]);
+      // Check if returned segment_id is in our list
+      const firstTokenSegId = rows[0].segment_id;
+      const isInList = segmentIds.includes(firstTokenSegId);
+      console.log('[NeonAdapter] First token segment_id', firstTokenSegId, 'in query list:', isInList);
+    }
     
     return rows.map((row: any) => ({
       id: row.id,

@@ -155,6 +155,7 @@ const InteractiveParagraph = memo(({
     
     if (result && onWordLongPress) {
       setSelectedIndex(result.index);
+      console.log('[InteractiveParagraph] Long press on token:', result.token.text, 'id:', result.token.id);
       onWordLongPress(result.token.text, result.token.id);
       
       // Keep highlight visible longer
