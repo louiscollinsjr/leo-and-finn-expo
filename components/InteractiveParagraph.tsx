@@ -288,9 +288,25 @@ const InteractiveParagraph = memo(({
         delayLongPress={300}
       >
         {useFlexWrap ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-            {renderContent}
-          </View>
+          <>
+            <Text
+              selectable={false}
+              onTextLayout={handleTextLayout}
+              style={{
+                position: 'absolute',
+                opacity: 0,
+                pointerEvents: 'none',
+                fontSize,
+                lineHeight,
+                letterSpacing,
+              }}
+            >
+              {fullText}
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              {renderContent}
+            </View>
+          </>
         ) : (
           <Text 
             selectable={false}
