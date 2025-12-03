@@ -1,7 +1,8 @@
+import { en_en_rules } from './en-en';
 import { ro_en_rules } from './ro-en';
 import { ro_fr_rules } from './ro-fr';
 import { rm_en_rules } from './rom-en';
-import type { PronunciationRule, PronunciationMatch } from './types';
+import type { PronunciationMatch, PronunciationRule } from './types';
 
 // Language labels (minimal set for UI)
 const LANG_LABELS: Record<string, string> = {
@@ -16,6 +17,9 @@ const guidesByTarget: Record<string, Record<string, PronunciationRule[]>> = {
   ro: {
     en: ro_en_rules,
     fr: ro_fr_rules
+  },
+  en: {
+    en: en_en_rules
   },
   rom: {
     en: rm_en_rules

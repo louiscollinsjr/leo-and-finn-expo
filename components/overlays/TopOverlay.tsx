@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
@@ -58,7 +59,17 @@ export default function TopOverlay({ insets, title, centerLabel, onBack }: TopOv
               style={styles.closeButton}
             >
               <BlurView intensity={BLUR_INTENSITY} tint="default" style={styles.blurFill} />
-              <View style={[styles.blurFill, styles.closeOverlay]} />
+              <LinearGradient
+                colors={[
+                  'rgba(255,255,255,0.55)',
+                  'rgba(255,255,255,0.08)',
+                ]}
+                start={{ x: 0.2, y: 0 }}
+                end={{ x: 0.8, y: 1 }}
+                style={styles.blurFill}
+              />
+              <View style={[styles.blurFill, styles.closeGlassBorder]} />
+              <View style={[styles.blurFill, styles.closeGlassHighlight]} />
               <IconSymbol name="xmark" size={16} color={textColor} style={styles.closeIcon} />
             </Pressable>
           ) : (
@@ -118,8 +129,20 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: 'rgba(15, 23, 42, 0.4)',
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
   },
-  closeOverlay: {
+  closeGlassBorder: {
+    borderRadius: CLOSE_BUTTON_SIZE / 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  closeGlassHighlight: {
+    borderRadius: CLOSE_BUTTON_SIZE / 2,
+    borderBottomColor: 'rgba(15,23,42,0.18)',
+    borderBottomWidth: StyleSheet.hairlineWidth,
     backgroundColor: BUTTON_OVERLAY,
   },
   closeIcon: {
