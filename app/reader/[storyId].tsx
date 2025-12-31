@@ -1,11 +1,13 @@
-import { WordContextBottomSheet } from '@/components/overlays/WordContextBottomSheet';
+import { WordTranslationSheet } from '@/components/overlays/WordTranslationSheet';
+import { ReaderSettingsSheet } from '@/components/overlays/ReaderSettingsSheet';
 import ReaderView from '@/components/ReaderView';
 import StoryContent from '@/components/StoryContent';
+import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { db } from '@/lib/db';
 import { useReaderUI } from '@/providers/ReaderProvider';
-import BottomSheet from '@gorhom/bottom-sheet';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { TrueSheet } from '@lodev09/react-native-true-sheet';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 
@@ -15,23 +17,31 @@ export default function ReaderScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { wordContext, openWordContext, closeWordContext } = useReaderUI();
-  const bottomSheetRef = useRef<BottomSheet>(null);
+  const wordSheetRef = useRef<TrueSheet>(null);
+  const settingsSheetRef = useRef<TrueSheet>(null);
   const router = useRouter();
   const { width } = useWindowDimensions();
   const hMargin = Math.max(24, Math.round(width * 0.10));
 
+  // TODO: Calculate actual page count and current page from scroll position
+  const pageCount = 42;
+  const currentPage = 12;
+
   // TODO: Load known words from user's vocabulary
   const knownWords = useMemo(() => new Set<string>(), []);
 
-  // Open/close bottom sheet based on word context
+  // Open/close word sheet based on word context
   useEffect(() => {
     if (wordContext.word) {
-      // Snap to index 1 (75%) for a better initial view
-      requestAnimationFrame(() => bottomSheetRef.current?.snapToIndex(1));
+      wordSheetRef.current?.present();
     } else {
-      bottomSheetRef.current?.close();
+      wordSheetRef.current?.dismiss();
     }
   }, [wordContext.word]);
+
+  const openSettings = useCallback(() => {
+    settingsSheetRef.current?.present();
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -68,33 +78,46 @@ export default function ReaderScreen() {
   }, [openWordContext]);
 
   return (
-    <ThemedView style={{ flex: 1 }}>
-      <ReaderView
-        title={title}
-        loading={loading}
-        error={error}
-        onBack={() => router.back()}
-        onOpenContents={() => { /* TODO: open contents */ }}
-        onOpenSearch={() => { /* TODO: open search */ }}
-        onOpenSettings={() => { /* TODO: open settings */ }}
-      >
-        <StoryContent
-          key={`${storyId}-scroll`}
-          storyId={storyId as string}
-          mode="scroll"
-          hMargin={hMargin}
-          knownWords={knownWords}
-          onWordLongPress={handleWordLongPress}
-        />
-      </ReaderView>
-
-      {/* Word context bottom sheet */}
-      <WordContextBottomSheet
-        ref={bottomSheetRef}
-        word={wordContext.word}
-        tokenId={wordContext.tokenId}
-        onClose={closeWordContext}
+    <>
+      {/* Hide header for immersive reading */}
+      <Stack.Screen
+        options={{
+          headerShown: false,
+        }}
       />
-    </ThemedView>
+
+      <ThemedView style={{ flex: 1 }}>
+        <ReaderView
+          title={title}
+          loading={loading}
+          error={error}
+          onBack={() => router.back()}
+          onOpenSettings={openSettings}
+        >
+          <StoryContent
+            key={`${storyId}-scroll`}
+            storyId={storyId as string}
+            mode="scroll"
+            hMargin={hMargin}
+            knownWords={knownWords}
+            onWordLongPress={handleWordLongPress}
+          />
+        </ReaderView>
+
+        {/* Word translation sheet */}
+        <WordTranslationSheet
+          ref={wordSheetRef}
+          word={wordContext.word}
+          tokenId={wordContext.tokenId}
+          onClose={closeWordContext}
+        />
+
+        {/* Reader settings sheet */}
+        <ReaderSettingsSheet
+          ref={settingsSheetRef}
+          onClose={() => settingsSheetRef.current?.dismiss()}
+        />
+      </ThemedView>
+    </>
   );
 }

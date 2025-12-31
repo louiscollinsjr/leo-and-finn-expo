@@ -121,12 +121,6 @@ export default function LibraryScreen() {
       updated_at: row.updated_at ?? null,
     }));
 
-    console.log('[Library] Cover data sample:', transformedData.slice(0, 2).map(s => ({
-      title: s.title,
-      coverFilename: s.coverFilename,
-      coverUrl: s.coverUrl,
-    })));
-
     console.log(`[Library] Loaded ${transformedData.length} stories`);
     return transformedData;
   }, [withTimeout]);
@@ -229,17 +223,6 @@ export default function LibraryScreen() {
       : hasLocalAsset
       ? COVER_ASSETS[item.coverFilename!]
       : DEFAULT_COVER;
-
-    console.log('[Library] renderItem:', {
-      title: item.title,
-      coverUrl: item.coverUrl,
-      coverFilename: item.coverFilename,
-      hasAsset: !!hasLocalAsset,
-      usingCdn: !!item.coverUrl,
-      usingLocal: !item.coverUrl && !!hasLocalAsset,
-      usingDefault: !item.coverUrl && !hasLocalAsset,
-      coverSourceType: typeof coverSource,
-    });
 
     return (
       <BookCard

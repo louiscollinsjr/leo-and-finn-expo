@@ -16,11 +16,6 @@ export const BookCard = ({ book, style, onPress }: { book: Book; style?: any; on
 
   const coverSource = book.cover || DEFAULT_COVER;
 
-  // Debug logging
-  if (!book.cover || book.cover === DEFAULT_COVER) {
-    console.log('[BookCard] Using default cover for:', book.title, 'cover type:', typeof book.cover);
-  }
-  
   return (
     <View style={[styles.outerContainer, style]}>
       <Pressable

@@ -1,7 +1,5 @@
-// TopOverlay: Minimal top bar overlay with optional centered pill label and a close
-// (X) button on the right. No global blur background; pill backgrounds are blurred
-// while keeping text crisp. Appears when reader overlays are shown (tap) and
-// auto-dismisses via ReaderView's overlay timer.
+// TopOverlay: Redesigned with large readable title and liquid glass close button
+// Matches modern reader aesthetics with minimal, elegant controls
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -18,11 +16,7 @@ type TopOverlayProps = {
   onBack?: () => void;
 };
 
-const BLUR_INTENSITY = 25;
-const PILL_OVERLAY = 'rgba(217,217,217,0.80)';
-const BUTTON_OVERLAY = 'rgba(217,217,217,0.75)';
-const CLOSE_ACCESSIBILITY_LABEL = 'Close reader overlay';
-const CLOSE_ACCESSIBILITY_HINT = 'Dismisses the reader controls';
+const BLUR_INTENSITY = 30;
 
 export default function TopOverlay({ insets, title, centerLabel, onBack }: TopOverlayProps) {
   const textColor = useThemeColor({}, 'text');
@@ -31,49 +25,57 @@ export default function TopOverlay({ insets, title, centerLabel, onBack }: TopOv
   const insetRight = insets?.right ?? 0;
 
   return (
-    <View pointerEvents="box-none" style={[styles.root, { paddingTop: insetTop, paddingLeft: insetLeft, paddingRight: insetRight }]}> 
+    <View
+      pointerEvents="box-none"
+      style={[styles.root, { paddingTop: insetTop, paddingLeft: insetLeft, paddingRight: insetRight }]}
+    >
       <View style={styles.inner}>
         <View style={styles.bar}>
-          <View style={styles.sideSlot} />
-          <View style={styles.centerSlot}>
-            {centerLabel ? (
-              <View style={styles.pillContainer}>
-                <BlurView intensity={BLUR_INTENSITY} tint="default" style={styles.blurFill} />
-                <View style={[styles.blurFill, styles.pillOverlay]} />
-                <ThemedText style={styles.pillText} numberOfLines={1}>{centerLabel}</ThemedText>
+          {/* Title in semi-transparent pill */}
+          <View style={styles.titleContainer}>
+            {title && (
+              <View style={styles.titlePill}>
+                <BlurView intensity={BLUR_INTENSITY} tint="default" style={styles.pillBlur} />
+                <View style={styles.pillOverlay} />
+                <ThemedText style={styles.titleText} numberOfLines={1}>
+                  {title}
+                </ThemedText>
               </View>
-            ) : title ? (
-              <ThemedText style={styles.title} numberOfLines={1}>{title}</ThemedText>
-            ) : (
-              <View />
             )}
           </View>
-          {onBack ? (
+
+          {/* Liquid Glass Close Button */}
+          {onBack && (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={CLOSE_ACCESSIBILITY_LABEL}
-              accessibilityHint={CLOSE_ACCESSIBILITY_HINT}
-              android_ripple={{ color: 'rgba(0,0,0,0.08)', borderless: false }}
-              hitSlop={8}
+              accessibilityLabel="Close book"
+              hitSlop={12}
               onPress={onBack}
               style={styles.closeButton}
             >
+              {/* Blur background */}
               <BlurView intensity={BLUR_INTENSITY} tint="default" style={styles.blurFill} />
+
+              {/* Gradient overlay for liquid glass effect */}
               <LinearGradient
                 colors={[
-                  'rgba(255,255,255,0.55)',
-                  'rgba(255,255,255,0.08)',
+                  'rgba(255,255,255,0.7)',
+                  'rgba(255,255,255,0.2)',
                 ]}
-                start={{ x: 0.2, y: 0 }}
-                end={{ x: 0.8, y: 1 }}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
                 style={styles.blurFill}
               />
-              <View style={[styles.blurFill, styles.closeGlassBorder]} />
-              <View style={[styles.blurFill, styles.closeGlassHighlight]} />
-              <IconSymbol name="xmark" size={16} color={textColor} style={styles.closeIcon} />
+
+              {/* Glass border */}
+              <View style={[styles.blurFill, styles.glassBorder]} />
+
+              {/* Inner glow highlight */}
+              <View style={[styles.blurFill, styles.glassHighlight]} />
+
+              {/* Close icon - using SF Symbol xmark */}
+              <IconSymbol name="xmark" size={20} color={textColor} style={styles.closeIcon} />
             </Pressable>
-          ) : (
-            <View style={styles.sideSlot} />
           )}
         </View>
       </View>
@@ -81,46 +83,46 @@ export default function TopOverlay({ insets, title, centerLabel, onBack }: TopOv
   );
 }
 
-const CLOSE_BUTTON_SIZE = 36;
-const SIDE_SLOT_WIDTH = CLOSE_BUTTON_SIZE + 8;
+const CLOSE_BUTTON_SIZE = 52;
 
 const styles = StyleSheet.create({
   root: {
     paddingBottom: 0,
   },
   inner: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 16,
   },
-  sideSlot: {
-    width: SIDE_SLOT_WIDTH,
-  },
-  centerSlot: {
+  titleContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  pillContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
+  titlePill: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
     overflow: 'hidden',
+    alignSelf: 'flex-start',
+  },
+  pillBlur: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 20,
   },
   pillOverlay: {
-    backgroundColor: PILL_OVERLAY,
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 20,
   },
-  pillText: {
-    fontWeight: '400',
-    opacity: 0.65,
+  titleText: {
     fontSize: 10,
-  },
-  title: {
     fontWeight: '400',
+    opacity: 0.7,
+    letterSpacing: 0.5,
   },
   closeButton: {
     width: CLOSE_BUTTON_SIZE,
@@ -129,24 +131,28 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: 'rgba(15, 23, 42, 0.4)',
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
+    // Liquid glass shadow
+    shadowColor: 'rgba(0, 0, 0, 0.15)',
+    shadowOpacity: 1,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
-  closeGlassBorder: {
+  glassBorder: {
     borderRadius: CLOSE_BUTTON_SIZE / 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.5)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.6)',
   },
-  closeGlassHighlight: {
+  glassHighlight: {
     borderRadius: CLOSE_BUTTON_SIZE / 2,
-    borderBottomColor: 'rgba(15,23,42,0.18)',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    backgroundColor: BUTTON_OVERLAY,
+    borderTopColor: 'rgba(255,255,255,0.8)',
+    borderTopWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.08)',
+    borderBottomWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.3)',
   },
   closeIcon: {
-    opacity: 0.45,
+    opacity: 0.7,
   },
   blurFill: {
     ...StyleSheet.absoluteFillObject,

@@ -116,12 +116,6 @@ export default function DiscoverScreen() {
       updated_at: row.updated_at ?? null,
     }));
 
-    console.log('[Discover] Cover data sample:', transformedData.slice(0, 2).map(s => ({
-      title: s.title,
-      coverFilename: s.coverFilename,
-      coverUrl: s.coverUrl,
-    })));
-
     console.log(`[Discover] Loaded ${transformedData.length} stories`);
     return transformedData;
   }, [withTimeout]);
@@ -210,17 +204,6 @@ export default function DiscoverScreen() {
       : hasLocalAsset
       ? COVER_ASSETS[item.coverFilename!]
       : DEFAULT_COVER;
-
-    console.log('[Discover] renderItem:', {
-      title: item.title,
-      coverUrl: item.coverUrl,
-      coverFilename: item.coverFilename,
-      hasAsset: !!hasLocalAsset,
-      usingCdn: !!item.coverUrl,
-      usingLocal: !item.coverUrl && !!hasLocalAsset,
-      usingDefault: !item.coverUrl && !hasLocalAsset,
-      coverSourceType: typeof coverSource,
-    });
 
     return (
       <BookCard

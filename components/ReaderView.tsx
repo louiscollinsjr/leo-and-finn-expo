@@ -265,10 +265,7 @@ export default function ReaderView(props: ReaderViewProps) {
           ) : (
             <BottomActions
               insets={insets}
-              onOpenMenu={() => {
-                setMenuPresented(false);
-                setMenuVisible(true);
-              }}
+              onOpenMenu={onOpenSettings}
             />
           )}
         </Animated.View>

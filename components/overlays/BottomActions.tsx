@@ -1,15 +1,14 @@
-// BottomActions: Blurred bottom bar overlay with mode selection buttons (normal, focused,
-// pronunciation, translations) and a Menu button. Shown when overlays are visible.
+// BottomActions: Single menu button matching close button style
+// Opens bottom sheet with all reader options
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import type { ReadingMode } from '@/providers/ReaderProvider';
-import { useReaderUI } from '@/providers/ReaderProvider';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-export type Mode = ReadingMode;
+const BLUR_INTENSITY = 30;
+const MENU_BUTTON_SIZE = 52;
 
 export default function BottomActions({
   insets,
@@ -19,77 +18,90 @@ export default function BottomActions({
   onOpenMenu?: () => void;
 }) {
   const textColor = useThemeColor({}, 'text');
-  const { readingMode, setReadingMode } = useReaderUI();
-  
-  return (
-    <View pointerEvents="box-none" style={{ paddingBottom: (insets?.bottom ?? 0) }}>
-     
-        <View style={{ position: 'relative', height: 40, alignItems: 'center', justifyContent: 'center' }}>
-          {/* Centered mode buttons */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-            <ModeButton icon="menu-book" mode="normal" activeMode={readingMode} onPress={() => setReadingMode('normal')} textColor={textColor} />
-            <ModeButton icon="center-focus-strong" mode="focused" activeMode={readingMode} onPress={() => setReadingMode('focused')} textColor={textColor} />
-            <ModeButton icon="record-voice-over" mode="pronunciation" activeMode={readingMode} onPress={() => setReadingMode('pronunciation')} textColor={textColor} />
-            <ModeButton icon="translate" mode="translations" activeMode={readingMode} onPress={() => setReadingMode('translations')} textColor={textColor} />
-          </View>
 
-          {/* Menu button pinned right */}
-          <Pressable
-            onPress={onOpenMenu}
-            hitSlop={8}
-            style={{ position: 'absolute', right: (insets?.right ?? 0) + 32, top: 0, width: 40, height: 40, borderRadius: 10, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <BlurView intensity={25} tint="default" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16 }} />
-            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(217,217,217,0.65)' }} />
-            <IconSymbol name="slider.horizontal.3" size={24} color={textColor} style={{ opacity: 0.5 }} />
-          </Pressable>
-        </View>
-     
+  return (
+    <View
+      pointerEvents="box-none"
+      style={[styles.container, { paddingBottom: (insets?.bottom ?? 0) + 16 }]}
+    >
+      <View style={styles.innerContainer}>
+        {/* Single menu button - right aligned */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open menu"
+          hitSlop={12}
+          onPress={onOpenMenu}
+          style={styles.menuButton}
+        >
+          {/* Blur background */}
+          <BlurView intensity={BLUR_INTENSITY} tint="default" style={styles.blurFill} />
+
+          {/* Gradient overlay for liquid glass effect */}
+          <LinearGradient
+            colors={[
+              'rgba(255,255,255,0.7)',
+              'rgba(255,255,255,0.2)',
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.blurFill}
+          />
+
+          {/* Glass border */}
+          <View style={[styles.blurFill, styles.glassBorder]} />
+
+          {/* Inner glow highlight */}
+          <View style={[styles.blurFill, styles.glassHighlight]} />
+
+          {/* Menu icon - using SF Symbol command */}
+          <IconSymbol name="command" size={20} color={textColor} style={styles.menuIcon} />
+        </Pressable>
+      </View>
     </View>
   );
 }
 
-function ModeButton({ 
-  icon, 
-  mode, 
-  activeMode, 
-  onPress, 
-  textColor 
-}: { 
-  icon: any; 
-  mode: Mode;
-  activeMode: Mode;
-  onPress: () => void; 
-  textColor: string;
-}) {
-  const isActive = mode === activeMode;
-  
-  return (
-    <Pressable
-      onPress={onPress}
-      hitSlop={8}
-      style={{ 
-        marginRight: 8, 
-        width: 40, 
-        height: 40, 
-        borderRadius: 10, 
-        overflow: 'hidden', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
-      }}
-    >
-      <BlurView intensity={25} tint="default" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16 }} />
-      <View 
-        style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          right: 0, 
-          bottom: 0, 
-          backgroundColor: isActive ? 'rgba(100, 150, 255, 0.5)' : 'rgba(217,217,217,0.45)' 
-        }} 
-      />
-      <MaterialIcons name={icon} size={16} color={textColor} style={{ opacity: isActive ? 1 : 0.4 }} />
-    </Pressable>
-  );
-}
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 20,
+  },
+  innerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  menuButton: {
+    width: MENU_BUTTON_SIZE,
+    height: MENU_BUTTON_SIZE,
+    borderRadius: MENU_BUTTON_SIZE / 2,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Liquid glass shadow
+    shadowColor: 'rgba(0, 0, 0, 0.15)',
+    shadowOpacity: 1,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
+  glassBorder: {
+    borderRadius: MENU_BUTTON_SIZE / 2,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.6)',
+  },
+  glassHighlight: {
+    borderRadius: MENU_BUTTON_SIZE / 2,
+    borderTopColor: 'rgba(255,255,255,0.8)',
+    borderTopWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.08)',
+    borderBottomWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  menuIcon: {
+    opacity: 0.7,
+  },
+  blurFill: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: MENU_BUTTON_SIZE / 2,
+  },
+});
