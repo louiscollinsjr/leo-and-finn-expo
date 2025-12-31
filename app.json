@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.leoandfinn",
+      "bundleIdentifier": "com.louiscollinsjr.leoandfinn",
       "associatedDomains": [
         "applinks:app.leoandfinn.com"
       ]
@@ -21,7 +21,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.leoandfinn",
+      "package": "com.louiscollinsjr.leoandfinn",
       "intentFilters": [
         {
           "action": "VIEW",

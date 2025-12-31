@@ -17,7 +17,7 @@ export interface Book {
   id: string;
   title: string;
   author: string;
-  cover?: string;
+  cover?: string | { uri: string } | number;
   coverImage?: string;
   videoCover?: any;
   posterImage?: any;

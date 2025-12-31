@@ -6,10 +6,10 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import type { ContinueBook } from "@/constants/mockData";
 import {
-  americanClassics,
-  continueReading,
-  featuredStories,
-  topPicks,
+    americanClassics,
+    continueReading,
+    featuredStories,
+    topPicks,
 } from "@/constants/mockData";
 import { useAuth } from "@/hooks/useAuth";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -18,22 +18,21 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
+    Animated,
+    Dimensions,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View
 } from "react-native";
 import {
-  SafeAreaView,
-  useSafeAreaInsets,
+    SafeAreaView,
+    useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { Circle, Svg } from "react-native-svg";
 
-import { Button, Host, Text as SwiftText } from "@expo/ui/swift-ui";
-import { frame, glassEffect, padding } from "@expo/ui/swift-ui/modifiers";
+import { Platform } from "react-native";
 
 // Animatable BlurView for the header background
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
@@ -153,6 +152,28 @@ export default function HomeScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const { user } = useAuth();
   const router = useRouter();
+  const swiftUi = React.useMemo(() => {
+    if (Platform.OS === "web") return null;
+    // Lazy require to avoid bundling native-only package on web
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const swift = require("@expo/ui/swift-ui");
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const modifiers = require("@expo/ui/swift-ui/modifiers");
+    return {
+      Button: swift.Button,
+      Host: swift.Host,
+      SwiftText: swift.Text,
+      frame: modifiers.frame,
+      glassEffect: modifiers.glassEffect,
+      padding: modifiers.padding,
+    };
+  }, []);
+  const SwiftHost = swiftUi?.Host;
+  const SwiftButton = swiftUi?.Button;
+  const SwiftText = swiftUi?.SwiftText;
+  const frame = swiftUi?.frame;
+  const glassEffect = swiftUi?.glassEffect;
+  const padding = swiftUi?.padding;
 
   const fadeStart = 0;
   const fadeHold = 12;
@@ -289,21 +310,50 @@ export default function HomeScreen() {
                 </Animated.View>
               ) : (
                 <Animated.View style={{ opacity: largeTitleOpacity }}>
-                  <Host matchContents>
-                    <Button
-                      variant="glass"
-                      onPress={() => router.push("/welcome")}
-                      modifiers={[
-                        padding({ all: 0 }),
-                        frame({ width: 80 }),
-                        glassEffect({
-                          glass: { variant: "regular", tint: "#f8f3e9" },
-                        }),
-                      ]}
-                    >
-                      <SwiftText size={16}>Sign up</SwiftText>
-                    </Button>
-                  </Host>
+                  {SwiftHost &&
+                  SwiftButton &&
+                  SwiftText &&
+                  padding &&
+                  frame &&
+                  glassEffect ? (
+                    <SwiftHost matchContents>
+                      <SwiftButton
+                        variant="glass"
+                        onPress={() => router.push("/welcome")}
+                        modifiers={[
+                          padding({ all: 0 }),
+                          frame({ width: 80 }),
+                          glassEffect({
+                            glass: { variant: "regular", tint: "#f8f3e9" },
+                          }),
+                        ]}
+                      >
+                        <SwiftText size={16}>Sign up</SwiftText>
+                      </SwiftButton>
+                    </SwiftHost>
+                  ) : (
+                    <Link href="/welcome" asChild>
+                      <Pressable
+                        style={{
+                          paddingVertical: 8,
+                          paddingHorizontal: 16,
+                          borderRadius: 14,
+                          backgroundColor:
+                            theme === "dark" ? "rgba(255,255,255,0.12)" : "#f1f5f9",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: "700",
+                            color: theme === "dark" ? "#fff" : "#0f172a",
+                          }}
+                        >
+                          Sign up
+                        </Text>
+                      </Pressable>
+                    </Link>
+                  )}
                 </Animated.View>
               )}
             </View>

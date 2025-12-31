@@ -13,8 +13,13 @@ export const BookCard = ({ book, style, onPress }: { book: Book; style?: any; on
   const background = Colors[theme].background;
   const text = Colors[theme].text;
   const secondaryText = theme === 'dark' ? 'rgba(236,237,238,0.7)' : '#71717a';
-  
+
   const coverSource = book.cover || DEFAULT_COVER;
+
+  // Debug logging
+  if (!book.cover || book.cover === DEFAULT_COVER) {
+    console.log('[BookCard] Using default cover for:', book.title, 'cover type:', typeof book.cover);
+  }
   
   return (
     <View style={[styles.outerContainer, style]}>

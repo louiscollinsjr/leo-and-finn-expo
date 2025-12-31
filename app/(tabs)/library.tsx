@@ -13,8 +13,11 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 const DEFAULT_COVER = require('@/assets/images/bookcovers/BookCover_Blank.png');
 const COVER_ASSETS: Record<string, any> = {
   'BookCover_Blank.png': DEFAULT_COVER,
+  'BookCover_BlankLocked.png': require('@/assets/images/bookcovers/BookCover_BlankLocked.png'),
   'BookCover_TheApprenice.png': require('@/assets/images/bookcovers/BookCover_TheApprenice.png'),
   'BookCover_MidnightMusicBox.png': require('@/assets/images/bookcovers/BookCover_MidnightMusicBox.png'),
+  'BookCover_BackwardsBellTower.png': require('@/assets/images/bookcovers/BookCover_BackwardsBellTower.png'),
+  'BookCover_ForgottenSummer.png': require('@/assets/images/bookcovers/BookCover_ForgottenSummer.png'),
 };
 
 // Animatable BlurView for the header background
@@ -118,6 +121,12 @@ export default function LibraryScreen() {
       updated_at: row.updated_at ?? null,
     }));
 
+    console.log('[Library] Cover data sample:', transformedData.slice(0, 2).map(s => ({
+      title: s.title,
+      coverFilename: s.coverFilename,
+      coverUrl: s.coverUrl,
+    })));
+
     console.log(`[Library] Loaded ${transformedData.length} stories`);
     return transformedData;
   }, [withTimeout]);
@@ -212,11 +221,25 @@ export default function LibraryScreen() {
   }, [authLoading, load]);
 
   const renderItem = ({ item }: { item: Story }) => {
+    // Prioritize database CDN URLs first, then fall back to local assets
+    const hasLocalAsset = item.coverFilename && COVER_ASSETS[item.coverFilename];
+
     const coverSource = item.coverUrl
       ? { uri: item.coverUrl }
-      : item.coverFilename && COVER_ASSETS[item.coverFilename]
-      ? COVER_ASSETS[item.coverFilename]
+      : hasLocalAsset
+      ? COVER_ASSETS[item.coverFilename!]
       : DEFAULT_COVER;
+
+    console.log('[Library] renderItem:', {
+      title: item.title,
+      coverUrl: item.coverUrl,
+      coverFilename: item.coverFilename,
+      hasAsset: !!hasLocalAsset,
+      usingCdn: !!item.coverUrl,
+      usingLocal: !item.coverUrl && !!hasLocalAsset,
+      usingDefault: !item.coverUrl && !hasLocalAsset,
+      coverSourceType: typeof coverSource,
+    });
 
     return (
       <BookCard

@@ -1,4 +1,4 @@
-package com.anonymous.leoandfinn
+package com.louiscollinsjr.leoandfinn
 
 import android.app.Application
 import android.content.res.Configuration

@@ -1,4 +1,4 @@
-package com.anonymous.leoandfinn
+package com.louiscollinsjr.leoandfinn
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
