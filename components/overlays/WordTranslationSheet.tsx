@@ -6,17 +6,24 @@ import { useWordTranslations } from "@/hooks/useWordTranslations";
 import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import React, { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Keyboard,
-  StyleSheet,
-  TextInput,
-  View
+    Keyboard,
+    StyleSheet,
+    TextInput,
+    View
 } from "react-native";
 
 interface WordTranslationSheetProps {
   word: string | null;
   tokenId: string | null;
+  /**
+   * Called when the sheet should be programmatically closed (button actions).
+   */
   onClose: () => void;
+  /**
+   * Optional handler for sheet dismissal gesture. Use this to clear state
+   * without re-triggering dismiss calls (avoids double-dismiss errors).
+   */
+  onDismiss?: () => void;
 }
 
 const capitalizeFirst = (input?: string | null): string => {
@@ -29,7 +36,7 @@ const capitalizeFirst = (input?: string | null): string => {
 export const WordTranslationSheet = forwardRef<
   TrueSheet,
   WordTranslationSheetProps
->(({ word, tokenId, onClose }, ref) => {
+>(({ word, tokenId, onClose, onDismiss }, ref) => {
   const [translation, setTranslation] = useState("");
   const inputRef = useRef<TextInput>(null);
 
@@ -71,9 +78,10 @@ export const WordTranslationSheet = forwardRef<
   return (
     <TrueSheet
       ref={ref}
-      sizes={['auto', 'large']}
+      detents={['auto', 1]}
       cornerRadius={24}
-      onDismiss={onClose}
+      onDidDismiss={onDismiss ?? onClose}
+      maxHeight={700}
     >
       <View style={styles.container}>
         {/* Word Header */}
@@ -114,32 +122,18 @@ export const WordTranslationSheet = forwardRef<
         {/* Action Buttons */}
         <View style={styles.actions}>
           <ThemedButton
+            title={mutationLoading ? 'Working...' : 'Mark as Known'}
             onPress={handleMarkKnown}
             disabled={mutationLoading || !word}
             style={styles.secondaryButton}
-          >
-            {mutationLoading ? (
-              <ActivityIndicator size="small" />
-            ) : (
-              <ThemedText style={styles.secondaryButtonText}>
-                Mark as Known
-              </ThemedText>
-            )}
-          </ThemedButton>
+          />
 
           <ThemedButton
+            title={mutationLoading ? 'Saving...' : 'Save Translation'}
             onPress={handleSaveTranslation}
             disabled={mutationLoading || !word || !translation.trim()}
             style={styles.primaryButton}
-          >
-            {mutationLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <ThemedText style={styles.primaryButtonText}>
-                Save Translation
-              </ThemedText>
-            )}
-          </ThemedButton>
+          />
         </View>
       </View>
     </TrueSheet>

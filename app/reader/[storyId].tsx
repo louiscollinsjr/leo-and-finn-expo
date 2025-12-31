@@ -1,8 +1,7 @@
-import { WordTranslationSheet } from '@/components/overlays/WordTranslationSheet';
 import { ReaderSettingsSheet } from '@/components/overlays/ReaderSettingsSheet';
+import { WordTranslationSheet } from '@/components/overlays/WordTranslationSheet';
 import ReaderView from '@/components/ReaderView';
 import StoryContent from '@/components/StoryContent';
-import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { db } from '@/lib/db';
 import { useReaderUI } from '@/providers/ReaderProvider';
@@ -30,18 +29,25 @@ export default function ReaderScreen() {
   // TODO: Load known words from user's vocabulary
   const knownWords = useMemo(() => new Set<string>(), []);
 
-  // Open/close word sheet based on word context
+  // Open word sheet when a word is selected (dismiss handled manually)
   useEffect(() => {
     if (wordContext.word) {
       wordSheetRef.current?.present();
-    } else {
-      wordSheetRef.current?.dismiss();
     }
   }, [wordContext.word]);
 
   const openSettings = useCallback(() => {
     settingsSheetRef.current?.present();
   }, []);
+
+  const closeSettings = useCallback(() => {
+    settingsSheetRef.current?.dismiss();
+  }, []);
+
+  const closeWordSheet = useCallback(() => {
+    wordSheetRef.current?.dismiss();
+    closeWordContext();
+  }, [closeWordContext]);
 
   useEffect(() => {
     let isMounted = true;
@@ -109,13 +115,13 @@ export default function ReaderScreen() {
           ref={wordSheetRef}
           word={wordContext.word}
           tokenId={wordContext.tokenId}
-          onClose={closeWordContext}
+          onClose={closeWordSheet}
         />
 
         {/* Reader settings sheet */}
         <ReaderSettingsSheet
           ref={settingsSheetRef}
-          onClose={() => settingsSheetRef.current?.dismiss()}
+          onClose={closeSettings}
         />
       </ThemedView>
     </>

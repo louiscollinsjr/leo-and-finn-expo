@@ -1,10 +1,10 @@
 // ReaderSettingsSheet: Unified opaque bottom sheet for all reader settings
 // Includes reading modes, typography, and appearance controls
 import { ThemedText } from '@/components/ThemedText';
-import Slider from '@/components/ui/Slider';
-import { QuickThemeSwatches } from '@/constants/Colors';
-import { useReaderPrefs, useReaderUI, type PageMode, type ThemeMode, type ReadingMode } from '@/providers/ReaderProvider';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { QuickThemeSwatches } from '@/constants/Colors';
+import { AVAILABLE_FONTS, type FontFamily } from '@/lib/fonts';
+import { useReaderPrefs, useReaderUI, type ReadingMode, type ThemeMode } from '@/providers/ReaderProvider';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { TrueSheet } from '@lodev09/react-native-true-sheet';
 import React, { forwardRef } from 'react';
@@ -16,7 +16,7 @@ interface ReaderSettingsSheetProps {
 
 export const ReaderSettingsSheet = forwardRef<TrueSheet, ReaderSettingsSheetProps>(
   ({ onClose }, ref) => {
-    const { prefs, setPrefs } = useReaderPrefs();
+    const { prefs, setPrefs, resetPrefs } = useReaderPrefs();
     const { readingMode, setReadingMode } = useReaderUI();
 
     const adjustFont = (delta: number) => {
@@ -37,9 +37,11 @@ export const ReaderSettingsSheet = forwardRef<TrueSheet, ReaderSettingsSheetProp
     return (
       <TrueSheet
         ref={ref}
-        sizes={[480]}
+        detents={['auto', 1]}
+        maxHeight={480}
         cornerRadius={24}
-        onDismiss={onClose}
+        onDidDismiss={onClose}
+        scrollable
         backgroundColor="#FFFFFF"
       >
         <View style={styles.container}>
@@ -56,6 +58,7 @@ export const ReaderSettingsSheet = forwardRef<TrueSheet, ReaderSettingsSheetProp
             contentContainerStyle={styles.content}
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
+            nestedScrollEnabled
           >
             {/* Reading Modes */}
           <View style={styles.section}>
@@ -90,6 +93,37 @@ export const ReaderSettingsSheet = forwardRef<TrueSheet, ReaderSettingsSheetProp
               />
             </View>
           </View>
+
+          {/* Font Selector (only visible in pronunciation mode) */}
+          {readingMode === 'pronunciation' && (
+            <View style={styles.section}>
+              <ThemedText style={styles.sectionTitle}>Pronunciation Font</ThemedText>
+              <View style={styles.fontGrid}>
+                {(Object.keys(AVAILABLE_FONTS) as FontFamily[]).map((fontKey) => {
+                  const font = AVAILABLE_FONTS[fontKey];
+                  const isSelected = prefs.pronunciationFont === fontKey;
+                  return (
+                    <Pressable
+                      key={fontKey}
+                      style={[styles.fontButton, isSelected && styles.fontButtonActive]}
+                      onPress={() => setPrefs({ pronunciationFont: fontKey })}
+                    >
+                      <ThemedText
+                        style={[
+                          styles.fontLabel,
+                          isSelected && styles.fontLabelActive,
+                          { fontFamily: font.regular }
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {font.displayName}
+                      </ThemedText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
 
           {/* Text Size Controls */}
           <View style={styles.textSizeSection}>
@@ -152,6 +186,17 @@ export const ReaderSettingsSheet = forwardRef<TrueSheet, ReaderSettingsSheetProp
           <Pressable style={styles.customizeButton}>
             <IconSymbol name="gearshape" size={20} color="#000" style={{ opacity: 0.7 }} />
             <ThemedText style={styles.customizeButtonText}>Customize</ThemedText>
+          </Pressable>
+
+          {/* Reset Button (Dev Tool) */}
+          <Pressable
+            style={styles.resetButton}
+            onPress={() => {
+              resetPrefs();
+              onClose();
+            }}
+          >
+            <ThemedText style={styles.resetButtonText}>Reset to Defaults</ThemedText>
           </Pressable>
         </ScrollView>
         </View>
@@ -221,6 +266,42 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#8E8E93',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+  },
+  fontGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  fontButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    backgroundColor: 'rgba(118,118,128,0.08)',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    minWidth: 100,
+  },
+  fontButtonActive: {
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    borderColor: '#007AFF',
+  },
+  fontLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#000',
+    textAlign: 'center',
+  },
+  fontLabelActive: {
+    color: '#007AFF',
+    fontWeight: '600',
   },
   textSizeSection: {
     flexDirection: 'row',
@@ -340,5 +421,19 @@ const styles = StyleSheet.create({
     opacity: 1,
     color: '#007AFF',
     fontWeight: '600',
+  },
+  resetButton: {
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255,59,48,0.08)',
+    borderRadius: 10,
+    marginTop: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,59,48,0.2)',
+  },
+  resetButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FF3B30',
   },
 });

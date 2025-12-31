@@ -2,8 +2,13 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { ReaderProvider } from '@/providers/ReaderProvider';
 import { StackAuthProvider, useStackAuth } from '@/providers/StackAuthProvider';
 import { Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
+import { LibreBaskerville_400Regular, LibreBaskerville_400Regular_Italic, LibreBaskerville_700Bold } from '@expo-google-fonts/libre-baskerville';
+import { Lora_400Regular, Lora_400Regular_Italic, Lora_700Bold } from '@expo-google-fonts/lora';
 import { Mansalva_400Regular } from '@expo-google-fonts/mansalva';
+import { PatrickHand_400Regular } from '@expo-google-fonts/patrick-hand';
+import { PatrickHandSC_400Regular } from '@expo-google-fonts/patrick-hand-sc';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { TrueSheetProvider } from '@lodev09/react-native-true-sheet';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Link, Stack, useRouter } from 'expo-router';
@@ -75,7 +80,6 @@ function RootLayoutInner() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({ Mansalva_400Regular });
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     // Inter families
@@ -86,6 +90,16 @@ export default function RootLayout() {
     'TisaSansPro-Regular': require('../assets/fonts/tisa-sans-pro/Tisa Sans Pro Regular.ttf'),
     'TisaSansPro-Medium': require('../assets/fonts/tisa-sans-pro/Tisa Sans Pro Medium.ttf'),
     'TisaSansPro-Bold': require('../assets/fonts/tisa-sans-pro/Tisa Sans Pro Bold.ttf'),
+    // Google Fonts for testing
+    'LibreBaskerville-Regular': LibreBaskerville_400Regular,
+    'LibreBaskerville-Italic': LibreBaskerville_400Regular_Italic,
+    'LibreBaskerville-Bold': LibreBaskerville_700Bold,
+    'Lora-Regular': Lora_400Regular,
+    'Lora-Italic': Lora_400Regular_Italic,
+    'Lora-Bold': Lora_700Bold,
+    'Mansalva-Regular': Mansalva_400Regular,
+    'PatrickHand-Regular': PatrickHand_400Regular,
+    'PatrickHandSC-Regular': PatrickHandSC_400Regular,
   });
 
   if (!loaded) {
@@ -96,11 +110,13 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <BottomSheetModalProvider>
-          <StackAuthProvider>
-            <RootLayoutInner />
-          </StackAuthProvider>
-        </BottomSheetModalProvider>
+        <TrueSheetProvider>
+          <BottomSheetModalProvider>
+            <StackAuthProvider>
+              <RootLayoutInner />
+            </StackAuthProvider>
+          </BottomSheetModalProvider>
+        </TrueSheetProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
