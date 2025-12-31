@@ -1,7 +1,7 @@
 import type { ReaderTypography } from '@/types/reader';
 
 export const defaultTypography: ReaderTypography = {
-  fontSize: 16,
+  fontSize: 19.2,
   lineHeight: 22,
   avgCharWidth: 8, // fallback if not computed from fontSize
   paraBottomMargin: 12,
