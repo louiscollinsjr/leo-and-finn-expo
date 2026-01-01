@@ -66,27 +66,29 @@ async function ensureUserExists(
 export class NeonAdapter implements DatabaseAdapter {
   async getStories(): Promise<StoryWithCover[]> {
     const db = ensureConnection();
-    
+
     const rows = await db`
-      SELECT 
+      SELECT
         s.id,
         s.title,
         s.author,
         s.description,
         s.updated_at,
+        s.language_code,
         sc.file_name,
         sc.cdn_url
       FROM stories s
       LEFT JOIN story_covers sc ON sc.story_id = s.id AND sc.is_primary = true
       ORDER BY s.updated_at DESC NULLS LAST
     `;
-    
+
     return rows.map((row: any) => ({
       id: row.id,
       title: row.title ?? 'Untitled story',
       author: row.author ?? null,
       description: row.description ?? null,
       updated_at: row.updated_at ?? null,
+      language_code: row.language_code ?? null,
       coverFilename: row.file_name ?? null,
       coverUrl: row.cdn_url ?? null,
     }));
@@ -94,16 +96,16 @@ export class NeonAdapter implements DatabaseAdapter {
 
   async getStoryById(id: string): Promise<Story | null> {
     const db = ensureConnection();
-    
+
     const rows = await db`
-      SELECT id, title, author, description, updated_at
+      SELECT id, title, author, description, updated_at, language_code
       FROM stories
       WHERE id = ${id}
       LIMIT 1
     `;
-    
+
     if (rows.length === 0) return null;
-    
+
     const row = rows[0];
     return {
       id: row.id,
@@ -111,19 +113,21 @@ export class NeonAdapter implements DatabaseAdapter {
       author: row.author ?? null,
       description: row.description ?? null,
       updated_at: row.updated_at ?? null,
+      language_code: row.language_code ?? null,
     };
   }
 
   async getUserLibrary(userId: string): Promise<StoryWithCover[]> {
     const db = ensureConnection();
-    
+
     const rows = await db`
-      SELECT 
+      SELECT
         s.id,
         s.title,
         s.author,
         s.description,
         s.updated_at as story_updated_at,
+        s.language_code,
         usp.updated_at as progress_updated_at,
         sc.file_name,
         sc.cdn_url
@@ -133,13 +137,14 @@ export class NeonAdapter implements DatabaseAdapter {
       WHERE usp.user_id = ${userId}
       ORDER BY usp.updated_at DESC NULLS LAST
     `;
-    
+
     return rows.map((row: any) => ({
       id: row.id,
       title: row.title ?? 'Untitled story',
       author: row.author ?? null,
       description: row.description ?? null,
       updated_at: row.progress_updated_at ?? row.story_updated_at ?? null,
+      language_code: row.language_code ?? null,
       coverFilename: row.file_name ?? null,
       coverUrl: row.cdn_url ?? null,
     }));

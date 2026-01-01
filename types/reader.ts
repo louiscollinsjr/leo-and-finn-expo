@@ -23,6 +23,8 @@ export interface Book {
   posterImage?: any;
   accentColors?: string[] | [string, string];
   loopVideo?: boolean;
+  // Language the book is written in (e.g., 'en', 'ro', 'rom') - used for pronunciation mode
+  languageCode?: string;
 }
 
 // Optional future-facing types (not yet used by the app). Left here for contributors.

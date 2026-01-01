@@ -15,7 +15,7 @@ export default function ReaderScreen() {
   const [title, setTitle] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { wordContext, openWordContext, closeWordContext } = useReaderUI();
+  const { wordContext, openWordContext, closeWordContext, setPronunciationLang } = useReaderUI();
   const wordSheetRef = useRef<TrueSheet>(null);
   const settingsSheetRef = useRef<TrueSheet>(null);
   const router = useRouter();
@@ -65,6 +65,11 @@ export default function ReaderScreen() {
           setError('Story not found');
         } else {
           setTitle(story.title ?? '');
+          // Set book language for pronunciation mode (default to English if not specified)
+          // readerLang comes from user preferences (not stored per-book)
+          setPronunciationLang({
+            bookLang: story.language_code ?? 'en',
+          });
         }
       } catch (err: any) {
         if (!isMounted) return;

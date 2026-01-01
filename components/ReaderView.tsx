@@ -1,11 +1,11 @@
 import { ThemedText } from '@/components/ThemedText';
-import BottomActions from '@/components/overlays/BottomActions';
 import ReaderMenuSheet from '@/components/overlays/ReaderMenuSheet';
+import ReaderModeBar from '@/components/overlays/ReaderModeBar';
 import SettingsSheet from '@/components/overlays/SettingsSheet';
 import ThemePopover from '@/components/overlays/ThemePopover';
 import TopOverlay from '@/components/overlays/TopOverlay';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { useReaderOverlay, useReaderPrefs, useReaderUI } from '@/providers/ReaderProvider';
+import { useReaderOverlay, useReaderPrefs, useReaderUI, type ReadingMode } from '@/providers/ReaderProvider';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -64,22 +64,32 @@ export default function ReaderView(props: ReaderViewProps) {
     setThemePopoverVisible,
     settingsVisible,
     setSettingsVisible,
+    readingMode,
+    setReadingMode,
   } = useReaderUI();
 
-  const [showOverlay, setShowOverlay] = useState(overlayVisible);
+  // DEV: Set to true to keep overlay always visible during styling
+  const DEV_ALWAYS_SHOW_OVERLAY = true;
+
+  const [showOverlay, setShowOverlay] = useState(DEV_ALWAYS_SHOW_OVERLAY || overlayVisible);
   const [menuPresented, setMenuPresented] = useState(false);
   const [bottomOverlayHeight, setBottomOverlayHeight] = useState(0);
   const overlayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Auto-hide timeout in ms (7.5 seconds for user to make selection changes)
+  const OVERLAY_AUTO_HIDE_MS = 7500;
+
   // Reanimated shared values for overlay animations
-  const overlayOpacity = useSharedValue(overlayVisible ? 1 : 0);
-  const bottomActionsOpacity = useSharedValue(overlayVisible ? 1 : 0);
+  const overlayOpacity = useSharedValue(DEV_ALWAYS_SHOW_OVERLAY || overlayVisible ? 1 : 0);
+  const bottomActionsOpacity = useSharedValue(DEV_ALWAYS_SHOW_OVERLAY || overlayVisible ? 1 : 0);
 
   const showOverlays = useCallback(() => {
     setShowOverlay(true);
     setOverlayVisible(true);
     overlayOpacity.value = withTiming(1, { duration: 160 });
     if (overlayTimer.current) clearTimeout(overlayTimer.current);
+    // Skip auto-hide in dev mode
+    if (DEV_ALWAYS_SHOW_OVERLAY) return;
     overlayTimer.current = setTimeout(() => {
       overlayOpacity.value = withTiming(0, { duration: 220 }, (finished) => {
         if (finished) {
@@ -87,10 +97,12 @@ export default function ReaderView(props: ReaderViewProps) {
           runOnJS(setOverlayVisible)(false);
         }
       });
-    }, 3500);
+    }, OVERLAY_AUTO_HIDE_MS);
   }, [overlayOpacity, setOverlayVisible]);
 
   const hideOverlays = useCallback(() => {
+    // Skip hide in dev mode
+    if (DEV_ALWAYS_SHOW_OVERLAY) return;
     if (overlayTimer.current) clearTimeout(overlayTimer.current);
     overlayOpacity.value = withTiming(0, { duration: 200 }, (finished) => {
       if (finished) {
@@ -99,6 +111,30 @@ export default function ReaderView(props: ReaderViewProps) {
       }
     });
   }, [overlayOpacity, setOverlayVisible]);
+
+  // Handle mode change from ReaderModeBar - switch mode and hide overlay after delay
+  const handleModeChange = useCallback((mode: ReadingMode) => {
+    setReadingMode(mode);
+    // Reset timer and hide after 1 second so user sees the selection
+    if (overlayTimer.current) clearTimeout(overlayTimer.current);
+    overlayTimer.current = setTimeout(() => {
+      hideOverlays();
+    }, 1000);
+  }, [setReadingMode, hideOverlays]);
+
+  // Fast hide on scroll - quicker animation
+  const hideOverlaysOnScroll = useCallback(() => {
+    // Skip hide in dev mode
+    if (DEV_ALWAYS_SHOW_OVERLAY) return;
+    if (!showOverlay) return;
+    if (overlayTimer.current) clearTimeout(overlayTimer.current);
+    overlayOpacity.value = withTiming(0, { duration: 150 }, (finished) => {
+      if (finished) {
+        runOnJS(setShowOverlay)(false);
+        runOnJS(setOverlayVisible)(false);
+      }
+    });
+  }, [showOverlay, overlayOpacity, setOverlayVisible]);
 
   useEffect(() => {
     if (overlayVisible) {
@@ -153,6 +189,8 @@ export default function ReaderView(props: ReaderViewProps) {
     onBeginDrag: () => {
       'worklet';
       runOnJS(setDragging)(true);
+      // Fast hide overlays on scroll start
+      runOnJS(hideOverlaysOnScroll)();
     },
     onEndDrag: () => {
       'worklet';
@@ -263,9 +301,11 @@ export default function ReaderView(props: ReaderViewProps) {
           {renderBottomOverlay ? (
             renderBottomOverlay({ insets, onOpenContents, onOpenSearch, onOpenSettings })
           ) : (
-            <BottomActions
+            <ReaderModeBar
               insets={insets}
-              onOpenMenu={onOpenSettings}
+              currentMode={readingMode}
+              onModeChange={handleModeChange}
+              onOpenSettings={onOpenSettings ?? (() => setMenuVisible(true))}
             />
           )}
         </Animated.View>
@@ -285,7 +325,6 @@ export default function ReaderView(props: ReaderViewProps) {
           }, 160);
         }}
         progress={jsProgress}
-        onScrub={scrubTo}
         onPresented={() => setMenuPresented(true)}
         bottomOffset={Math.max(0, bottomOverlayHeight) - 24}
       />

@@ -30,7 +30,7 @@ export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks
   const [pages, setPages] = useState<Block[][]>([]);
   const { width: screenWidth } = useWindowDimensions();
   const { prefs } = useReaderPrefs();
-  const { readingMode } = useReaderUI();
+  const { readingMode, focusSentenceId, pronunciationLang } = useReaderUI();
   const colorScheme = useColorScheme();
   const baseMargin = hMargin ?? Math.round(screenWidth * 0.08);
   const sidePad = Math.max(20, Math.round(baseMargin * (prefs.marginScale || 1)));
@@ -51,6 +51,9 @@ export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks
         onWordLongPress,
         onWordTap,
         readingMode,
+        focusSentenceId,
+        bookLang: pronunciationLang.bookLang,
+        readerLang: pronunciationLang.readerLang,
       }),
     [
       sidePad,
@@ -64,6 +67,9 @@ export default function StoryContent({ storyId, mode = 'scroll', hMargin, blocks
       onWordLongPress,
       onWordTap,
       readingMode,
+      focusSentenceId,
+      pronunciationLang.bookLang,
+      pronunciationLang.readerLang,
     ]
   );
   const dataBlocks = providedBlocks ?? localBlocks;

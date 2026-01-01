@@ -1,10 +1,11 @@
 /**
  * InteractiveParagraph - Efficient word-level interactions for the reader
- * 
+ *
  * Uses a single Pressable per paragraph instead of per-word, with word hit-testing
  * based on onTextLayout measurements. This reduces component count by ~95%
  * while preserving word-level interactions needed for the Birkenbihl method.
  */
+import * as PronConfig from '@/lib/pronunciationConfig';
 import { defaultTypography } from '@/lib/typography';
 import type { ReadingMode } from '@/providers/ReaderProvider';
 import type { Token } from '@/types/reader';
@@ -35,6 +36,12 @@ interface InteractiveParagraphProps {
   onWordTap?: (word: string, tokenId?: string) => void;
   readingMode?: ReadingMode;
   translationColor?: string;
+  // Focus mode props
+  focusSentenceId?: string | null;
+  onSentenceVisible?: (sentenceId: string) => void;
+  // Language settings for pronunciation mode
+  bookLang?: string; // Language the book is written in
+  readerLang?: string; // Reader's native language
 }
 
 interface TextLine {
@@ -59,6 +66,10 @@ const InteractiveParagraph = memo(({
   onWordLongPress,
   readingMode = 'normal',
   translationColor = '#666666',
+  focusSentenceId,
+  onSentenceVisible,
+  bookLang = 'en',
+  readerLang = 'en',
 }: InteractiveParagraphProps) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const textLinesRef = useRef<TextLine[]>([]);
@@ -75,6 +86,39 @@ const InteractiveParagraph = memo(({
       text: word,
     }));
   }, [tokens, text]);
+
+  // Split tokens into sentences for pronunciation mode and focus mode
+  // Each sentence gets a unique ID for focus tracking
+  type SentenceData = { id: string; tokens: Token[] };
+
+  const sentences = useMemo<SentenceData[]>(() => {
+    const result: SentenceData[] = [];
+    let currentSentence: Token[] = [];
+
+    tokenList.forEach((token, idx) => {
+      currentSentence.push(token);
+
+      // Check if this token ends a sentence (., !, ?, etc.)
+      const endsWithSentencePunct = /[.!?]\s*$/.test(token.text);
+
+      if (endsWithSentencePunct || idx === tokenList.length - 1) {
+        if (currentSentence.length > 0) {
+          // Create sentence ID from blockKey and sentence index
+          const sentenceId = `${blockKey}-s${result.length}`;
+          result.push({ id: sentenceId, tokens: [...currentSentence] });
+          currentSentence = [];
+        }
+      }
+    });
+
+    // Add any remaining tokens as final sentence
+    if (currentSentence.length > 0) {
+      const sentenceId = `${blockKey}-s${result.length}`;
+      result.push({ id: sentenceId, tokens: currentSentence });
+    }
+
+    return result.length > 0 ? result : [{ id: `${blockKey}-s0`, tokens: tokenList }];
+  }, [tokenList, blockKey]);
 
   // Build the full text string with spaces
   const fullText = useMemo(() => {
@@ -184,39 +228,124 @@ const InteractiveParagraph = memo(({
       letterSpacing,
     };
 
-    // Pronunciation mode: render each word with phoneme segments
+    // Pronunciation mode: render sentences separately with spacing
     if (readingMode === 'pronunciation') {
-      return tokenList.map((token, i) => {
-        const isKnown = knownWords?.has(token.text.toLowerCase());
-        const cleanWord = token.text.replace(/^[^\w]+|[^\w]+$/g, '');
-        const leadingPunct = token.text.match(/^[^\w]+/)?.[0] || '';
-        const trailingPunct = token.text.match(/[^\w]+$/)?.[0] || '';
-        
-        // Skip pure punctuation tokens
-        if (!cleanWord) {
+      return sentences.map((sentence, sentenceIdx) => {
+        const sentenceTokens = sentence.tokens;
+        const sentenceWords = sentenceTokens.map((token, i) => {
+          const isKnown = knownWords?.has(token.text.toLowerCase());
+          const cleanWord = token.text.replace(/^[^\w]+|[^\w]+$/g, '');
+          const leadingPunct = token.text.match(/^[^\w]+/)?.[0] || '';
+          const trailingPunct = token.text.match(/[^\w]+$/)?.[0] || '';
+
+          // Skip pure punctuation tokens
+          if (!cleanWord) {
+            return (
+              <Text
+                key={`${blockKey}-${token.id}-${i}`}
+                allowFontScaling={PronConfig.ALLOW_FONT_SCALING}
+                style={[baseStyle, { color: textColor }]}
+              >
+                {token.text}
+              </Text>
+            );
+          }
+
+          // Determine spacing after this token
+          // If there's trailing punctuation, use punctuation spacing
+          // Otherwise use word spacing (unless it's the last token)
+          const isLastInSentence = i === sentenceTokens.length - 1;
+          const spacingAfter = trailingPunct
+            ? PronConfig.PUNCTUATION_SPACING
+            : (isLastInSentence ? 0 : PronConfig.WORD_SPACING);
+
           return (
-            <Text key={`${blockKey}-${token.id}-${i}`} style={[baseStyle, { color: textColor }]}>
-              {token.text}
-            </Text>
+            <View
+              key={`${blockKey}-${token.id}-${i}`}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                marginRight: spacingAfter
+              }}
+            >
+              {leadingPunct ? (
+                <Text
+                  allowFontScaling={PronConfig.ALLOW_FONT_SCALING}
+                  style={[baseStyle, { color: textColor }]}
+                >
+                  {leadingPunct}
+                </Text>
+              ) : null}
+              <PronunciationWord
+                word={cleanWord}
+                fontSize={fontSize}
+                textColor={textColor}
+                isKnown={isKnown}
+                knownWordColor={knownWordColor}
+                bookLang={bookLang}
+                readerLang={readerLang}
+              />
+              {trailingPunct ? (
+                <Text
+                  allowFontScaling={PronConfig.ALLOW_FONT_SCALING}
+                  style={[baseStyle, { color: textColor }]}
+                >
+                  {trailingPunct}
+                </Text>
+              ) : null}
+            </View>
           );
-        }
+        });
 
         return (
-          <View key={`${blockKey}-${token.id}-${i}`} style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-            {leadingPunct ? (
-              <Text style={[baseStyle, { color: textColor }]}>{leadingPunct}</Text>
-            ) : null}
-            <PronunciationWord
-              word={cleanWord}
-              fontSize={fontSize}
-              textColor={textColor}
-              isKnown={isKnown}
-              knownWordColor={knownWordColor}
-            />
-            {trailingPunct ? (
-              <Text style={[baseStyle, { color: textColor, marginRight: 4 }]}>{trailingPunct}</Text>
-            ) : null}
+          <View
+            key={sentence.id}
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              alignItems: 'flex-start',
+              marginBottom: sentenceIdx < sentences.length - 1 ? PronConfig.SENTENCE_SPACING : 0,
+            }}
+          >
+            {sentenceWords}
           </View>
+        );
+      });
+    }
+
+    // Focus mode: render sentences with dimming for non-focused sentences
+    if (readingMode === 'focused') {
+      return sentences.map((sentence, sentenceIdx) => {
+        const sentenceTokens = sentence.tokens;
+        const isFocused = focusSentenceId === sentence.id;
+        // If no sentence is focused, show all at full opacity
+        const dimOpacity = focusSentenceId ? (isFocused ? 1 : 0.3) : 1;
+
+        return (
+          <Text
+            key={sentence.id}
+            style={{ opacity: dimOpacity }}
+          >
+            {sentenceTokens.map((token, i) => {
+              const isKnown = knownWords?.has(token.text.toLowerCase());
+              const isSelected = selectedIndex === tokenList.indexOf(token);
+
+              const tokenStyle: TextStyle = {
+                ...baseStyle,
+                color: isKnown ? knownWordColor : textColor,
+                backgroundColor: isSelected ? 'rgba(100, 150, 255, 0.35)' : 'transparent',
+                fontWeight: '500',
+              };
+
+              return (
+                <Text key={`${sentence.id}-${token.id}-${i}`} style={tokenStyle}>
+                  {token.text}
+                  {i < sentenceTokens.length - 1 ? ' ' : ''}
+                </Text>
+              );
+            })}
+            {sentenceIdx < sentences.length - 1 ? ' ' : ''}
+          </Text>
         );
       });
     }
@@ -256,17 +385,15 @@ const InteractiveParagraph = memo(({
       });
     }
 
-    // Normal and Focused modes: standard inline text
+    // Normal mode: standard inline text
     return tokenList.map((token, i) => {
       const isKnown = knownWords?.has(token.text.toLowerCase());
       const isSelected = selectedIndex === i;
-      
+
       const tokenStyle: TextStyle = {
         ...baseStyle,
         color: isKnown ? knownWordColor : textColor,
         backgroundColor: isSelected ? 'rgba(100, 150, 255, 0.35)' : 'transparent',
-        // Focused mode: slightly bolder text
-        ...(readingMode === 'focused' && { fontWeight: '500' }),
       };
 
       return (
@@ -276,10 +403,11 @@ const InteractiveParagraph = memo(({
         </Text>
       );
     });
-  }, [tokenList, fontSize, lineHeight, letterSpacing, textColor, knownWordColor, knownWords, selectedIndex, blockKey, readingMode, translationColor]);
+  }, [tokenList, sentences, fontSize, lineHeight, letterSpacing, textColor, knownWordColor, knownWords, selectedIndex, blockKey, readingMode, translationColor, focusSentenceId]);
 
-  // Use flex wrap for pronunciation/translations modes
-  const useFlexWrap = readingMode === 'pronunciation' || readingMode === 'translations';
+  // Use flex wrap for translations mode only; pronunciation mode handles its own layout
+  const useFlexWrap = readingMode === 'translations';
+  const isPronunciation = readingMode === 'pronunciation';
 
   return (
     <View style={{ marginBottom: defaultTypography.paraBottomMargin, paddingHorizontal: sidePad }}>
@@ -287,7 +415,27 @@ const InteractiveParagraph = memo(({
         onLongPress={handleLongPress}
         delayLongPress={300}
       >
-        {useFlexWrap ? (
+        {isPronunciation ? (
+          <>
+            <Text
+              selectable={false}
+              onTextLayout={handleTextLayout}
+              style={{
+                position: 'absolute',
+                opacity: 0,
+                pointerEvents: 'none',
+                fontSize,
+                lineHeight,
+                letterSpacing,
+              }}
+            >
+              {fullText}
+            </Text>
+            <View style={{ flexDirection: 'column' }}>
+              {renderContent}
+            </View>
+          </>
+        ) : useFlexWrap ? (
           <>
             <Text
               selectable={false}
@@ -308,7 +456,7 @@ const InteractiveParagraph = memo(({
             </View>
           </>
         ) : (
-          <Text 
+          <Text
             selectable={false}
             onTextLayout={handleTextLayout}
           >
@@ -328,7 +476,8 @@ const InteractiveParagraph = memo(({
     prev.textColor === next.textColor &&
     prev.knownWordColor === next.knownWordColor &&
     prev.knownWords === next.knownWords &&
-    prev.readingMode === next.readingMode
+    prev.readingMode === next.readingMode &&
+    prev.focusSentenceId === next.focusSentenceId
   );
 });
 

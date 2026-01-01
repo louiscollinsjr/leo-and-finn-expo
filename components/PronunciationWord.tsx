@@ -1,12 +1,15 @@
 /**
  * PronunciationWord - Renders a word with phoneme segments stacked below
- * 
+ *
  * Each word is split into segments using pronunciation rules.
  * Each segment is rendered as a column with the letter(s) on top
  * and the phoneme below, maintaining vertical alignment.
  */
+import { getFontFamily } from '@/lib/fonts';
 import { findPronunciationMatches, getPronunciationRules } from '@/lib/pronunciation';
 import type { PronunciationMatch } from '@/lib/pronunciation/types';
+import * as PronConfig from '@/lib/pronunciationConfig';
+import { useReaderPrefs } from '@/providers/ReaderProvider';
 import React, { memo, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -17,8 +20,8 @@ interface PronunciationWordProps {
   phonemeColor?: string;
   isKnown?: boolean;
   knownWordColor?: string;
-  targetLang?: string;
-  nativeLang?: string;
+  bookLang?: string; // Language the book is written in
+  readerLang?: string; // Reader's native language
 }
 
 interface Segment {
@@ -62,53 +65,69 @@ const PronunciationWord = memo(({
   word,
   fontSize,
   textColor,
-  phonemeColor = '#c41e3a', // Red for phonemes
+  phonemeColor = PronConfig.PHONEME_COLOR,
   isKnown = false,
-  knownWordColor = '#4a4a4a',
-  targetLang = 'ro',
-  nativeLang = 'en',
+  knownWordColor = PronConfig.KNOWN_WORD_COLOR,
+  bookLang = 'en',
+  readerLang = 'en',
 }: PronunciationWordProps) => {
-  const phonemeFontSize = Math.round(fontSize * 0.5);
-  
+  // Use centralized config for sizing
+  const phonemeFontSize = PronConfig.getPhonemeSize(fontSize);
+
   const segments = useMemo(() => {
-    const rules = getPronunciationRules(targetLang, nativeLang);
+    const rules = getPronunciationRules(bookLang, readerLang);
     const matches = findPronunciationMatches(word, rules);
     return buildSegments(word, matches);
-  }, [word, targetLang, nativeLang]);
+  }, [word, bookLang, readerLang]);
 
-  const effectiveTextColor = isKnown ? knownWordColor : textColor;
+  const { prefs } = useReaderPrefs();
+
+  // Word font comes from user preference, phoneme font is always Patrick Hand SC
+  const wordFont = getFontFamily(prefs.pronunciationFont);
+  const phonemeFont = getFontFamily(PronConfig.PHONEME_FONT);
 
   return (
     <View style={styles.wordContainer}>
-      {segments.map((segment, i) => (
-        <View key={`${word}-seg-${i}`} style={styles.segmentColumn}>
-          {/* Letter(s) on top */}
-          <Text
-            style={[
-              styles.letterText,
-              {
-                fontSize,
-                color: effectiveTextColor,
-              },
-            ]}
-          >
-            {segment.text}
-          </Text>
-          {/* Phoneme below (or empty spacer) */}
-          <Text
-            style={[
-              styles.phonemeText,
-              {
-                fontSize: phonemeFontSize,
-                color: phonemeColor,
-                minHeight: phonemeFontSize + 2,
-              },
-            ]}
-          >
-            {segment.phoneme || ' '}
-          </Text>
-        </View>
-      ))}
+      {segments.map((segment, i) => {
+        // Use config to determine segment color
+        const segmentColor = PronConfig.getSegmentColor(!!segment.phoneme, isKnown);
+
+        return (
+          <View key={`${word}-seg-${i}`} style={styles.segmentColumn}>
+            {/* Letter(s) on top - uses word font (user configurable) */}
+            <Text
+              allowFontScaling={PronConfig.ALLOW_FONT_SCALING}
+              style={[
+                styles.letterText,
+                {
+                  fontSize,
+                  color: segmentColor,
+                  fontFamily: wordFont,
+                  letterSpacing: PronConfig.WORD_LETTER_SPACING,
+                },
+              ]}
+            >
+              {segment.text}
+            </Text>
+            {/* Phoneme below - always Patrick Hand SC */}
+            <Text
+              allowFontScaling={PronConfig.ALLOW_FONT_SCALING}
+              style={[
+                styles.phonemeText,
+                {
+                  fontSize: phonemeFontSize,
+                  color: phonemeColor,
+                  minHeight: phonemeFontSize + 2,
+                  fontFamily: phonemeFont,
+                  fontWeight: PronConfig.PHONEME_FONT_WEIGHT,
+                },
+              ]}
+            >
+              {segment.phoneme || ' '}
+            </Text>
+          </View>
+        );
+      })}
     </View>
   );
 });
@@ -119,20 +138,22 @@ const styles = StyleSheet.create({
   wordContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginRight: 8, // Space between words
-    marginBottom: 4, // Extra vertical space for wrapped lines
+    marginBottom: PronConfig.WORD_BOTTOM_MARGIN,
   },
   segmentColumn: {
     flexDirection: 'column',
     alignItems: 'center',
-    minWidth: 12, // Ensure minimum width for alignment
+    minWidth: PronConfig.SEGMENT_MIN_WIDTH,
+    paddingHorizontal: PronConfig.SEGMENT_PADDING,
   },
   letterText: {
     textAlign: 'center',
+    includeFontPadding: !PronConfig.REMOVE_FONT_PADDING,
   },
   phonemeText: {
     textAlign: 'center',
-    fontWeight: '500',
+    includeFontPadding: !PronConfig.REMOVE_FONT_PADDING,
+    marginTop: PronConfig.WORD_PHONEME_GAP,
   },
 });
 

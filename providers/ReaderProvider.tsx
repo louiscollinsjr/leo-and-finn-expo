@@ -1,3 +1,5 @@
+import type { FontFamily } from '@/lib/fonts';
+import { DEFAULT_WORD_FONT } from '@/lib/pronunciationConfig';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 // Simple, pluggable storage adapter so apps can use AsyncStorage, SecureStore, etc.
@@ -33,6 +35,7 @@ export type ReaderPrefs = {
   marginScale: number; // horizontal margin multiplier
   theme: ThemeMode;
   typeface: Typeface;
+  pronunciationFont: FontFamily; // Font for pronunciation mode
   // New visual prefs for advanced customization
   brightness: number; // 0..1 UI brightness multiplier (app level, not system)
   boldText: boolean; // prefer bolder text weight for body
@@ -47,6 +50,7 @@ const DEFAULT_PREFS: ReaderPrefs = {
   marginScale: 1.0,
   theme: 'system',
   typeface: 'system',
+  pronunciationFont: DEFAULT_WORD_FONT, // From centralized config
   brightness: 1.0,
   boldText: false,
   charSpacing: 0,
@@ -81,6 +85,12 @@ export type WordContextPayload = {
   anchor?: WordAnchor | null;
 };
 
+// Language settings for pronunciation mode
+type PronunciationLanguage = {
+  bookLang: string; // Language the book is written in (e.g., 'en', 'ro', 'rom')
+  readerLang: string; // Reader's native language for pronunciation guides (e.g., 'en', 'fr')
+};
+
 type ReaderUIContextValue = {
   overlayVisible: boolean;
   setOverlayVisible: (visible: boolean) => void;
@@ -95,6 +105,12 @@ type ReaderUIContextValue = {
   closeWordContext: () => void;
   readingMode: ReadingMode;
   setReadingMode: (mode: ReadingMode) => void;
+  // Focus mode: scroll-based sentence highlighting
+  focusSentenceId: string | null;
+  setFocusSentenceId: (id: string | null) => void;
+  // Language settings for pronunciation mode
+  pronunciationLang: PronunciationLanguage;
+  setPronunciationLang: (lang: Partial<PronunciationLanguage>) => void;
 };
 
 const ReaderPrefsContext = createContext<ReaderPrefsContextValue | undefined>(undefined);
@@ -109,6 +125,9 @@ export function ReaderProvider({ children, storage }: ReaderProviderProps) {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [wordContext, setWordContext] = useState<WordContextValue>({ word: null, tokenId: null, anchor: null });
   const [readingMode, setReadingMode] = useState<ReadingMode>('normal');
+  const [focusSentenceId, setFocusSentenceId] = useState<string | null>(null);
+  // Default to English for both (most common case) - reader screen updates bookLang from story data
+  const [pronunciationLang, setPronunciationLangState] = useState<PronunciationLanguage>({ bookLang: 'en', readerLang: 'en' });
   const loadedRef = useRef(false);
 
   // Load on mount
@@ -153,6 +172,10 @@ export function ReaderProvider({ children, storage }: ReaderProviderProps) {
     setWordContext({ word: null, tokenId: null, anchor: null });
   }, []);
 
+  const setPronunciationLang = useCallback((lang: Partial<PronunciationLanguage>) => {
+    setPronunciationLangState((prev) => ({ ...prev, ...lang }));
+  }, []);
+
   const prefsValue = useMemo<ReaderPrefsContextValue>(
     () => ({ prefs, setPrefs, resetPrefs }),
     [prefs]
@@ -173,6 +196,10 @@ export function ReaderProvider({ children, storage }: ReaderProviderProps) {
       closeWordContext,
       readingMode,
       setReadingMode,
+      focusSentenceId,
+      setFocusSentenceId,
+      pronunciationLang,
+      setPronunciationLang,
     }),
     [
       overlayVisible,
@@ -183,6 +210,9 @@ export function ReaderProvider({ children, storage }: ReaderProviderProps) {
       openWordContext,
       closeWordContext,
       readingMode,
+      focusSentenceId,
+      pronunciationLang,
+      setPronunciationLang,
     ]
   );
 

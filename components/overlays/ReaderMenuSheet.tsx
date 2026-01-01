@@ -1,22 +1,17 @@
-// ReaderMenuSheet: Bottom sheet overlay with two-column layout (no global dim or blur).
-// Left column: two full-opacity buttons (Contents, Themes & Settings) and 4 mode buttons.
-// Right column: vertical scrub gutter. No search, no horizontal progress slider.
+// ReaderMenuSheet: Simplified settings sheet (mode buttons moved to ReaderModeBar)
+// Contains Contents button and Themes & Settings access
 import { ThemedText } from '@/components/ThemedText';
-import type { ReadingMode } from '@/providers/ReaderProvider';
-import { useReaderUI } from '@/providers/ReaderProvider';
+import BlurCapsule from '@/components/ui/BlurCapsule';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-type Mode = ReadingMode;
 
 export default function ReaderMenuSheet({
   visible,
   onClose,
   onOpenThemePopover,
   progress,
-  onScrub,
   onPresented,
   bottomOffset,
 }: {
@@ -24,23 +19,15 @@ export default function ReaderMenuSheet({
   onClose: () => void;
   onOpenThemePopover: () => void;
   progress: number; // 0..1
-  onScrub: (v: number) => void;
   onPresented?: () => void;
   bottomOffset?: number;
 }) {
   const insets = useSafeAreaInsets();
-  const { readingMode, setReadingMode } = useReaderUI();
-  // Call onPresented when becoming visible (without animation)
-  React.useEffect(() => {
-    if (visible) onPresented && onPresented();
-  }, [visible, onPresented]);
 
-  // Fast vertical scrub gutter
-  const [gutterHeight, setGutterHeight] = useState(1);
-  const onGutterEvent = (y: number) => {
-    const v = Math.max(0, Math.min(1, y / Math.max(1, gutterHeight)));
-    onScrub(v);
-  };
+  // Call onPresented when becoming visible
+  React.useEffect(() => {
+    if (visible) onPresented?.();
+  }, [visible, onPresented]);
 
   // Fade/slide animation for presenting/dismissing the sheet
   const opacity = useRef(new Animated.Value(0)).current;
@@ -94,108 +81,56 @@ export default function ReaderMenuSheet({
       <Animated.View
         style={{
           position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: (bottomOffset ?? (insets.bottom || 0) + 64),
+          left: 20,
+          right: 20,
+          bottom: (bottomOffset ?? (insets.bottom || 0) + 80),
           zIndex: 20,
           opacity,
           transform: [{ translateY }],
         }}
       >
-        {/* Two-column layout: left content, right vertical gutter */}
-        <View style={{ flexDirection: 'row', paddingHorizontal: 28, paddingTop: 10, paddingBottom: (insets.bottom || 0) + 12 }}>
-          {/* Left column */}
-          <View style={{ flex: 1, paddingRight: 12 }}>
-            {/* Contents button */}
-            <View>
-              <Pressable
-                onPress={() => { /* TODO: open contents/metrics */ }}
-                style={{
-                  backgroundColor: 'rgba(217,217,217,1.0)',
-                  borderRadius: 12,
-                  paddingVertical: 16,
-                  paddingHorizontal: 20,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  // Shadow (iOS)
-                  shadowColor: '#000',
-                  shadowOffset: { width: 3, height: -15 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 25,
-                  // Elevation (Android)
-                  elevation: 3,
-                }}
-              >
-                <ThemedText style={{ fontWeight: '400', fontSize: 14 }}>Contents · {Math.round((progress || 0) * 100)}%</ThemedText>
-                <MaterialIcons name="list" size={20} color="#666" />
-              </Pressable>
-            </View>
-
-            {/* Themes & Settings */}
-            <View style={{ marginTop: 10 }}>
-              <Pressable
-                onPress={() => { onClose(); onOpenThemePopover(); }}
-                style={{ backgroundColor: 'rgba(217,217,217,1.0)', borderRadius: 12, paddingVertical: 16, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-              >
-                <ThemedText style={{ fontWeight: '400', fontSize: 14 }}>Themes & Settings</ThemedText>
-                <MaterialIcons name="text-fields" size={16} color="#666" />
-              </Pressable>
-            </View>
-
-            {/* Mode buttons row */}
-            <View style={{ marginTop: 12, flexDirection: 'row', justifyContent: 'space-between' }}>
-              <View style={{ width: '22%', aspectRatio: 1.2 }}>
-                <ModeButton label="" icon="menu-book" mode="normal" activeMode={readingMode} onPress={() => { setReadingMode('normal'); onClose(); }} />
-              </View>
-              <View style={{ width: '22%', aspectRatio: 1.2 }}>
-                <ModeButton label="" icon="center-focus-strong" mode="focused" activeMode={readingMode} onPress={() => { setReadingMode('focused'); onClose(); }} />
-              </View>
-              <View style={{ width: '22%', aspectRatio: 1.2 }}>
-                <ModeButton label="" icon="record-voice-over" mode="pronunciation" activeMode={readingMode} onPress={() => { setReadingMode('pronunciation'); onClose(); }} />
-              </View>
-              <View style={{ width: '22%', aspectRatio: 1.2 }}>
-                <ModeButton label="" icon="translate" mode="translations" activeMode={readingMode} onPress={() => { setReadingMode('translations'); onClose(); }} />
-              </View>
-            </View>
-          </View>
-
-          {/* Right column: vertical gutter (shares space, no overlap) */}
-          <View
-            onLayout={(e) => setGutterHeight(e.nativeEvent.layout.height)}
-            onStartShouldSetResponder={() => true}
-            onMoveShouldSetResponder={() => true}
-            onResponderGrant={(e) => onGutterEvent(e.nativeEvent.locationY)}
-            onResponderMove={(e) => onGutterEvent(e.nativeEvent.locationY)}
-            style={{ width: 56, borderRadius: 12, backgroundColor: 'rgba(0,0,0,1.0)', alignItems: 'center' }}
+        <BlurCapsule borderRadius={16} style={{ padding: 12 }}>
+          {/* Contents button */}
+          <Pressable
+            onPress={() => { /* TODO: open contents/metrics */ }}
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.06)',
+              borderRadius: 12,
+              paddingVertical: 14,
+              paddingHorizontal: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
           >
-            {/* <View style={{ width: 4, flex: 1, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 2, marginVertical: 12 }} /> */}
-          </View>
-        </View>
+            <ThemedText style={{ fontWeight: '500', fontSize: 15 }}>
+              Contents · {Math.round((progress || 0) * 100)}%
+            </ThemedText>
+            <MaterialIcons name="list" size={20} color="#666" />
+          </Pressable>
+
+          {/* Themes & Settings */}
+          <Pressable
+            onPress={() => {
+              onClose();
+              onOpenThemePopover();
+            }}
+            style={{
+              marginTop: 8,
+              backgroundColor: 'rgba(0,0,0,0.06)',
+              borderRadius: 12,
+              paddingVertical: 14,
+              paddingHorizontal: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <ThemedText style={{ fontWeight: '500', fontSize: 15 }}>Themes & Settings</ThemedText>
+            <MaterialIcons name="text-fields" size={18} color="#666" />
+          </Pressable>
+        </BlurCapsule>
       </Animated.View>
     </View>
-  );
-}
-
-function ModeButton({ label, icon, mode, activeMode, onPress }: { label?: string; icon: any; mode: Mode; activeMode: Mode; onPress: () => void }) {
-  const isActive = mode === activeMode;
-  
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{ 
-        flex: 1, 
-        backgroundColor: isActive ? 'rgba(100, 150, 255, 0.6)' : 'rgba(217,217,217,1.0)', 
-        borderRadius: 12, 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        overflow: 'hidden' 
-      }}
-    >
-      <MaterialIcons name={icon} size={20} color="#000" style={{ opacity: isActive ? 1 : 0.65 }} />
-      {label ? (
-        <ThemedText style={{ marginTop: 4, fontSize: 12, fontWeight: '400' }}>{label}</ThemedText>
-      ) : null}
-    </Pressable>
   );
 }

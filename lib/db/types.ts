@@ -13,6 +13,8 @@ export type Story = {
   author: string | null;
   description: string | null;
   updated_at: string | null;
+  // Language the book is written in (e.g., 'en', 'ro', 'rom') - used for pronunciation mode
+  language_code: string | null;
 };
 
 export type StoryCover = {
