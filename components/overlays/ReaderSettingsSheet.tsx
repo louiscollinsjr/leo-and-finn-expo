@@ -4,10 +4,11 @@ import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { QuickThemeSwatches } from '@/constants/Colors';
 import { AVAILABLE_FONTS, type FontFamily } from '@/lib/fonts';
+import { LANG_LABELS, listGuidesForBookLang } from '@/lib/pronunciation';
 import { useReaderPrefs, useReaderUI, type ReadingMode, type ThemeMode } from '@/providers/ReaderProvider';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { TrueSheet } from '@lodev09/react-native-true-sheet';
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 interface ReaderSettingsSheetProps {
@@ -17,7 +18,12 @@ interface ReaderSettingsSheetProps {
 export const ReaderSettingsSheet = forwardRef<TrueSheet, ReaderSettingsSheetProps>(
   ({ onClose }, ref) => {
     const { prefs, setPrefs, resetPrefs } = useReaderPrefs();
-    const { readingMode, setReadingMode } = useReaderUI();
+    const { readingMode, setReadingMode, pronunciationLang, setPronunciationLang } = useReaderUI();
+
+    // Get available reader languages for the current book language
+    const availableReaderLangs = useMemo(() => {
+      return listGuidesForBookLang(pronunciationLang.bookLang);
+    }, [pronunciationLang.bookLang]);
 
     const adjustFont = (delta: number) => {
       const nextFont = Math.max(0.7, Math.min(1.6, (prefs.fontScale ?? 1) + delta));
@@ -94,35 +100,65 @@ export const ReaderSettingsSheet = forwardRef<TrueSheet, ReaderSettingsSheetProp
             </View>
           </View>
 
-          {/* Font Selector (only visible in pronunciation mode) */}
+          {/* Pronunciation Mode Settings */}
           {readingMode === 'pronunciation' && (
-            <View style={styles.section}>
-              <ThemedText style={styles.sectionTitle}>Pronunciation Font</ThemedText>
-              <View style={styles.fontGrid}>
-                {(Object.keys(AVAILABLE_FONTS) as FontFamily[]).map((fontKey) => {
-                  const font = AVAILABLE_FONTS[fontKey];
-                  const isSelected = prefs.pronunciationFont === fontKey;
-                  return (
-                    <Pressable
-                      key={fontKey}
-                      style={[styles.fontButton, isSelected && styles.fontButtonActive]}
-                      onPress={() => setPrefs({ pronunciationFont: fontKey })}
-                    >
-                      <ThemedText
-                        style={[
-                          styles.fontLabel,
-                          isSelected && styles.fontLabelActive,
-                          { fontFamily: font.regular }
-                        ]}
-                        numberOfLines={1}
+            <>
+              {/* Reader's Native Language Selector */}
+              <View style={styles.section}>
+                <ThemedText style={styles.sectionTitle}>Your Native Language</ThemedText>
+                <View style={styles.langGrid}>
+                  {availableReaderLangs.map(({ readerLang, label }) => {
+                    const isSelected = pronunciationLang.readerLang === readerLang;
+                    return (
+                      <Pressable
+                        key={readerLang}
+                        style={[styles.langButton, isSelected && styles.langButtonActive]}
+                        onPress={() => setPronunciationLang({ readerLang })}
                       >
-                        {font.displayName}
-                      </ThemedText>
-                    </Pressable>
-                  );
-                })}
+                        <ThemedText
+                          style={[
+                            styles.langLabel,
+                            isSelected && styles.langLabelActive,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {label}
+                        </ThemedText>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
+
+              {/* Font Selector */}
+              <View style={styles.section}>
+                <ThemedText style={styles.sectionTitle}>Pronunciation Font</ThemedText>
+                <View style={styles.fontGrid}>
+                  {(Object.keys(AVAILABLE_FONTS) as FontFamily[]).map((fontKey) => {
+                    const font = AVAILABLE_FONTS[fontKey];
+                    const isSelected = prefs.pronunciationFont === fontKey;
+                    return (
+                      <Pressable
+                        key={fontKey}
+                        style={[styles.fontButton, isSelected && styles.fontButtonActive]}
+                        onPress={() => setPrefs({ pronunciationFont: fontKey })}
+                      >
+                        <ThemedText
+                          style={[
+                            styles.fontLabel,
+                            isSelected && styles.fontLabelActive,
+                            { fontFamily: font.regular }
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {font.displayName}
+                        </ThemedText>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            </>
           )}
 
           {/* Text Size Controls */}
@@ -300,6 +336,34 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   fontLabelActive: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  langGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  langButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: 'rgba(118,118,128,0.08)',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    minWidth: 90,
+  },
+  langButtonActive: {
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    borderColor: '#007AFF',
+  },
+  langLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#000',
+    textAlign: 'center',
+  },
+  langLabelActive: {
     color: '#007AFF',
     fontWeight: '600',
   },
